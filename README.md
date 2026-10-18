@@ -2,6 +2,10 @@
 
 A local 3D conversation studio: a rigged human character with idle movement, blinking, eye contact, expressions, hand gestures and mouth shapes driven by the actual British voice recording. Ollama answers, Kokoro speaks and Whisper transcribes on your computer (with a Vosk fallback). No paid API or cloud account is required for the implemented path.
 
+The combined working version is on **`codex/live-3d-persona`**, in [PR #1](https://github.com/jpjohno/moneypenny-studio/pull/1). Open **Moneypenny.code-workspace** in VS Code for the complete web app and Blender tools. The separate Desktop checkout is preserved; its `app.py` is a Blender script, not the web server. See the latest section of [SESSION_HANDOFF.md](SESSION_HANDOFF.md) before continuing development.
+
+**Open Studio Rig Controls.command** locates Blender on this Mac and opens the local dressed performance source with a **Moneypenny** sidebar. Remember a pose, edit a different pose, then animate back to the remembered pose. A new timeline action keeps the previous action available; constrained rigs must be animated through their own controls. Export movement produces a motion-only GLB for **Motion library → Add animation** in the web app. No character upload or automatic execution of model-written code is involved. See [CHARACTER_WORKSHOP.md](CHARACTER_WORKSHOP.md#blender-to-web-studio-motion-workflow).
+
 ## Open on this Mac
 
 Double-click **Start-Moneypenny.command**, or run:
@@ -16,12 +20,12 @@ The studio opens at **http://127.0.0.1:8090**. Keep its Terminal window open. Th
 MONEYPENNY_PORT=8091 ./Start-Moneypenny.command
 ```
 
-Requirements: macOS or Linux, Python 3.10+, Node.js/npm for installing the pinned Three.js dependency, a modern WebGL2 browser and [Ollama](https://ollama.com/). Start Ollama and install an answer model. The studio discovers installed models rather than inventing a catalogue. On James's Mac the existing `MoneyPenny:latest` and other models were detected.
+Requirements: macOS or Linux, Python 3.10+, Node.js/npm for installing the pinned Three.js dependency, a modern WebGL2 browser and [Ollama](https://ollama.com/). Start Ollama and install an answer model. The studio discovers installed models rather than inventing a catalogue. On James's Mac `cognitivecomputations/dolphin-llama3:latest` is installed and selected for the saved Moneypenny persona. Fresh settings prefer that installed tag; existing saved model choices are respected. No model is downloaded automatically.
 
 ## First installation elsewhere
 
 ```sh
-git clone https://github.com/jpjohno/moneypenny-studio.git
+git clone --branch codex/live-3d-persona https://github.com/jpjohno/moneypenny-studio.git
 cd moneypenny-studio
 python3 -m venv .venv
 .venv/bin/python -m pip install -r requirements.txt

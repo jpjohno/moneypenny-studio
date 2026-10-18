@@ -97,3 +97,24 @@ The answer model defaults to installed `uncensored-3b:latest`; its actual name i
 - [MetaHuman hardware requirements](https://dev.epicgames.com/documentation/metahuman/metahuman-hardware-requirements-in-unreal-engine) list substantially higher recommended hardware and note that M1 Macs cannot render hair strands. This Mac is an M1 with 16 GB, so MetaHuman is not represented as an installed, proven photo-real route here.
 
 No professional application makes every conceivable movement automatic or guarantees anatomy/skin/cloth quality by installation alone. The library, rig and workshop now support building and integrating that work without pretending the sample is finished.
+
+
+## Blender to web studio motion workflow
+
+The complete project now separates the Flask server (`app.py`) from Blender tools (`scripts/character/studio_controls.py`). The Desktop/main Blender script remains available in Git history at `e85c2f7`; it is not the web server. Its unbound anatomical sliders and intimate actions were not integrated. Existing user Desktop scripts and unsaved Blender edits were not run or overwritten.
+
+1. Open `Moneypenny.code-workspace` in VS Code. The task **Moneypenny: open web studio** runs the web app. Continue can keep using the already installed Ollama model `cognitivecomputations/dolphin-llama3:latest` at `http://127.0.0.1:11434`; its global configuration is unchanged. Conversation controls and motion remain separate from code editing.
+2. Run **Open Studio Rig Controls.command**, or the workspace task **Moneypenny: open Blender motion panel**. It resolves `~/Applications/Blender-4.5-LTS.app/Contents/MacOS/Blender` on this Mac. Set `MONEYPENNY_BLENDER` for another executable. The default source is the existing local dressed `Moneypenny-Performance-Final-Fit-v3.blend`. To use a different saved scene: `python3 scripts/launch_blender.py --file /absolute/path/source.blend`. This opens a separate Blender instance and does not save or replace a currently open scene.
+3. Select the intended rig (or a mesh with an armature modifier). Open the 3D viewport sidebar with **N**, then **Moneypenny**. **Remember current pose** stores the pose on that rig. Edit another pose; **Animate to remembered pose** creates a new action from the current frame, with quaternion interpolation over the chosen transition frames. The previous action is retained with a fake user. This changes the active action/rotation representation intentionally and supports Blender Undo. It does not zero every rig in the scene. Rigs with bone constraints or active NLA tracks are refused for this simple transition tool; animate their own controllers normally instead.
+4. Set the scene start/end range to the clip, at most 60 seconds and 1,800 frames. In Object Mode choose **Export movement for web studio**. Export evaluates Blender's scene animation/constraints. The GLB contains the selected skeleton, animation and a three-vertex skin carrier, with no character meshes, textures or clothing. Selection, active object and current frame are restored; temporary objects are removed even on error. The source .blend is not saved automatically.
+5. In the running web studio, use **Motion library → Add animation**, select the exported GLB and review its retargeted playback on the existing clothed sample. Add words to request the clip or opt it into independent movement. Unknown bone conventions need **Animation bone mapping**; export is not a guarantee that arbitrary skeletons match. Facial morphs and cloth are not included in this motion-only route. New character upload acceptance remains unverified; this integration does not retry it.
+
+Verification on 18 October: Blender 4.5.14 created a real 24-frame pose transition on a disposable four-bone rig, preserved a second rig and the previous action, rejected constrained pose rewriting, exported GLB and restored scene state. The same GLB loaded through Three.js and the studio retargeter, producing finite tracks and actual spine movement on the live sample's skeleton. These checks do not prove production mocap quality, arbitrary motion, clothing fit, photorealism or acceptance on another computer.
+
+Repeat from the repository root:
+
+```sh
+python3 scripts/launch_blender.py --check
+"$HOME/Applications/Blender-4.5-LTS.app/Contents/MacOS/Blender" --background --factory-startup --python-exit-code 1 --python scripts/character/verify_studio_controls.py -- .runtime/studio-controls-test.glb
+node scripts/character/verify_motion_export.mjs .runtime/studio-controls-test.glb
+```

@@ -1,0 +1,30 @@
+// Independent consumer check: real Blender export -> studio retargeter -> sample rig.
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+import * as THREE from 'three';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import {retarget} from '../../static/motion-library.js';
+import {RigController} from '../../static/rig.js';
+import {rig} from '../../tests/rig-fixture.mjs';
+
+const path=process.argv[2];
+if(!path)throw new Error('Pass the motion GLB produced by verify_studio_controls.py.');
+const data=fs.readFileSync(path);
+const gltf=await new GLTFLoader().parseAsync(data.buffer.slice(data.byteOffset,data.byteOffset+data.byteLength),'');
+let skeleton;
+gltf.scene.traverse(node=>{if(node.isSkinnedMesh)skeleton=node.skeleton;});
+assert.ok(skeleton&&gltf.animations.length===1);
+const sourceMeshes=[];gltf.scene.traverse(node=>{if(node.isMesh)sourceMeshes.push(node);});
+assert.equal(sourceMeshes.length,1);
+assert.equal(sourceMeshes[0].geometry.attributes.position.count,3,'only the tiny skeleton carrier is exported');
+const head=rig(),target=new RigController(head);
+const result=retarget(skeleton,gltf.animations[0],target);
+assert.ok(result.clip.duration>.9&&result.clip.duration<1.1);
+assert.ok(result.clip.tracks.every(track=>Array.from(track.values).every(Number.isFinite)));
+const mixer=new THREE.AnimationMixer(head.armature);
+mixer.clipAction(result.clip).setLoop(THREE.LoopOnce,1).play();
+mixer.update(0);
+const before=target.bones.Spine.quaternion.clone();
+mixer.update(.5);
+assert.ok(before.angleTo(target.bones.Spine.quaternion)>.05,'retargeted spine must actually move');
+console.log(JSON.stringify({verified:true,duration:result.clip.duration,mappedBones:Object.keys(result.mapping).length,meshVertices:3}));

@@ -14,6 +14,7 @@ import { prepareSampleMaterials, setLook } from './appearance.js';
 import { PoseCorrectives } from './correctives.js';
 import { SeatSupport } from './seat-support.js';
 import { actionOnly, movementAcknowledgement, wardrobeCommand } from './action-commands.js';
+import { chooseModel } from './model-choice.js';
 
 const $ = id => document.getElementById(id);
 const owner = crypto.randomUUID();
@@ -539,9 +540,7 @@ async function initialize() {
     const response=await fetch('/api/status');if(!response.ok)throw new Error('Local status check failed.');statusData=await response.json();
     $('modelSelect').replaceChildren();
     for(const model of statusData.models){const option=document.createElement('option');option.value=model;option.textContent=model;$('modelSelect').append(option);}
-    if(statusData.models.includes('uncensored-3b:latest'))$('modelSelect').value='uncensored-3b:latest';
-    else if(statusData.models.includes('MoneyPenny:latest'))$('modelSelect').value='MoneyPenny:latest';
-    if(saved?.modelSelect&&saved.modelSelect!=='MoneyPenny:latest'&&statusData.models.includes(saved.modelSelect))$('modelSelect').value=saved.modelSelect;
+    $('modelSelect').value=chooseModel(statusData.models,saved?.modelSelect);
     if(!statusData.models.length){const option=document.createElement('option');option.textContent='Ollama unavailable';$('modelSelect').append(option);}
     $('connectionNote').textContent=statusData.voice_ready&&statusData.models.length?'Local model & British voice connected':statusData.ollama_error||'Local voice needs setup · see README';
     if(statusData.ollama_error)notify(statusData.ollama_error);
