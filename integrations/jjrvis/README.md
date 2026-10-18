@@ -21,3 +21,7 @@ Preserve the current broker package, check and apply `jjrvis-integration.patch` 
 The current character is CG and has not passed photographic realism acceptance. The browser character is clothed. Camera permission, live house control, native phone integration, other vehicle brands and multiple household/customer records remain separate, uncompleted integration work. A phone browser cannot use another computer's localhost 3D service: the UI labels 3D as available on the Mac until a supported authenticated remote rendering route exists.
 
 `PRODUCT_STRATEGY.md` contains the private pilot, Home Assistant integration sequence, commercial hypotheses and source links. No new customers, accounts, purchases or cameras were created.
+
+## Verified local conversation
+
+The selected Sadiq uncensored 3B model returned a warmed direct response in 0.71 seconds and the full authenticated JJRVIS chat returned an arithmetic answer in 3.25 seconds. See `LOCAL_AI_VERIFICATION.json` for the bounded synthetic tests, including cold-load timeout. No paid request or device action was made. This does not guarantee cold-start latency or tool accuracy for arbitrary tasks.

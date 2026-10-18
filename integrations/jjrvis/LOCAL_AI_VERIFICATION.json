@@ -1,0 +1,35 @@
+{
+  "checked_at": "2026-10-18T20:51:26.338590+00:00",
+  "selected_model": "sadiq-bd/llama3.2-3b-uncensored:latest",
+  "provider": "ollama",
+  "paid_api_requests": 0,
+  "model_preference_changed": false,
+  "processes_killed": false,
+  "observations": [
+    {
+      "kind": "cold_direct_tiny_chat",
+      "timeout_seconds": 28,
+      "outcome": "client_timeout_during_model_load"
+    },
+    {
+      "kind": "warmed_direct_tiny_chat",
+      "elapsed_seconds": 0.71,
+      "outcome": "verified_reply",
+      "reply": "Ready James",
+      "eval_count": 3,
+      "load_seconds": 0.01
+    },
+    {
+      "kind": "authenticated_gateway_chat",
+      "endpoint": "/v1/workspace/ask",
+      "elapsed_seconds": 3.25,
+      "outcome": "verified_reply",
+      "question": "What is seven plus five? Answer in one short sentence.",
+      "answer": "12",
+      "mode": "local_conversation",
+      "model": "sadiq-bd/llama3.2-3b-uncensored:latest",
+      "actions_executed": false
+    }
+  ],
+  "operational_note": "The idle Dolphin runner was naturally evicted by requesting the selected3B model. Cold model swapping was slow; warmed local inference and authenticated gateway both succeeded. Selected3B was kept warm for2h."
+}

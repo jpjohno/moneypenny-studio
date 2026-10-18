@@ -4,8 +4,9 @@
   "files": {
     "PRODUCT_STRATEGY.md": "c04455a296fd87fb4df35a8bd1c4a0ba7045f110c469cec0e43f1e0637c4ef3a",
     "jjrvis-integration.patch": "a8ab1e450e7a403dd09ddef0e2ee4a2b10c86ef95803108564c8656f5194afc6",
+    "LOCAL_AI_VERIFICATION.json": "788a4084da9e26d052239fe581e40db72357c82860d5483a2f77f77dc0e7b38c",
     "connection_status.py": "0e1bda4609a5fdd26d85349f0e75a092c8cdc2ea0d64455277788d08130692a7",
-    "README.md": "956ae0f050053752592238720250b199e5f92db7b70793aae0862638a3baed1f",
+    "README.md": "b913a13f2ea811d7166592bd2400d3a4e9c1527703080cd217b370e5731893d7",
     "tests/test_voice_interrupt.cjs": "b2a3d9a65b59ff1df41ff6a4c30983db23f02fa4f0af3ced8b0f9e153b3c8be5",
     "tests/presence-voice.test.cjs": "51f216f8c017b014cbe82b35834d4d78b46ac2d8529cdc80b6d9df3bdb76a61f",
     "tests/test_connection_status.py": "b0c614849d9598e3dee1ab32613a4f989d95f4ec726a6d8b70c51ae267b3a682"
