@@ -178,6 +178,20 @@
       "present": true,
       "bytes": 49895224,
       "sha256": "1b1da4b2e234b83012b3e370258f09e1b6bb5119f082de881621aa79373c0cee"
+    },
+    {
+      "path": ".runtime/character-workshop/Moneypenny-Style-v27.blend",
+      "role": "v27 clothed garment-fit source; body and all morph coordinates preserved from v26",
+      "present": true,
+      "bytes": 229807076,
+      "sha256": "73e882fa5b012fae6121d026950f7b021f404ecbf32999b714c6b841a63caa7a"
+    },
+    {
+      "path": ".runtime/character-workshop/Moneypenny-Style-v27.glb",
+      "role": "v27 clothed browser candidate; corrected under-bust drape and Jarvis presence source",
+      "present": true,
+      "bytes": 49895220,
+      "sha256": "d9166e9e453cb9eb2f5047853cdaa4d8e7011e25493138979fe1e44c3fd4f9c4"
     }
   ]
 }

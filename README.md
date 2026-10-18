@@ -14,6 +14,14 @@ For editing existing code with this Dolphin model, open the file, select the rel
 
 **Open Studio Rig Controls.command** locates Blender on this Mac and opens the local dressed performance source with a **Moneypenny** sidebar. Remember a pose, edit a different pose, then animate back to the remembered pose. A new timeline action keeps the previous action available; constrained rigs must be animated through their own controls. Export movement produces a motion-only GLB for **Motion library → Add animation** in the web app. No character upload or automatic execution of model-written code is involved. See [CHARACTER_WORKSHOP.md](CHARACTER_WORKSHOP.md#blender-to-web-studio-motion-workflow).
 
+## JJRVIS front of house
+
+Open the combined private workspace at http://127.0.0.1:8766/workspace . The existing JJRVIS service must be running separately. Moneypenny and the interactive device atlas share one scene; **Customise Moneypenny** opens this full studio. The embedded view has transparent surroundings and uses the local voice with speech-driven mouth shapes. v27 changes the clothed blouse drape while preserving the v26 body and all facial/body shape coordinates. It remains a CG character, not a photographic asset.
+
+The integration patch and connection-status helper are in [integrations/jjrvis](integrations/jjrvis/README.md). They apply to James's existing JJRVIS package; this repository does not become a standalone JJRVIS installation. Runtime, credentials, private source records and generated large character binaries are not included. The [private concierge product strategy](integrations/jjrvis/PRODUCT_STRATEGY.md) separates implemented features from proposed phone, home, camera, car and household work.
+
+In the embedded view, autonomous idle movement stays local; background choreography does not independently load another Ollama model. Speech is prepared in bounded passages, and playback messages are tied to each reply so Stop and stale completion remain separate. `/api/status?quick=1` checks stage/voice prerequisites without waiting for an Ollama catalogue request. Application tests live under `tests/`; the integration tests need the existing JJRVIS environment.
+
 ## Open on this Mac
 
 Double-click **Start-Moneypenny.command**, or run:

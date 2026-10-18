@@ -24,6 +24,7 @@ OLLAMA = os.environ.get("MONEYPENNY_OLLAMA_URL", "http://127.0.0.1:11434").rstri
 LOCAL_CHARACTER = ROOT / ".runtime/character-workshop/Moneypenny-Performance-Candidate-v6.glb"
 SURFACE_CHARACTER = ROOT / ".runtime/character-workshop/Moneypenny-Performance-Candidate-v9.glb"
 STYLED_CHARACTER = ROOT / ".runtime/character-workshop/Moneypenny-Style-v26.glb"
+FITTED_CHARACTER = ROOT / ".runtime/character-workshop/Moneypenny-Style-v27.glb"
 FREE_SURFACE_CHARACTER = ROOT / ".runtime/character-workshop/Moneypenny-Free-Surface-Reviewed.glb"
 app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = 26 * 1024 * 1024
@@ -48,7 +49,7 @@ def valid_local_character(path):
 
 def local_character_path():
     """Prefer the reviewed surface revision, retaining the previous working rig."""
-    return next((path for path in (STYLED_CHARACTER, FREE_SURFACE_CHARACTER, SURFACE_CHARACTER, LOCAL_CHARACTER)
+    return next((path for path in (FITTED_CHARACTER, STYLED_CHARACTER, FREE_SURFACE_CHARACTER, SURFACE_CHARACTER, LOCAL_CHARACTER)
                  if valid_local_character(path)), None)
 
 
@@ -230,22 +231,24 @@ def default_character():
 @app.get("/api/status")
 def status():
     models, error = [], None
-    try:
-        response = requests.get(f"{OLLAMA}/api/tags", timeout=3)
-        response.raise_for_status()
-        models = [item["name"] for item in response.json().get("models", [])]
-    except (requests.RequestException, ValueError, KeyError):
-        error = "Ollama is unavailable. Start Ollama to chat."
+    quick = request.args.get('quick') == '1'
+    if not quick:
+        try:
+            response = requests.get(f"{OLLAMA}/api/tags", timeout=3)
+            response.raise_for_status()
+            models = [item["name"] for item in response.json().get("models", [])]
+        except (requests.RequestException, ValueError, KeyError):
+            error = "Ollama is unavailable. Start Ollama to chat."
     config = voice_config()
     character_path = local_character_path()
     candidate = character_path is not None
-    return jsonify(app="moneypenny-studio", version="2.2.0", models=models, ollama_error=error, voice_ready=voice.available(),
+    return jsonify(app="moneypenny-studio", version="2.2.0", models=models, models_checked=not quick, ollama_error=error, voice_ready=voice.available(),
                    voice="Moneypenny · British English · bf_emma", voice_engine="Kokoro ONNX",
                    microphone_ready=listening.available() or bool(config.get("transcribe_python") and Path(config.get("transcribe_model", "__missing__")).is_dir()),
                    listening_engine='Whisper base.en' if listening.available() else 'Vosk',
                    avatar_ready=candidate or (ROOT / "static/avatars/mpfb.glb").is_file(),
                    character_candidate_ready=candidate,
-                   character_revision="style-v26" if character_path == STYLED_CHARACTER else "free-surface-reviewed" if character_path == FREE_SURFACE_CHARACTER else "surface-v9" if character_path == SURFACE_CHARACTER else "performance-v6" if candidate else None,
+                   character_revision="style-v27" if character_path == FITTED_CHARACTER else "style-v26" if character_path == STYLED_CHARACTER else "free-surface-reviewed" if character_path == FREE_SURFACE_CHARACTER else "surface-v9" if character_path == SURFACE_CHARACTER else "performance-v6" if candidate else None,
                    character_source="local-performance-candidate" if candidate else "bundled-cc0-sample")
 
 

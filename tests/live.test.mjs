@@ -36,3 +36,15 @@ test('microphone segments are encoded as bounded mono PCM',()=>{
   const wav=pcmWav(new Float32Array([-1,0,1]));const data=new DataView(wav);
   assert.equal(data.getUint32(24,true),16000);assert.equal(data.getInt16(44,true),-32768);assert.equal(data.getInt16(48,true),32767);
 });
+
+// A long JJRVIS sentence must reach the voice in full without breaching one-clip limits.
+test('long embedded replies preserve every word in bounded voice passages',()=>{
+  const parts=[],text=Array(1200).fill('conversation').join(' ')+'.';
+  const segments=new SpeechSegmenter(part=>parts.push(part));segments.update(text,true);
+  assert.equal(parts.join(' '),text);assert.ok(parts.every(part=>part.length<=2400));
+});
+
+test('a long unbroken voice token terminates without losing characters',()=>{
+  const parts=[],text='a'.repeat(3000);new SpeechSegmenter(part=>parts.push(part)).update(text,true);
+  assert.equal(parts.join(''),text);assert.ok(parts.every(part=>part.length<=2400));
+});

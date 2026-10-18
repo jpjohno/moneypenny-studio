@@ -30,6 +30,8 @@ FILES = {
     'Moneypenny-Style-v25.glb': 'v25 clothed browser candidate; natural eye atlas and cutout bob',
     'Moneypenny-Style-v26.blend': 'v26 complete source with balanced profile and refitted blouse',
     'Moneypenny-Style-v26.glb': 'v26 clothed browser candidate; balanced profile and Jarvis presence source',
+    'Moneypenny-Style-v27.blend': 'v27 clothed garment-fit source; body and all morph coordinates preserved from v26',
+    'Moneypenny-Style-v27.glb': 'v27 clothed browser candidate; corrected under-bust drape and Jarvis presence source',
 }
 
 

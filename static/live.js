@@ -16,9 +16,9 @@ export class SpeechSegmenter {
     while(remaining.length){
       let end=0;
       const sentence=remaining.match(/^.*?[.!?](?:\s+|$)/s);
-      if(sentence&&sentence[0].trim().length>=8&&(finished||/\s$/.test(sentence[0])))end=sentence[0].length;
+      if(sentence&&sentence[0].length<=2400&&sentence[0].trim().length>=8&&(finished||/\s$/.test(sentence[0])))end=sentence[0].length;
       const limit=this.count?170:80;
-      if(!end&&remaining.length>limit){const prefix=remaining.slice(0,limit+25);const comma=prefix.lastIndexOf(', ');end=comma>25?comma+2:prefix.lastIndexOf(' ');}
+      if(!end&&remaining.length>limit){const prefix=remaining.slice(0,limit+25);const comma=prefix.lastIndexOf(', ');const boundary=prefix.lastIndexOf(' ');end=comma>25?comma+2:boundary>0?boundary:limit;}
       if(!end&&finished)end=remaining.length;
       if(!end)break;
       const part=remaining.slice(0,end).trim();this.consumed+=end;remaining=spoken.slice(this.consumed);

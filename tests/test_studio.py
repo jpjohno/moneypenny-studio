@@ -15,6 +15,7 @@ HEADERS = {'X-Studio-Client': 'moneypenny'}
 
 @pytest.fixture
 def client(monkeypatch, tmp_path):
+    monkeypatch.setattr(studio, 'FITTED_CHARACTER', tmp_path / 'missing-fit.glb')
     monkeypatch.setattr(studio, 'FREE_SURFACE_CHARACTER', tmp_path / 'missing-free.glb')
     monkeypatch.setattr(studio, 'STYLED_CHARACTER', tmp_path / 'missing-style.glb')
     studio.app.config.update(TESTING=True)
@@ -191,3 +192,33 @@ def test_styled_candidate_and_status_match_with_safe_corrupt_fallback(client, mo
     styled.write_bytes(b'broken')
     assert client.get('/api/status').json['character_revision'] == 'surface-v9'
     assert client.get('/api/character/default').data == previous.read_bytes()
+
+
+def test_fitted_candidate_is_preferred_with_a_verified_previous_fallback(client, monkeypatch, tmp_path):
+    fitted, previous = tmp_path / 'fitted.glb', tmp_path / 'previous.glb'
+    def glb(payload):
+        return b'glTF' + struct.pack('<IIII', 2, 20 + len(payload), len(payload), 0x4e4f534a) + payload
+    fitted.write_bytes(glb(b'{ } '))
+    previous.write_bytes(glb(b'{}  '))
+    monkeypatch.setattr(studio, 'FITTED_CHARACTER', fitted)
+    monkeypatch.setattr(studio, 'STYLED_CHARACTER', previous)
+    monkeypatch.setattr(studio.requests, 'get', Mock(side_effect=requests.ConnectionError()))
+    assert client.get('/api/status').json['character_revision'] == 'style-v27'
+    assert client.get('/api/character/default').data == fitted.read_bytes()
+    fitted.write_bytes(b'broken')
+    assert client.get('/api/status').json['character_revision'] == 'style-v26'
+    assert client.get('/api/character/default').data == previous.read_bytes()
+
+
+def test_quick_presence_status_does_not_wait_for_ollama(client, monkeypatch):
+    get = Mock(side_effect=AssertionError('Presence readiness must not query Ollama'))
+    monkeypatch.setattr(studio.requests, 'get', get)
+    monkeypatch.setattr(studio.voice, 'available', lambda: True)
+    monkeypatch.setattr(studio.listening, 'available', lambda: True)
+    response = client.get('/api/status?quick=1')
+    assert response.status_code == 200
+    assert response.json['voice_ready'] is True
+    assert response.json['microphone_ready'] is True
+    assert 'avatar_ready' in response.json and 'character_revision' in response.json
+    assert response.json['models_checked'] is False
+    get.assert_not_called()

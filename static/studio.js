@@ -10,13 +10,17 @@ import { RigController, authoredNeutral } from './rig.js';
 import { RigView } from './rig-view.js';
 import { MotionLibrary } from './motion-library.js';
 import { StudioTools } from './studio-tools.js';
-import { prepareSampleMaterials, setLook, setHairTone } from './appearance.js';
+import { prepareSampleMaterials, prepareCharacterMaterials, setLook, setHairTone } from './appearance.js';
 import { PoseCorrectives } from './correctives.js';
 import { SeatSupport } from './seat-support.js';
 import { actionOnly, movementAcknowledgement, wardrobeCommand } from './action-commands.js';
 import { chooseModel } from './model-choice.js';
 
 const $ = id => document.getElementById(id);
+const jarvisEmbed=new URLSearchParams(location.search).get('embed')==='jarvis';
+const jarvisOrigins=['http://127.0.0.1:8766','http://localhost:8766'];
+const jarvisParentOrigin=(()=>{try{const origin=new URL(document.referrer).origin;return jarvisOrigins.includes(origin)?origin:jarvisOrigins[0];}catch{return jarvisOrigins[0];}})();
+function postPresence(type,detail={}){if(jarvisEmbed&&parent!==window)parent.postMessage({type,...detail},jarvisParentOrigin);}
 const owner = crypto.randomUUID();
 const presets = {
   moneypenny: 'You are Moneypenny, an adult British assistant. You are sharp-witted, warm, perceptive and quietly confident, with a knowing smile and a little playful teasing. Be practical when help is needed and genuinely interested in the conversation. Speak naturally and briefly. Use subtle physical expressions when appropriate.',
@@ -124,7 +128,8 @@ function validateGLB(buffer) {
 function frameCharacter(view,plan=null) {
   const lying=plan?.steps?.some(step=>step.skill==='lie_back');
   const low=plan?.steps?.some(step=>['splits','kneel','sit'].includes(step.skill));
-  head.setView(view,{cameraY:view==='full'?(lying?.75:low?.35:0):.6,cameraDistance:view==='head'?.8:0,cameraRotateX:lying?-.35:0});
+  const embeddedPortrait=jarvisEmbed&&view==='upper';
+  head.setView(view,{cameraY:view==='full'?(lying?.75:low?.35:0):embeddedPortrait?.78:.6,cameraDistance:view==='head'?.8:embeddedPortrait?.25:0,cameraRotateX:lying?-.35:0});
   document.querySelectorAll('[data-view]').forEach(button=>button.classList.toggle('selected',button.dataset.view===view));
 }
 async function showAvatar(file=null, localCharacter=null) {
@@ -149,10 +154,11 @@ async function showAvatar(file=null, localCharacter=null) {
     motion=new MotionDirector(head,value=>{$('motionState').textContent=value;},rig);
     tools?.refreshMotions().catch(error=>notify(error.message));
     motion.onChoosePlan=async()=>{
-      if(busy||userSpeaking||!$('autonomy').checked)return;
+      if(busy||userSpeaking||document.hidden||!$('autonomy').checked)return;
       const choices=motionLibrary.items.filter(item=>motionLibrary.autoIds.includes(item.id));
       if(choices.length&&!$('aiMotion').checked&&!head.studioNeutral){motion.queue=[];motion.active=null;motion.nextDecision=motion.clock+20+(1-motion.activity)*20;motionLibrary.loop=false;try{await motionLibrary.play(choices[Math.floor(Math.random()*choices.length)].id,0,'persona');}catch{}return;}
-      if(!$('aiMotion').checked||!$('modelSelect').value)return;
+      // The embedded face shares JJRVIS's answer model; local idle motion needs no competing model load.
+      if(jarvisEmbed||!$('aiMotion').checked||!$('modelSelect').value)return;
       const epoch=generation,persona=$('behaviourPrompt').value;
       try{
         const plan=await(await api('/api/motion/plan',{prompt:'Choose one short physical activity for yourself now, based on your movement personality and recent conversation. Use custom keyframes for original gestures, or an existing skill. Recent conversation: '+history.slice(-2).map(x=>x.content).join(' ').slice(0,600),persona,model:$('modelSelect').value})).json();
@@ -165,6 +171,7 @@ async function showAvatar(file=null, localCharacter=null) {
     try{motionLibrary.autoIds=JSON.parse(localStorage.getItem('moneypenny-autonomous-clips')||'["studio-stretch"]');motionLibrary.aliasOverrides=JSON.parse(localStorage.getItem('moneypenny-motion-aliases')||'{}');motionLibrary.cueOverrides=JSON.parse(localStorage.getItem('moneypenny-garment-cues')||'{}');}catch{}
     tools?.refreshGarments();
     if(!file&&!localCharacter)disposeAppearance=prepareSampleMaterials(head.armature);
+    else if(localCharacter)prepareCharacterMaterials(head.armature,head.renderer);
     setLook(head,$('lightingLook').value,$('lightBrightness').value);
     studioOutfit=[];
     if(!file&&!localCharacter)head.armature.traverse(node=>{if(node.isMesh&&node.name.includes('female_casualsuit')){for(const material of [node.material].flat())studioOutfit.push({material,map:material.map,color:material.color.clone()});}});
@@ -185,22 +192,24 @@ async function initializeStage() {
   try {
     head=new TalkingHead($('avatar'),{
       lipsyncModules:[],lipsyncLang:'en',cameraView:'upper',cameraY:.6,cameraRotateEnable:true,cameraZoomEnable:false,
-      modelPixelRatio:Math.min(devicePixelRatio,1.75),modelFPS:40,modelMovementFactor:.65,
+      // TalkingHead multiplies this scale by the display's pixel ratio itself.
+      modelPixelRatio:Math.min(devicePixelRatio,2)/devicePixelRatio,modelFPS:40,modelMovementFactor:.65,
       lightAmbientIntensity:.65,lightDirectIntensity:2.4,lightDirectColor:'#fff2e6',lightDirectPhi:.8,lightDirectTheta:1.1,
       lightSpotIntensity:1.1,lightSpotColor:'#d9e5ef',lightSpotPhi:.3,lightSpotTheta:4,
       avatarIdleEyeContact:.6,avatarSpeakingEyeContact:.85,avatarIdleHeadMove:.25,avatarSpeakingHeadMove:.4,
     });
+    head.renderer.setClearColor(0x000000,0);head.scene.background=null;
     head.renderer.toneMappingExposure=.85;
     head.renderer.shadowMap.enabled=true;head.renderer.shadowMap.type=THREE.PCFSoftShadowMap;
-    head.lightDirect.castShadow=true;head.lightDirect.shadow.mapSize.set(2048,2048);head.lightDirect.shadow.bias=-.0002;
+    head.lightDirect.castShadow=true;head.lightDirect.shadow.mapSize.set(2048,2048);head.lightDirect.shadow.bias=-.0002;head.lightDirect.shadow.normalBias=.008;
     Object.assign(head.lightDirect.shadow.camera,{left:-2,right:2,top:2,bottom:-2,near:.05,far:10});
     let saved=null; try {saved=await asset('avatar');}catch{}
     if(saved) { try{await showAvatar(saved);}catch{notify('The saved character is incompatible. The studio character has been restored.'); await showAvatar();} }
     else if(statusData.character_candidate_ready) {
-      try{await showAvatar(null,{url:'/api/character/default',label:statusData.character_revision==='style-v26'?'Moneypenny · balanced character v26':statusData.character_revision==='free-surface-reviewed'?'Moneypenny · free character study':statusData.character_revision==='surface-v9'?'Moneypenny · surface study v9':'Moneypenny · local performance candidate'});}
+      try{await showAvatar(null,{url:'/api/character/default',label:statusData.character_revision==='style-v27'?'Moneypenny · tailored fit v27':statusData.character_revision==='style-v26'?'Moneypenny · balanced character v26':statusData.character_revision==='free-surface-reviewed'?'Moneypenny · free character study':statusData.character_revision==='surface-v9'?'Moneypenny · surface study v9':'Moneypenny · local performance candidate'});}
       catch{notify('The local performance character could not load. The studio sample has been restored.');await showAvatar();}
     } else await showAvatar();
-    const floor=new THREE.Mesh(new THREE.PlaneGeometry(6,6),new THREE.ShadowMaterial({opacity:.22}));floor.rotation.x=-Math.PI/2;floor.position.y=-.003;floor.receiveShadow=true;head.scene.add(floor);
+    if(!jarvisEmbed){const floor=new THREE.Mesh(new THREE.PlaneGeometry(6,6),new THREE.ShadowMaterial({opacity:.22}));floor.rotation.x=-Math.PI/2;floor.position.y=-.003;floor.receiveShadow=true;head.scene.add(floor);}
     await head.audioCtx.audioWorklet.addModule('/static/vendor/headaudio/headworklet.min.mjs');
     lips=new HeadAudio(head.audioCtx,{parameterData:{vadGateActiveDb:-40,vadGateInactiveDb:-55,speakerMeanHz:220}});
     await lips.loadModel('/static/vendor/headaudio/model-en-mixed.bin');
@@ -231,10 +240,10 @@ async function initializeStage() {
       },onEnd:audio=>handleLiveTurn(audio),onLevel:probability=>$('micLevel').value=probability,
       onError:error=>{notify(error.name==='NotAllowedError'?'Microphone permission is needed for live conversation.':error.message);updateLiveControls();},
     });
-    lipReady=true; setBusy(busy);
+    lipReady=true; setBusy(busy);postPresence('moneypenny-presence-ready');
     // Pause graphics in background tabs, retaining audio playback.
     document.addEventListener('visibilitychange',()=>{if(document.hidden)head.stop();else head.start();});
-  } catch(e) { notify(`3D stage: ${e.message||e}`); setState('Stage unavailable',''); }
+  } catch(e) { notify(`3D stage: ${e.message||e}`); setState('Stage unavailable','');postPresence('moneypenny-presence-error',{message:'The live character or voice could not start. Open Moneypenny Studio to retry.'}); }
 }
 
 async function stopAll(clearNotice=true) {
@@ -307,7 +316,7 @@ async function playPrepared(audio, token, performance={}) {
       // Let the delayed audio and mouth closure drain before reporting idle.
       resolve();
     };
-    source.start();
+    source.start();performance.onStarted?.();
   });
   if(token===generation) {setState(liveSession?.active?'Listening':'Here with you');head.setMood($('mood').value||'neutral');}
 }
@@ -540,20 +549,25 @@ $('importPersona').onclick=()=>$('personaFile').click();
 $('personaFile').onchange=async e=>{const file=e.target.files[0];if(!file)return;try{if(file.size>30000)throw new Error('Persona files must be smaller than 30 KB.');applySettings(JSON.parse(await file.text()));notify('Persona settings imported.');}catch(error){notify(error.message);}e.target.value='';};
 window.addEventListener('pagehide',()=>{recorder.cancel();liveSession?.stop();head?.stopSpeaking();try{currentSource?.stop();}catch{};fetch('/api/speech/stop',{method:'POST',headers:{'Content-Type':'application/json','X-Studio-Client':'moneypenny'},body:JSON.stringify({owner:`${owner}:${generation}`}),keepalive:true}).catch(()=>{});});
 
-const jarvisEmbed=new URLSearchParams(location.search).get('embed')==='jarvis';
 if(jarvisEmbed){
   window.addEventListener('message',async event=>{
-    if(!['http://127.0.0.1:8766','http://localhost:8766'].includes(event.origin)||event.source!==parent)return;
+    if(!jarvisOrigins.includes(event.origin)||event.source!==parent)return;
     const message=event.data||{};
+    if(message.type==='jjrvis-presence-status'){if(avatarReady&&lipReady)postPresence('moneypenny-presence-ready');return;}
     if(message.type==='jjrvis-stop'){await stopAll(false);return;}
     if(message.type==='jjrvis-wave'&&avatarReady){motion?.stop();motionLibrary?.stop();head.setMood('happy');motion?.plan({steps:[{skill:'wave',duration:4,intensity:.65}]});return;}
     if(message.type!=='jjrvis-speak'||typeof message.text!=='string'||!message.text.trim())return;
+    if(!avatarReady||!lipReady){postPresence('moneypenny-presence-error',{requestId:message.requestId,message:'Moneypenny is still preparing her character and voice.'});return;}
+    if(message.text.length>24000){postPresence('moneypenny-presence-error',{requestId:message.requestId,message:'This reply exceeds the supported voice length.'});return;}
     await stopAll(false);const token=generation;controller=new AbortController();setBusy(true);
-    try{parent.postMessage({type:'moneypenny-presence-speaking'},event.origin);await playSpeech(message.text.trim().slice(0,2400),token,{mood:message.mood||'neutral',actions:message.actions||'look attentive and speak naturally'});}
-    catch(error){if(token===generation)notify(error.message);}
-    finally{if(token===generation)setBusy(false);parent.postMessage({type:'moneypenny-presence-idle'},event.origin);}
+    try{
+      let started=false;
+      const pipeline=new SpeechPipeline(part=>prepareSpeech(part,token),audio=>playPrepared(audio,token,{mood:message.mood||'neutral',actions:message.actions||'look attentive and speak naturally',onStarted:()=>{if(!started){started=true;postPresence('moneypenny-presence-speaking',{requestId:message.requestId});}}}));
+      const segmenter=new SpeechSegmenter(part=>pipeline.push(part));segmenter.update(message.text.trim(),true);await pipeline.done();
+    }
+    catch(error){if(token===generation){notify(error.message);postPresence('moneypenny-presence-error',{requestId:message.requestId,message:'Speech playback unavailable.'});}}
+    finally{if(token===generation)setBusy(false);postPresence('moneypenny-presence-idle',{requestId:message.requestId});}
   });
-  window.addEventListener('load',()=>parent.postMessage({type:'moneypenny-presence-ready'},'http://127.0.0.1:8766'));
 }
 
 async function initialize() {

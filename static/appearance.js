@@ -1,8 +1,8 @@
 import * as THREE from 'three';
 
 const looks={
-  daylight:{ambient:.22,key:1.65,fill:.6,exposure:.83,keyColor:'#fff8f0',fillColor:'#e2ecff'},
-  portrait:{ambient:.12,key:2.1,fill:.45,exposure:.82,keyColor:'#ffe9d5',fillColor:'#dce8ff'},
+  daylight:{ambient:.16,key:1.75,fill:.55,exposure:.84,keyColor:'#fff6ed',fillColor:'#e5edff'},
+  portrait:{ambient:.12,key:1.95,fill:.5,exposure:.84,keyColor:'#fff0e2',fillColor:'#e1ebff'},
   neutral:{ambient:.35,key:1.3,fill:.7,exposure:.88,keyColor:'#ffffff',fillColor:'#ffffff'},
 };
 
@@ -45,6 +45,38 @@ export function prepareSampleMaterials(root){
     node.material=Array.isArray(node.material)?node.material.map(convert):convert(node.material);
   });
   return ()=>created.forEach(material=>material.dispose());
+}
+
+// The local asset already owns its textures, skin rig and facial shapes. Improve
+// sampling and light response without replacing those production data.
+export function prepareCharacterMaterials(root,renderer){
+  const anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
+  const seen=new Set();
+  root.traverse(node=>{
+    if(!node.isMesh)return;
+    const materials=[node.material].flat().filter(Boolean);
+    // Transmission shells and blended eyelashes cannot cast physically correct
+    // shadows with the standard shadow map; keep the iris and face unobscured.
+    node.castShadow=materials.some(material=>material.alphaTest>0||(!material.transparent&&!(material.transmission>0)));
+    node.receiveShadow=materials.some(material=>!(material.transmission>0));
+    for(const material of materials){
+      if(!material||seen.has(material))continue;
+      seen.add(material);material.dithering=true;
+      for(const key of ['map','normalMap','roughnessMap','metalnessMap','alphaMap']){
+        if(material[key]){material[key].anisotropy=anisotropy;material[key].needsUpdate=true;}
+      }
+      if(material.name==='VitHair'&&material.alphaTest>0){
+        // Coverage antialiasing softens cutout strand edges in the MSAA canvas.
+        // Keep depth writing and the authored alpha threshold for card sorting.
+        material.alphaToCoverage=true;
+      }
+      if(material.name.startsWith('Performance skin')){
+        material.envMapIntensity=.8;
+        if(material.isMeshPhysicalMaterial)material.specularIntensity=Math.min(material.specularIntensity,.5);
+      }
+      material.needsUpdate=true;
+    }
+  });
 }
 
 export function setLook(head,name='daylight',brightness=1){

@@ -1039,7 +1039,10 @@ html.jarvis-embed .stage-top,html.jarvis-embed .stage-controls,html.jarvis-embed
 html.jarvis-embed .stage-note{display:none!important}
 html.jarvis-embed .workspace{display:block;min-height:100%;height:100%;max-width:none;margin:0}
 html.jarvis-embed .stage-panel{height:100%;padding:0;background:transparent}
-html.jarvis-embed .stage{height:100%;min-height:0;border:0;border-radius:0;background:radial-gradient(circle at 50% 30%,#164e5c55,transparent 52%),linear-gradient(180deg,#06141bdd,#02080dcc);box-shadow:none}
+html.jarvis-embed .stage{height:100%;min-height:0;border:0;border-radius:0;background:transparent;box-shadow:none}
+html.jarvis-embed .stage-halo,html.jarvis-embed .stage-grain,html.jarvis-embed .stage-bottom{display:none!important}
+html.jarvis-embed .stage-loader{background:transparent;color:#c7e8f2}
+html.jarvis-embed #avatar canvas{background:transparent}
 html.jarvis-embed .stage-watermark{display:none}
 html.jarvis-embed .stage-status{display:none}
 html.jarvis-embed .stage-bottom{left:20px;right:20px;bottom:16px}
@@ -1054,3 +1057,5 @@ html.jarvis-embed .character-subtitle{color:#9bc4cf}
 .live-options span { font-size: 8px; color: #929c86; }
 .autonomy-toggle { margin: 15px 0 10px; }
 #planMotion { width: 100%; margin: 10px 0; }
+/* Match JJRVIS's dark document canvas so Chromium preserves iframe alpha. */
+html.jarvis-embed{color-scheme:dark}
