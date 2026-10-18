@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {studioFetch as fetch} from './studio-paths.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { BVHLoader } from 'three/addons/loaders/BVHLoader.js';
 import { retargetClip } from 'three/addons/utils/SkeletonUtils.js';

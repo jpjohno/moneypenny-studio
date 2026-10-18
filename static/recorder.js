@@ -1,3 +1,4 @@
+import {studioURL} from './studio-paths.js';
 // Explicit recording with local transcription; never an always-on microphone.
 export class Recorder {
   constructor() { this.active = false; this.frames = []; }
@@ -5,7 +6,7 @@ export class Recorder {
     this.stream = await navigator.mediaDevices.getUserMedia({audio: {channelCount:1, echoCancellation:true, noiseSuppression:true}});
     try {
       this.context = new AudioContext();
-      await this.context.audioWorklet.addModule('/static/record-worklet.js');
+      await this.context.audioWorklet.addModule(studioURL('/static/record-worklet.js'));
       this.source = this.context.createMediaStreamSource(this.stream);
       this.node = new AudioWorkletNode(this.context, 'studio-recorder');
       this.frames = [];

@@ -1,5 +1,5 @@
-import { TalkingHead } from '/static/vendor/talkinghead/talkinghead.mjs';
-import { HeadAudio } from '/static/vendor/headaudio/headaudio.min.mjs';
+import { TalkingHead } from './vendor/talkinghead/talkinghead.mjs';
+import { HeadAudio } from './vendor/headaudio/headaudio.min.mjs';
 import { Recorder } from './recorder.js';
 import * as THREE from 'three';
 import { MotionDirector, movementFromText } from './motion.js';
@@ -15,11 +15,16 @@ import { PoseCorrectives } from './correctives.js';
 import { SeatSupport } from './seat-support.js';
 import { actionOnly, movementAcknowledgement, wardrobeCommand } from './action-commands.js';
 import { chooseModel } from './model-choice.js';
+import { renderProfile,StageActivity } from './render-budget.js';
+import { studioFetch as fetch,studioURL,parentOrigins,STUDIO_BASE } from './studio-paths.js';
+import {PresenceAudio} from './presence-audio.js';
 
 const $ = id => document.getElementById(id);
 const jarvisEmbed=new URLSearchParams(location.search).get('embed')==='jarvis';
-const jarvisOrigins=['http://127.0.0.1:8766','http://localhost:8766'];
-const jarvisParentOrigin=(()=>{try{const origin=new URL(document.referrer).origin;return jarvisOrigins.includes(origin)?origin:jarvisOrigins[0];}catch{return jarvisOrigins[0];}})();
+const proxiedPresence=jarvisEmbed&&STUDIO_BASE==='/presence/';
+const jarvisOrigins=parentOrigins();
+const defaultParentOrigin=jarvisOrigins.includes(location.origin)?location.origin:jarvisOrigins[0];
+let jarvisParentOrigin=(()=>{try{const origin=new URL(document.referrer).origin;return jarvisOrigins.includes(origin)?origin:defaultParentOrigin;}catch{return defaultParentOrigin;}})();
 function postPresence(type,detail={}){if(jarvisEmbed&&parent!==window)parent.postMessage({type,...detail},jarvisParentOrigin);}
 const owner = crypto.randomUUID();
 const presets = {
@@ -39,6 +44,8 @@ let motion=null,wardrobe=null,liveSession=null,speechGate=null,speechDelay=null,
 let quietUntil=Number(localStorage.getItem('moneypenny-quiet-until')||0),reminderPolling=false;
 let turnStarted=0,firstVoiceAt=0;
 let rig=null,rigView=null,motionLibrary=null,tools=null,poseCorrectives=null,seatSupport=null;
+let stageActivity=null,parentStageVisible=true,renderFrames=0;
+let presenceAudio=null;
 const recorder = new Recorder();
 
 function notify(message='') { $('notice').textContent = message; $('notice').hidden = !message; }
@@ -49,12 +56,13 @@ function setState(label, state='ready') {
 function setBusy(value) {
   for(const id of ['playMotion','pauseMotion','stopLibraryMotion','pinFeet','releaseTarget','resetRig','planMotion','stopMotion','previewSeatPose'])$(id).disabled=!avatarReady;
   busy = value; $('send').disabled = value || !statusData.models?.length || recorder.active || recordingPending;
+  stageActivity?.update({active:value||!!head?.isSpeaking||!!motion?.active||!!motionLibrary?.playing});
   $('stop').hidden = !value && !recorder.active && !recordingPending;
   $('record').disabled = value || recordingPending || !statusData.microphone_ready || !!liveSession?.active;
   $('previewVoice').disabled = value || !avatarReady || !lipReady || !statusData.voice_ready;
 }
 function settings() { return Object.fromEntries(settingIds.map(id => [id, $(id).type==='checkbox' ? $(id).checked : $(id).value])); }
-function saveSettings() { try { localStorage.setItem('moneypenny-persona-v2', JSON.stringify(settings())); } catch {} }
+function saveSettings() { if(jarvisEmbed)return;try { localStorage.setItem('moneypenny-persona-v2', JSON.stringify(settings())); } catch {} }
 function applySettings(value) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('Invalid persona file.');
   for (const id of settingIds) {
@@ -140,7 +148,7 @@ async function showAvatar(file=null, localCharacter=null) {
     if (file) { if(file.size>80*1024*1024)throw new Error('Use a GLB smaller than 80 MB.'); validateGLB(await file.arrayBuffer()); next=URL.createObjectURL(file); }
     wardrobe?.dispose();rigView?.dispose();motionLibrary?.dispose();seatSupport?.dispose();disposeAppearance?.();disposeAppearance=null;
     head.studioNeutral=null;
-    await head.showAvatar({url:next||localCharacter?.url||'/static/avatars/mpfb.glb',body:'F',avatarMood:'neutral',lipsyncLang:'en',avatarIdleEyeContact:.6,avatarSpeakingEyeContact:.85}, e=>{
+    await head.showAvatar({url:next||studioURL(localCharacter?.url||'/static/avatars/mpfb.glb'),body:'F',avatarMood:'neutral',lipsyncLang:'en',avatarIdleEyeContact:.6,avatarSpeakingEyeContact:.85}, e=>{
       if(e.lengthComputable) $('loadLabel').textContent=`Loading character · ${Math.round(100*e.loaded/e.total)}%`;
     },gltf=>{if(localCharacter)head.studioNeutral=authoredNeutral(gltf.scene);});
     avatarURL=next; if(previous)URL.revokeObjectURL(previous);
@@ -179,6 +187,7 @@ async function showAvatar(file=null, localCharacter=null) {
     $('wardrobe').disabled=fitted;$('footwear').disabled=fitted;
     $('avatarLabel').textContent=file ? `Your character · ${file.name||'imported GLB'}` : localCharacter?.label||'Studio character · CC0 sample';
     avatarReady=true; $('stageLoader').hidden=true; frameCharacter('upper');
+    stageActivity?.update();
     document.querySelectorAll('[data-view]').forEach(x=>x.classList.toggle('selected',x.dataset.view==='upper'));
     head.setMood($('mood').value||'neutral'); head.lookAtCamera(1500);
     setState('Here with you'); updateSettings();
@@ -190,19 +199,25 @@ async function showAvatar(file=null, localCharacter=null) {
 }
 async function initializeStage() {
   try {
+    const profile=renderProfile({pixelRatio:devicePixelRatio,narrow:matchMedia('(max-width:760px)').matches,embedded:jarvisEmbed});
     head=new TalkingHead($('avatar'),{
       lipsyncModules:[],lipsyncLang:'en',cameraView:'upper',cameraY:.6,cameraRotateEnable:true,cameraZoomEnable:false,
+      dracoDecoderPath:studioURL('/vendor/three/examples/jsm/libs/draco/'),
       // TalkingHead multiplies this scale by the display's pixel ratio itself.
-      modelPixelRatio:Math.min(devicePixelRatio,2)/devicePixelRatio,modelFPS:40,modelMovementFactor:.65,
+      modelPixelRatio:profile.pixelRatioScale,modelFPS:profile.activeFPS,modelMovementFactor:.65,
       lightAmbientIntensity:.65,lightDirectIntensity:2.4,lightDirectColor:'#fff2e6',lightDirectPhi:.8,lightDirectTheta:1.1,
       lightSpotIntensity:1.1,lightSpotColor:'#d9e5ef',lightSpotPhi:.3,lightSpotTheta:4,
       avatarIdleEyeContact:.6,avatarSpeakingEyeContact:.85,avatarIdleHeadMove:.25,avatarSpeakingHeadMove:.4,
     });
     head.renderer.setClearColor(0x000000,0);head.scene.background=null;
     head.renderer.toneMappingExposure=.85;
-    head.renderer.shadowMap.enabled=true;head.renderer.shadowMap.type=THREE.PCFSoftShadowMap;
-    head.lightDirect.castShadow=true;head.lightDirect.shadow.mapSize.set(2048,2048);head.lightDirect.shadow.bias=-.0002;head.lightDirect.shadow.normalBias=.008;
+    head.renderer.shadowMap.enabled=profile.shadows;head.renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+    head.lightDirect.castShadow=profile.shadows;head.lightDirect.shadow.mapSize.set(profile.shadowSize,profile.shadowSize);head.lightDirect.shadow.bias=-.0002;head.lightDirect.shadow.normalBias=.008;
     Object.assign(head.lightDirect.shadow.camera,{left:-2,right:2,top:2,bottom:-2,near:.05,far:10});
+    stageActivity=new StageActivity(head,profile,{onChange:state=>{$('avatar').dataset.renderFps=String(state.fps);$('avatar').dataset.rendering=String(state.running);}});
+    stageActivity.update({documentVisible:!document.hidden,parentVisible:parentStageVisible});
+    if('IntersectionObserver' in window)new IntersectionObserver(entries=>{const entry=entries[0];if(entry)stageActivity.update({inView:entry.isIntersecting&&entry.intersectionRatio>.01});},{threshold:[0,.01]}).observe($('stage'));
+    window.__moneypennyRenderStats=()=>({...stageActivity.status(),frames:renderFrames,audioState:head.audioCtx.state,canvasWidth:head.renderer.domElement.width,canvasHeight:head.renderer.domElement.height,calls:head.renderer.info.render.calls,triangles:head.renderer.info.render.triangles});
     let saved=null; try {saved=await asset('avatar');}catch{}
     if(saved) { try{await showAvatar(saved);}catch{notify('The saved character is incompatible. The studio character has been restored.'); await showAvatar();} }
     else if(statusData.character_candidate_ready) {
@@ -210,9 +225,9 @@ async function initializeStage() {
       catch{notify('The local performance character could not load. The studio sample has been restored.');await showAvatar();}
     } else await showAvatar();
     if(!jarvisEmbed){const floor=new THREE.Mesh(new THREE.PlaneGeometry(6,6),new THREE.ShadowMaterial({opacity:.22}));floor.rotation.x=-Math.PI/2;floor.position.y=-.003;floor.receiveShadow=true;head.scene.add(floor);}
-    await head.audioCtx.audioWorklet.addModule('/static/vendor/headaudio/headworklet.min.mjs');
+    await head.audioCtx.audioWorklet.addModule(studioURL('/static/vendor/headaudio/headworklet.min.mjs'));
     lips=new HeadAudio(head.audioCtx,{parameterData:{vadGateActiveDb:-40,vadGateInactiveDb:-55,speakerMeanHz:220}});
-    await lips.loadModel('/static/vendor/headaudio/model-en-mixed.bin');
+    await lips.loadModel(studioURL('/static/vendor/headaudio/model-en-mixed.bin'));
     head.audioSpeechGainNode.connect(lips);
     const delay=head.audioCtx.createDelay(1);speechDelay=delay;delay.delayTime.value=Number($('mouthTiming').value)/1000;
     speechGate=head.audioCtx.createGain();
@@ -220,6 +235,8 @@ async function initializeStage() {
     analyser=head.audioCtx.createAnalyser(); analyser.fftSize=256; head.audioSpeechGainNode.connect(analyser);
     lips.onvalue=(key,value)=>{const target=head.mtAvatar[key];if(target)Object.assign(target,{newvalue:value,needsUpdate:true});};
     head.opt.update=dt=>{
+      renderFrames++;
+      stageActivity.update({active:busy||userSpeaking||head.isSpeaking||!!motion?.active||!!motion?.queue.length||!!motionLibrary?.playing||!!rig?.targets.size});
       lips.update(dt);if(!rig)return;
       const seconds=dt/1000;
       if((busy||userSpeaking)&&motionLibrary?.currentSource==='persona')motionLibrary.stop();
@@ -231,7 +248,7 @@ async function initializeStage() {
       const stage=$('avatar'),skill=motion?.active?.skill||'idle',facing=String(Math.round((motion?.currentHeading||0)*180/Math.PI));
       if(stage.dataset.motion!==skill)stage.dataset.motion=skill;
       if(stage.dataset.facing!==facing)stage.dataset.facing=facing;
-      poseCorrectives?.update(seconds);seatSupport?.update(motionLibrary?.playing?null:motion);rigView?.update();
+      poseCorrectives?.update(seconds);seatSupport?.update(motionLibrary?.playing?null:motion);if(rigView?.visible)rigView.update();
     };
     liveSession=new LiveSession({audioContext:head.audioCtx,onState:value=>$('liveState').textContent=value,
       onStart:()=>{
@@ -241,12 +258,14 @@ async function initializeStage() {
       onError:error=>{notify(error.name==='NotAllowedError'?'Microphone permission is needed for live conversation.':error.message);updateLiveControls();},
     });
     lipReady=true; setBusy(busy);postPresence('moneypenny-presence-ready');
-    // Pause graphics in background tabs, retaining audio playback.
-    document.addEventListener('visibilitychange',()=>{if(document.hidden)head.stop();else head.start();});
+    stageActivity.update({documentVisible:!document.hidden,parentVisible:parentStageVisible});
+    document.addEventListener('visibilitychange',()=>stageActivity.update({documentVisible:!document.hidden}));
+    window.addEventListener('pagehide',()=>stageActivity.update({documentVisible:false}));
+    window.addEventListener('pageshow',()=>stageActivity.update({documentVisible:!document.hidden}));
   } catch(e) { notify(`3D stage: ${e.message||e}`); setState('Stage unavailable','');postPresence('moneypenny-presence-error',{message:'The live character or voice could not start. Open Moneypenny Studio to retry.'}); }
 }
 
-async function stopAll(clearNotice=true) {
+async function stopAll(clearNotice=true,cancelLocalVoice=true) {
   const cancelled=generation;
   generation++; controller?.abort(); controller=null;motionLibrary?.stop();
   const stopGeneration=generation;
@@ -255,11 +274,11 @@ async function stopAll(clearNotice=true) {
   recorder.cancel(); recordingPending=false; $('record').classList.remove('recording'); $('recordLabel').textContent='Record note';
   if(currentSource) {currentSource.onended=null;try{currentSource.stop();}catch{} currentSource.disconnect();currentSource=null;}
   speechEnded?.(); speechEnded=null;
-  head?.stopSpeaking(); head?.stopGesture(150); lips?.resetAll();
+  head?.stopSpeaking();if(head)head.isSpeaking=false;head?.stopGesture(150); lips?.resetAll();
   if(visualizer)cancelAnimationFrame(visualizer);
   actionTimers.forEach(clearTimeout);actionTimers=[];
   for(const key of ['headRotateX','headRotateZ','bodyRotateX','eyeBlinkLeft'])head?.setValue(key,0,150);
-  try {await api('/api/speech/stop',{owner:`${owner}:${cancelled}`});} catch {}
+  if(cancelLocalVoice&&!proxiedPresence)try {await api('/api/speech/stop',{owner:`${owner}:${cancelled}`});} catch {}
   if(generation===stopGeneration){if(clearNotice)notify();setBusy(false);setState(userSpeaking?'Listening to you':avatarReady?'Here with you':'Character unavailable',avatarReady?'ready':'');}
 }
 
@@ -309,7 +328,7 @@ async function playPrepared(audio, token, performance={}) {
       $('waveform').querySelectorAll('i').forEach((node,i)=>{node.style.height=`${3+values[i*3+2]/255*12}px`;});
       visualizer=requestAnimationFrame(draw);
     }
-    draw();
+    if(!jarvisEmbed&&!document.hidden)draw();
     source.onended=()=>{
       source.disconnect(); if(currentSource===source)currentSource=null;
       head.isSpeaking=false; speechEnded=null; cancelAnimationFrame(visualizer);
@@ -478,7 +497,7 @@ async function handleLiveTurn(audio){
   }catch(error){if(epoch===listenEpoch&&error.name!=='AbortError'){notify(error.message);$('liveState').textContent='Listening · previous transcription failed';}}
 }
 async function pollReminders(){
-  if(reminderPolling||document.hidden)return;reminderPolling=true;
+  if(jarvisEmbed||reminderPolling||document.hidden)return;reminderPolling=true;
   try{
     const response=await fetch('/api/reminders');if(!response.ok)return;
     const data=await response.json();const list=data.reminders||[];
@@ -510,7 +529,7 @@ $('planMotion').onclick=async()=>{
 };
 $('stopMotion').onclick=()=>{motionLibrary?.stop();motion?.stop();$('autonomy').checked=false;updateSettings();$('motionState').textContent='Independent movement paused';};
 $('previewSeatPose').onclick=async()=>{await stopAll();motionLibrary?.stop();rig?.clear();motion?.plan({steps:[{skill:'supported_step',side:$('seatPoseSide').value,duration:8,intensity:1}]});frameCharacter('full');};
-setInterval(pollReminders,2500);
+if(!jarvisEmbed)setInterval(pollReminders,2500);
 
 $('chatForm').addEventListener('submit',sendMessage);
 $('userInput').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();sendMessage();}});
@@ -547,16 +566,37 @@ $('exportPersona').onclick=()=>{
 };
 $('importPersona').onclick=()=>$('personaFile').click();
 $('personaFile').onchange=async e=>{const file=e.target.files[0];if(!file)return;try{if(file.size>30000)throw new Error('Persona files must be smaller than 30 KB.');applySettings(JSON.parse(await file.text()));notify('Persona settings imported.');}catch(error){notify(error.message);}e.target.value='';};
-window.addEventListener('pagehide',()=>{recorder.cancel();liveSession?.stop();head?.stopSpeaking();try{currentSource?.stop();}catch{};fetch('/api/speech/stop',{method:'POST',headers:{'Content-Type':'application/json','X-Studio-Client':'moneypenny'},body:JSON.stringify({owner:`${owner}:${generation}`}),keepalive:true}).catch(()=>{});});
+window.addEventListener('pagehide',()=>{presenceAudio?.cancel();recorder.cancel();liveSession?.stop();head?.stopSpeaking();try{currentSource?.stop();}catch{};if(!proxiedPresence)fetch('/api/speech/stop',{method:'POST',headers:{'Content-Type':'application/json','X-Studio-Client':'moneypenny'},body:JSON.stringify({owner:`${owner}:${generation}`}),keepalive:true}).catch(()=>{});});
 
 if(jarvisEmbed){
+  presenceAudio=new PresenceAudio({
+    stopAudio:()=>stopAll(false,false),setBusy,emit:postPresence,
+    decode:async bytes=>{
+      if(!avatarReady||!lipReady)throw new Error('Moneypenny is still preparing her character and voice.');
+      await new Promise((resolve,reject)=>{const timer=setTimeout(()=>reject(new Error('Tap Moneypenny once to enable her voice on this device.')),2500);head.audioCtx.resume().then(()=>{clearTimeout(timer);resolve();},error=>{clearTimeout(timer);reject(error);});});
+      if(head.audioCtx.state!=='running')throw new Error('Tap Moneypenny once to enable her voice on this device.');
+      return head.audioCtx.decodeAudioData(bytes);
+    },
+    playAudio:(audio,{onStarted})=>playPrepared(audio,generation,{onStarted,mood:$('mood').value||'neutral'}),
+    drain:()=>new Promise(resolve=>setTimeout(resolve,Math.round((speechDelay?.delayTime.value||0)*1000)+30)),
+  });
+  let pointerStart=null;
+  $('avatar').addEventListener('pointerdown',event=>{pointerStart={x:event.clientX,y:event.clientY,id:event.pointerId};});
+  $('avatar').addEventListener('pointerup',event=>{const start=pointerStart;pointerStart=null;if(start&&start.id===event.pointerId&&Math.hypot(event.clientX-start.x,event.clientY-start.y)<=8){head?.audioCtx.resume().catch(()=>{});postPresence('moneypenny-presence-activate');}});
+  $('avatar').addEventListener('pointercancel',()=>{pointerStart=null;});
   window.addEventListener('message',async event=>{
     if(!jarvisOrigins.includes(event.origin)||event.source!==parent)return;
+    jarvisParentOrigin=event.origin;
     const message=event.data||{};
+    if(message.type==='jjrvis-presence-visibility'&&typeof message.visible==='boolean'){parentStageVisible=message.visible;stageActivity?.update({parentVisible:message.visible});return;}
     if(message.type==='jjrvis-presence-status'){if(avatarReady&&lipReady)postPresence('moneypenny-presence-ready');return;}
-    if(message.type==='jjrvis-stop'){await stopAll(false);return;}
+    if(message.type==='jjrvis-stop'){const brokerAudio=presenceAudio.id!==null;presenceAudio.cancel();await stopAll(false,!brokerAudio);return;}
+    if(message.type==='jjrvis-audio'){await presenceAudio.play(message);return;}
+    if(message.type==='jjrvis-audio-end'){await presenceAudio.end(message);return;}
     if(message.type==='jjrvis-wave'&&avatarReady){motion?.stop();motionLibrary?.stop();head.setMood('happy');motion?.plan({steps:[{skill:'wave',duration:4,intensity:.65}]});return;}
     if(message.type!=='jjrvis-speak'||typeof message.text!=='string'||!message.text.trim())return;
+    if(proxiedPresence){postPresence('moneypenny-presence-error',{requestId:message.requestId,message:'Voice is supplied by the connected workspace.'});return;}
+    presenceAudio.cancel();
     if(!avatarReady||!lipReady){postPresence('moneypenny-presence-error',{requestId:message.requestId,message:'Moneypenny is still preparing her character and voice.'});return;}
     if(message.text.length>24000){postPresence('moneypenny-presence-error',{requestId:message.requestId,message:'This reply exceeds the supported voice length.'});return;}
     await stopAll(false);const token=generation;controller=new AbortController();setBusy(true);
@@ -576,7 +616,7 @@ async function initialize() {
   if(saved)applySettings(saved);else updateSettings();
   setBusy(false);
   try{
-    const response=await fetch('/api/status');if(!response.ok)throw new Error('Local status check failed.');statusData=await response.json();
+    const response=await fetch('/api/status'+(jarvisEmbed?'?quick=1':''));if(!response.ok)throw new Error('Local status check failed.');statusData=await response.json();
     $('modelSelect').replaceChildren();
     for(const model of statusData.models){const option=document.createElement('option');option.value=model;option.textContent=model;$('modelSelect').append(option);}
     $('modelSelect').value=chooseModel(statusData.models,saved?.modelSelect);
@@ -587,6 +627,7 @@ async function initialize() {
     setBusy(false);saveSettings();
   }catch(e){notify(e.message);$('connectionNote').textContent='Local services unavailable';}
   await initializeStage();
+  if(jarvisEmbed){try{await motionLibrary?.refresh();}catch{}return;}
   tools=new StudioTools({getRig:()=>rig,getRigView:()=>rigView,getLibrary:()=>motionLibrary,getMotion:()=>motion,getWardrobe:()=>wardrobe,settings,applySettings,post:api,notify,frame:frameCharacter,stopConversation:stopAll,
     resetConversation:async()=>{await stopAll();history=[];$('messages').replaceChildren();$('welcome').hidden=false;},
     download:(filename,value)=>{const url=URL.createObjectURL(new Blob([JSON.stringify(value,null,2)],{type:'application/json'}));const link=document.createElement('a');link.href=url;link.download=filename;link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}});

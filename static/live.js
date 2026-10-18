@@ -1,3 +1,5 @@
+import {studioURL} from './studio-paths.js';
+
 export function pcmWav(samples,rate=16000){
   const buffer=new ArrayBuffer(44+samples.length*2),view=new DataView(buffer);
   const write=(offset,value)=>{for(let i=0;i<value.length;i++)view.setUint8(offset+i,value.charCodeAt(i));};
@@ -54,7 +56,7 @@ export class LiveSession {
       await this.audioContext.resume();
       this.vad=await window.vad.MicVAD.new({
         model:'v5',startOnLoad:false,audioContext:this.audioContext,
-        baseAssetPath:'/vendor/vad/',onnxWASMBasePath:'/vendor/onnx/',
+        baseAssetPath:studioURL('/vendor/vad/'),onnxWASMBasePath:studioURL('/vendor/onnx/'),
         ortConfig:ort=>{ort.env.wasm.numThreads=1;ort.env.logLevel='error';},
         positiveSpeechThreshold:.65,negativeSpeechThreshold:.35,minSpeechMs:128,redemptionMs:650,preSpeechPadMs:320,
         submitUserSpeechOnPause:true,

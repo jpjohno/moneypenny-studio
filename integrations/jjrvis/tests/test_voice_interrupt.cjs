@@ -19,14 +19,16 @@ function harness({deferStop=false}={}) {
   const element = () => ({textContent: '', value: '', disabled: false, classList: {toggle() {}, remove() {}, add() {}}});
   const context = {
     window: {
+      JJSpokenReply: require('../spoken-reply'),
+      JJSettings: {preferences() {return {volume:.85};}},
       speechSynthesis: {cancel() {}, getVoices() { return []; }, resume() {}, speak() {}},
       SpeechSynthesisUtterance: function () {},
     },
     SpeechSynthesisUtterance: function (text) { this.text = text; },
-    document: {hidden: false, querySelector() { return null; }},
+    document: {hidden: false, documentElement:{dataset:{presenceMode:'together'}}, querySelector() { return null; }},
     localStorage: {setItem() {}},
     clearTimeout() {},
-    AbortSignal, AbortController,
+    AbortSignal, AbortController, DOMException,
     setTimeout() {return 1;},
     URL: {createObjectURL() { return `blob:unit-test-${++nextURL}`; }, revokeObjectURL(url) { revoked.push(url); }},
     fetch(url, options) {
@@ -47,7 +49,7 @@ function harness({deferStop=false}={}) {
   };
   vm.createContext(context);
   vm.runInContext(`
-    let cloudAudio=null, activeUtterance=null, activeRecognition=null, speechController=null, presenceSpeech=null, presenceSpeechSequence=0, speechEchoUntil=0, wakeArmedUntil=0;
+    let cloudAudio=null, activeUtterance=null, activeRecognition=null, speechController=null, presenceSpeech=null, presenceSpeechSequence=0, streamingSpeech=null, speechEchoUntil=0, wakeArmedUntil=0;
     let wakeRestart=null, wakePaused=false, wakeEnabled=true, wakeMicStream=null;
     let wakeStarts=0, wakeStarter=()=>{wakeStarts++;};
     ${voiceSource}
@@ -136,10 +138,11 @@ async function run() {
     h.context.speak('Current answer'); await h.deliver(1);
     const currentAudio = h.audios[1];
     currentAudio.resolvePlay(); await tick();
+    const currentMarker=h.context.state.utterance;
     const speaking = h.status();
     oldAudio.rejectPlay(new Error('Old playback cancelled')); await tick();
     assert.equal(h.context.state.audio, currentAudio, 'Old play rejection must not clear the current playback');
-    assert.equal(h.context.state.utterance, currentAudio);
+    assert.equal(h.context.state.utterance, currentMarker,'Old rejection cannot clear the current request owner');
     assert.equal(h.status(), speaking);
     assert.equal(oldAudio.pauseCount, 1, 'Starting another answer pauses previous cloud audio');
   }

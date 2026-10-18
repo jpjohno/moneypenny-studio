@@ -1,0 +1,16 @@
+{
+  "asset": "globe-earth.jpg",
+  "sha256": "d4dc80a6ef571939d0abe04a9bed3d3d1e6cd63e59514be1c5e43a6b069e6f1e",
+  "bytes": 266599,
+  "dimensions": [
+    2048,
+    1024
+  ],
+  "source": "https://eoimages.gsfc.nasa.gov/images/imagerecords/57000/57730/land_ocean_ice_2048.jpg",
+  "article": "https://science.nasa.gov/earth/earth-observatory/the-blue-marble-true-color-global-imagery-at-1km-resolution/",
+  "usage_guidelines": "https://www.nasa.gov/nasa-brand-center/images-and-media/",
+  "credit": "NASA Goddard Space Flight Center; Reto St\u00f6ckli (surface, shallow water); Robert Simmon (ocean colour/compositing); MODIS science teams; USGS/NOAA supporting data.",
+  "description": "Historic Blue Marble composite released in 2002 using observations from 2001. Static illustration, not a live satellite or weather feed. UI lighting is decorative.",
+  "conditions": "Retain NASA attribution. Do not imply NASA endorsement. NASA guidelines permit factual/informational imagery use and identify restrictions for logos, promotional use and separately copyrighted third-party material. This Earth texture contains no NASA logo or identifiable person.",
+  "retrieved": "2026-10-18"
+}

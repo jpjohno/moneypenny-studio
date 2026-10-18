@@ -1,0 +1,99 @@
+{
+  "prepared": "2026-10-18",
+  "phase": "final_source_patch_verified_one_mac_playback_sample",
+  "speaker_playback_in_baseline": false,
+  "synthetic_tts_route_seconds": {
+    "broker": {
+      "5_words": 0.82,
+      "30_words": 2.531,
+      "100_words": 8.343
+    },
+    "studio_before_interactive_reload": {
+      "5_words": 3.024,
+      "30_words": 10.3,
+      "100_words": {
+        "deadline_seconds": 18.002,
+        "result": "cancelled_after_deadline"
+      }
+    }
+  },
+  "interpretation": "Measurements compare separate TTS routes before the shared-audio bridge and final UI edits. They are not a new end-to-end speech latency result or a guarantee for arbitrary answers.",
+  "studio_service": {
+    "configuration": "Interactive",
+    "loopback_quick_status": 200,
+    "avatar_ready": true,
+    "voice_engine_ready": true,
+    "microphone_engine_ready": true,
+    "os_device_permission_verified": false
+  },
+  "automated_checks": {
+    "broker_python_tests": 412,
+    "broker_python_seconds": 18.56,
+    "apple_frontend_tests": 10,
+    "studio_service_tests": 7,
+    "package_frontend_passed": 11,
+    "package_frontend_optional_browser_skipped": 1,
+    "studio_python_passed": 64,
+    "studio_python_skipped": 2,
+    "studio_python_seconds": 0.68,
+    "studio_javascript_passed": 51,
+    "studio_javascript_seconds": 1.386,
+    "studio_syntax_checks": "passed",
+    "broker_node_unit_passed": 26,
+    "broker_node_optional_browser_skipped": 1,
+    "broker_node_seconds": 0.241,
+    "spoken_reply_and_globe_source_tests_passed": 14,
+    "spoken_reply_and_globe_packaged_tests_passed": 14
+  },
+  "remaining": [
+    "Human acoustic lip-sync and photographic character acceptance",
+    "iPhone installation and microphone/camera permission on the user device",
+    "Main LaunchAgent Mac Mail/Messages process permissions",
+    "Unconnected provider sign-ins",
+    "Optional service-specific integrations and separate customer isolation"
+  ],
+  "final_mac_browser_sample": {
+    "question": "neutral synthetic question",
+    "same_avatar_playback": true,
+    "first_text_seconds": 2.648,
+    "first_audio_source_start_ack_seconds": 5.535,
+    "validated_final_answer_seconds": 7.267,
+    "scope": "One observed Mac run after the 48-character first phrase and 6\u201310-word first-sentence change. Browser AudioSource.start acknowledgement is not a calibrated acoustic measurement.",
+    "zero_latency": false,
+    "guaranteed_latency": false
+  },
+  "intermediate_browser_sample": {
+    "first_text_seconds": 1.555,
+    "first_audio_source_start_ack_seconds": 7.094,
+    "validated_final_answer_seconds": 12.533,
+    "scope": "Before the final 48-character first-phrase adjustment; retained as intermediate evidence only."
+  },
+  "runtime_connection_limits": {
+    "mac_mail_process_permission": "action_needed_in_main_LaunchAgent",
+    "mac_messages_process_permission": "action_needed_in_main_LaunchAgent",
+    "standalone_Codex_readability_is_not_daemon_permission": true,
+    "iphone_hardware_verified": false,
+    "provider_sign_in_completion_required": true
+  },
+  "release_package": {
+    "existing_patch_chain_unchanged": true,
+    "incremental_patch_applied_to_exact_captures": true,
+    "all_six_outputs_match_final_source": true,
+    "full_owner_source_included": false,
+    "credentials_or_private_counts_included": false,
+    "all_new_served_direct_asset_references_present": true,
+    "new_served_direct_asset_references": 8,
+    "NASA_texture_hash_matches_attribution": true
+  },
+  "public_web_search": {
+    "state": "browser_verification_needed_for_challenged_query",
+    "observed_mode": "live_web_unavailable",
+    "challenged_query_sources": 0,
+    "exact_provider_http_status": 202,
+    "short_site_query_http_status": 200,
+    "short_site_query_results": 10,
+    "challenge_detection_and_manual_browser_link": "implemented_and_unit_tested",
+    "automatic_bypass": false,
+    "general_search_always_works": false
+  }
+}

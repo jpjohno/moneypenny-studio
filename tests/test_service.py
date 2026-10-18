@@ -19,6 +19,7 @@ def test_login_service_has_no_network_listener_override_or_credentials(tmp_path)
     assert definition['ProgramArguments'] == [str(tmp_path / '.venv/bin/python'), str(tmp_path / 'scripts/serve.py')]
     assert definition['RunAtLoad'] and definition['KeepAlive']
     assert definition['Umask'] == 0o077
+    assert definition['ProcessType'] == 'Interactive'
     assert definition['EnvironmentVariables'] == {'PYTHONUNBUFFERED': '1', 'MONEYPENNY_PORT': '8090',
                                                  'MONEYPENNY_OLLAMA_URL': 'http://127.0.0.1:11434',
                                                  'MONEYPENNY_LOG_DIR': str(service.LOGS)}
@@ -55,3 +56,53 @@ def test_wsgi_server_cannot_bind_external_address():
     assert "host='127.0.0.1'" in source
     assert 'expose_tracebacks=False' in source
     assert 'app.run(' not in source
+
+
+def test_explicit_restart_reloads_scheduling_definition(monkeypatch):
+    service = module('service')
+    actions = []
+    monkeypatch.setattr(service.sys, 'platform', 'darwin')
+    monkeypatch.setattr(service.sys, 'argv', ['service.py', 'restart'])
+    monkeypatch.setattr(service, 'loaded', lambda: True)
+    monkeypatch.setattr(service, 'prepare', lambda: actions.append('prepare'))
+    monkeypatch.setattr(service, 'wait_ready', lambda: actions.append('ready'))
+    monkeypatch.setattr(service, 'status', lambda: {'ready': True})
+    monkeypatch.setattr(service.subprocess, 'run', lambda argv, **kwargs: actions.append(argv[1]))
+    service.main()
+    assert actions == ['prepare', 'bootout', 'bootstrap', 'ready'], 'A stale Background job must not survive a scheduling fix'
+
+
+def test_bootstrap_retries_only_transient_launchd_reload_race(monkeypatch):
+    service = module('service')
+    calls, pauses = [], []
+    def run(argv, **kwargs):
+        calls.append(argv)
+        if len(calls) < 3:
+            raise service.subprocess.CalledProcessError(5, argv)
+    monkeypatch.setattr(service.subprocess, 'run', run)
+    monkeypatch.setattr(service.time, 'sleep', pauses.append)
+    service.bootstrap()
+    assert len(calls) == 3 and pauses == [.25, .5]
+    assert all(call[1] == 'bootstrap' for call in calls)
+
+
+def test_bootstrap_does_not_retry_unrelated_failure_or_loop_forever(monkeypatch):
+    import pytest
+    service = module('service')
+    calls = []
+    def rejected(argv, **kwargs):
+        calls.append(argv)
+        raise service.subprocess.CalledProcessError(37, argv)
+    monkeypatch.setattr(service.subprocess, 'run', rejected)
+    monkeypatch.setattr(service.time, 'sleep', lambda value: None)
+    with pytest.raises(service.subprocess.CalledProcessError):
+        service.bootstrap()
+    assert len(calls) == 1
+    calls.clear()
+    def transient(argv, **kwargs):
+        calls.append(argv)
+        raise service.subprocess.CalledProcessError(5, argv)
+    monkeypatch.setattr(service.subprocess, 'run', transient)
+    with pytest.raises(service.subprocess.CalledProcessError):
+        service.bootstrap()
+    assert len(calls) == 4

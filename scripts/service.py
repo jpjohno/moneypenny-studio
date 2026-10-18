@@ -32,7 +32,9 @@ def definition(root=ROOT):
                                  'MONEYPENNY_OLLAMA_URL': 'http://127.0.0.1:11434',
                                  'MONEYPENNY_LOG_DIR': str(LOGS)},
         'RunAtLoad': True, 'KeepAlive': True, 'ThrottleInterval': 10,
-        'Umask': 0o077, 'ProcessType': 'Background',
+        # Speech is an interactive request. Background classification throttles
+        # its child inference worker and delays the first audible phrase.
+        'Umask': 0o077, 'ProcessType': 'Interactive',
         'StandardOutPath': str(LOGS / 'stdout.log'),
         'StandardErrorPath': str(LOGS / 'stderr.log'),
     }
@@ -92,6 +94,19 @@ def wait_ready():
     raise SystemExit('The service did not become ready. Private diagnostics are in ' + str(LOGS))
 
 
+def bootstrap():
+    # launchd can acknowledge bootout before releasing the old job. Retry only
+    # its transient I/O result, with a short fixed deadline and no other changes.
+    for attempt in range(4):
+        try:
+            subprocess.run(['/bin/launchctl', 'bootstrap', DOMAIN, str(AGENT)], check=True)
+            return
+        except subprocess.CalledProcessError as error:
+            if error.returncode != 5 or attempt == 3:
+                raise
+            time.sleep(.25 * (attempt + 1))
+
+
 def start():
     if loaded():
         if not ready():
@@ -104,7 +119,7 @@ def start():
                 raise SystemExit('The studio is running outside its login service. Close its original Terminal instance, then start again; nothing was stopped.')
             raise SystemExit('Port 8090 belongs to another program. Nothing was stopped.')
         prepare()
-        subprocess.run(['/bin/launchctl', 'bootstrap', DOMAIN, str(AGENT)], check=True)
+        bootstrap()
     wait_ready()
 
 
@@ -124,7 +139,11 @@ def main():
         start()
     elif args.action == 'restart':
         if loaded():
-            subprocess.run(['/bin/launchctl', 'kickstart', '-k', TARGET], check=True)
+            # Reload the definition too: kickstart alone retains old scheduling
+            # and environment settings even when the plist has been updated.
+            prepare()
+            subprocess.run(['/bin/launchctl', 'bootout', TARGET], check=True)
+            bootstrap()
             wait_ready()
         else:
             start()

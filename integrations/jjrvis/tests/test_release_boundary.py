@@ -19,7 +19,7 @@ def test_pairing_size_is_checked_before_reading_and_security_headers_present():
         assert client.post('/workspace/phone-connect?ticket=invalid', content=b'x'*2049).status_code == 413
         result = client.get('/workspace')
         assert result.headers['x-frame-options'] == 'DENY'
-        assert 'camera=()' in result.headers['permissions-policy']
+        assert 'camera=(self)' in result.headers['permissions-policy']
         assert result.headers['strict-transport-security'] == 'max-age=31536000'
         assert "object-src 'none'" in result.headers['content-security-policy']
 

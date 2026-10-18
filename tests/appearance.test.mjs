@@ -13,12 +13,14 @@ test('local presentation preserves skin textures, hair masks and facial shapes',
  const skin=new THREE.MeshPhysicalMaterial({name:'Performance skin — textured',map,normalMap:normal,specularIntensity:.64});
  const hair=new THREE.MeshStandardMaterial({name:'VitHair',map,alphaTest:.32});
  const face=new THREE.Mesh(new THREE.BufferGeometry(),skin),strands=new THREE.Mesh(new THREE.BufferGeometry(),hair);
- const cornea=new THREE.Mesh(new THREE.BufferGeometry(),new THREE.MeshPhysicalMaterial({transmission:1}));
+ const cornea=new THREE.Mesh(new THREE.BufferGeometry(),new THREE.MeshPhysicalMaterial({name:'Corneal optical surface',transmission:1}));
  face.morphTargetInfluences=[.4,.7];root.add(face,strands,cornea);
  prepareCharacterMaterials(root,{capabilities:{getMaxAnisotropy:()=>16}});
  assert.equal(face.material,skin);assert.equal(skin.map,map);assert.equal(skin.normalMap,normal);
- assert.deepEqual(face.morphTargetInfluences,[.4,.7]);assert.equal(map.anisotropy,8);
+ assert.deepEqual(face.morphTargetInfluences,[.4,.7]);assert.equal(map.anisotropy,4);
  assert.equal(hair.alphaTest,.32);assert.equal(hair.depthWrite,true);assert.equal(hair.alphaToCoverage,true);
  assert.equal(skin.specularIntensity,.5);assert.ok(face.castShadow&&face.receiveShadow);
  assert.equal(cornea.castShadow,false);assert.equal(cornea.receiveShadow,false);
+ assert.equal(cornea.material.transmission,0,'No full-scene transmission capture is needed for the corneal highlight');
+ assert.equal(cornea.material.depthWrite,false);assert.equal(cornea.material.transparent,true);
 });

@@ -4,6 +4,8 @@ Source snapshot for the JJRVIS workspace already running on James's Mac. This di
 
 The 18 October incremental release adds an isolated tester preview, local Jarvis voice, weather and sky, clearer app permissions, and selectable light/dark palettes. It preserves the earlier v27 integration patch rather than replacing the owner's full broker source.
 
+A further performance, companion and Apple connections increment is included as `jjrvis-performance.patch`. See `PERFORMANCE_APPLE_RELEASE.md`, `PERFORMANCE_RELEASE_BASES.json` and `PERFORMANCE_VERIFICATION.json` for its exact six-file source basis, verified patch application, included helpers and limits. Apply this increment only after the existing patch chain and only when the receiving source matches the recorded bases; the earlier patches remain intact.
+
 The running package is `outputs/communication_broker` in the JARVIS project. Its owner workspace is http://127.0.0.1:8766/workspace ; Moneypenny runs at http://127.0.0.1:8090/ . Synced `sources/` files are read-only.
 
 ## Included changes
@@ -46,7 +48,7 @@ Jarvis now has a local Kokoro voice alongside Moneypenny. Explicit cloud voice p
 
 ## Present limits
 
-The current character is CG and has not passed photographic realism acceptance. The browser character is clothed. Camera permission, live house control, native phone integration, other vehicle brands and multiple household/customer records remain separate, uncompleted integration work. A phone browser cannot use another computer's localhost 3D service: the UI labels 3D as available on the Mac until a supported authenticated remote rendering route exists.
+The current character is CG and has not passed photographic realism acceptance. The browser character is clothed. Live house control, native phone integration, other vehicle brands and multiple household/customer records remain separate, uncompleted integration work. The performance increment adds an authenticated owner-only remote renderer, without exposing Studio writes or granting its child camera/microphone access; actual iPhone hardware acceptance remains unverified. Explicit parent camera/microphone tests are local browser previews, not general device or camera integrations. The main LaunchAgent still needs process-specific macOS permission before its local Mail/Messages connections are ready, and several provider sign-ins remain unfinished.
 
 `PRODUCT_STRATEGY.md` contains the private pilot, Home Assistant integration sequence, commercial hypotheses and source links. No new customers, accounts, purchases or cameras were created.
 

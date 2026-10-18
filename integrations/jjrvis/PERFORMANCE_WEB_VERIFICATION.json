@@ -1,0 +1,28 @@
+{
+  "scope": "Neutral public search diagnostics; no private query, history or provider credentials included.",
+  "exact_query_provider_check": {
+    "status": 202,
+    "seconds": 0.172,
+    "bytes": 14384,
+    "challenge": true,
+    "result_links": 0,
+    "current_parser_pairs": 0,
+    "no_results_marker": false,
+    "content_type": "text/html; charset=UTF-8"
+  },
+  "secondary_short_site_query": {
+    "status": 200,
+    "result_links": 10,
+    "interpretation": "Parser/provider smoke test only; reported by the root investigator."
+  },
+  "application_behaviour": {
+    "verification_challenge_detected": true,
+    "web_state": "browser_verification_needed",
+    "results_in_challenged_query": 0,
+    "manual_browser_search_link": true,
+    "automatic_challenge_bypass": false,
+    "automatic_provider_retry": false,
+    "unrelated_provider_fallback": false
+  },
+  "general_search_always_works": false
+}

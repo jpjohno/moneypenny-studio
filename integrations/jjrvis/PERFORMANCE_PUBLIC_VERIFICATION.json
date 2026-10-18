@@ -1,0 +1,43 @@
+{
+  "scope": "Existing HTTPS domain; configured direct HTTP client, no sign-ins or new permissions created",
+  "results": [
+    {
+      "path": "/workspace",
+      "owner": false,
+      "status": 200,
+      "bytes": 9058,
+      "https": true
+    },
+    {
+      "path": "/presence/?embed=jarvis",
+      "owner": false,
+      "status": 401,
+      "bytes": 36,
+      "https": true
+    },
+    {
+      "path": "/presence/?embed=jarvis",
+      "owner": true,
+      "status": 200,
+      "bytes": 19119,
+      "https": true,
+      "frame": "SAMEORIGIN",
+      "child_capture_denied": true,
+      "blob_texture_allowed": true
+    },
+    {
+      "path": "/presence/api/status?quick=1",
+      "owner": true,
+      "status": 200,
+      "bytes": 404,
+      "https": true
+    },
+    {
+      "path": "/v1/workspace/apple-connections",
+      "owner": true,
+      "status": 200,
+      "bytes": 3468,
+      "https": true
+    }
+  ]
+}

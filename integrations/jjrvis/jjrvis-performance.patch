@@ -1,0 +1,577 @@
+diff --git a/workspace.js b/workspace.js
+--- a/workspace.js
++++ b/workspace.js
+@@ -35,2 +35,3 @@
+ const titles = {rooms:'Your room studio.',overview:'Your command centre.',communications:'Your communications.',junomo:'Junomo, in one place.',trading:'Your J-NEXUS workspace.',jarvis:'Your Jarvis foundation.',library:'Find what you already have.',connections:'One workspace. Existing projects.',home:'Your house.',music:'Your listening room.',news:'Your world, in focus.',research:'Research and ideas.',plan:'The JJRVIS plan.'};
++let companionAutostarted=false;
+ let current = ['overview','music','news','library','home','connections','rooms','jarvis','communications'].includes(new URLSearchParams(location.search).get('view'))?new URLSearchParams(location.search).get('view'):'overview', snapshot, serviceData, reviews = [], socket, stopped = false, reconnect;
+@@ -48,5 +49,5 @@
+ }
+-let cloudAudio=null, speechController=null, presenceSpeech=null, presenceSpeechSequence=0;
++let cloudAudio=null, speechController=null, presenceSpeech=null, presenceSpeechSequence=0, streamingSpeech=null, mutedSpeechRequest=-1;
+ let speechEchoUntil=0;
+-function interruptReply(){presenceSpeech=null;document.querySelector('#moneypenny-presence')?.contentWindow?.postMessage({type:'jjrvis-stop'},'http://127.0.0.1:8090');speechController?.abort();speechController=null;if(cloudAudio){cloudAudio.pause();URL.revokeObjectURL(cloudAudio.src);cloudAudio=null;}activeUtterance=null;wakeArmedUntil=Date.now()+45000;assistantRequest++;assistantController?.abort();voiceReplyRequested=false;voiceState("Listening — go ahead.");}
++function interruptReply(){streamingSpeech?.cancel();streamingSpeech=null;presenceSpeech=null;postToPresence({type:'jjrvis-stop'});speechController?.abort();speechController=null;if(cloudAudio){cloudAudio.pause();URL.revokeObjectURL(cloudAudio.src);cloudAudio=null;}activeUtterance=null;wakeArmedUntil=Date.now()+45000;assistantRequest++;assistantController?.abort();voiceReplyRequested=false;voiceState("Listening — go ahead.");}
+ let activeUtterance=null, activeRecognition=null, voiceReplyRequested=false, wakeEnabled=localStorage.getItem('jjrvis-wake-enabled')!=='false', wakeRestart=null, wakeStarter=null, assistantController=null;
+@@ -75,3 +76,3 @@
+ }
+-function lock(){document.querySelector('.assistant-dock')?.classList.remove('assistant-overlay','assistant-expanded');document.querySelectorAll('dialog[open]').forEach(dialog=>dialog.close());document.querySelectorAll('.comms-conversation,.comms-compose').forEach(dialog=>{dialog.close();dialog.remove();});restoreAssistant();document.querySelector('[data-open-assistant]')?.setAttribute('aria-expanded','false');nativeRows=[];pendingNativeSearch=null;nativeGeneration++;sessionEpoch++;readerFile=null;stopAllVoice();voiceReplyRequested=false;stopped=true;clearTimeout(reconnect);socket?.close();inboxData=null;selectedMessage=null;reviews=[];workingDraft={};snapshot=null;briefData=null;assistantHistory=[];assistantFile=null;if($('#assistant-answer'))$('#assistant-answer').replaceChildren();if($('#assistant-input'))$('#assistant-input').value='';content.replaceChildren();$('#reader-text').textContent='';$('#reader-title').textContent='';$('#reader-path').textContent='';$('#reader').close();$('#login').hidden=false;content.hidden=true;$('#broker-state').textContent='Sign-in needed';$('#broker-state').className='badge warn';$('#section-label').textContent='SIGN IN';$('#page-title').textContent='Your private workspace.';checkLoginHealth();}
++function lock(){window.JJCompanion?.exit();document.querySelector('.assistant-dock')?.classList.remove('assistant-overlay','assistant-expanded');document.querySelectorAll('dialog[open]').forEach(dialog=>dialog.close());document.querySelectorAll('.comms-conversation,.comms-compose').forEach(dialog=>{dialog.close();dialog.remove();});restoreAssistant();document.querySelector('[data-open-assistant]')?.setAttribute('aria-expanded','false');nativeRows=[];pendingNativeSearch=null;nativeGeneration++;sessionEpoch++;readerFile=null;stopAllVoice();voiceReplyRequested=false;stopped=true;clearTimeout(reconnect);socket?.close();inboxData=null;selectedMessage=null;reviews=[];workingDraft={};snapshot=null;briefData=null;assistantHistory=[];assistantFile=null;if($('#assistant-answer'))$('#assistant-answer').replaceChildren();if($('#assistant-input'))$('#assistant-input').value='';content.replaceChildren();$('#reader-text').textContent='';$('#reader-title').textContent='';$('#reader-path').textContent='';$('#reader').close();$('#login').hidden=false;content.hidden=true;$('#broker-state').textContent='Sign-in needed';$('#broker-state').className='badge warn';$('#section-label').textContent='SIGN IN';$('#page-title').textContent='Your private workspace.';checkLoginHealth();}
+ async function checkLoginHealth(){try{const r=await fetch('/health',{credentials:'omit'});const d=await r.json();if(!$('#login').hidden)$('#login-health').textContent=r.ok&&d.service==='jarvis-comm-broker'?'JJRVIS is running. Your workspace is locked until you sign in.':'JJRVIS needs restarting with the Desktop launcher.';}catch{if(!$('#login').hidden)$('#login-health').textContent='The local service is not responding. Use the Desktop launcher to start JJRVIS.';}}
+@@ -85,3 +86,4 @@
+     serviceData=briefData.services;
+-    if(['overview','jarvis','connections','home','trading','plan'].includes(current)&&!$('#task-title')?.value) await render();
++    if(['jarvis','connections','home','trading','plan'].includes(current)) await render();
++    else if(current==='overview'){updateOverviewSystems();updateConnectionStrip();}
+   } catch(e){notify(e.message);}
+@@ -105,3 +107,4 @@
+  const reactor=stage.querySelector('.globe-reactor'),canvas=reactor.querySelector('canvas'),ctx=canvas.getContext('2d'),info=reactor.querySelector('.globe-info');
+- const ratio=Math.min(window.devicePixelRatio||1,2);canvas.width=420*ratio;canvas.height=420*ratio;ctx.scale(ratio,ratio);
++ const surface=window.JJGlobeSurface?.create(land,{element:reactor,onReady:()=>{const credit=reactor.querySelector('.globe-credit');if(credit)credit.textContent='Earth · NASA Blue Marble · static imagery · Map © OpenStreetMap';}});
++ const ratio=Math.min(window.devicePixelRatio||1,1.5);canvas.width=420*ratio;canvas.height=420*ratio;ctx.scale(ratio,ratio);
+  const picker=reactor.querySelector('[data-device-focus]'),map=reactor.querySelector('.globe-map');
+@@ -115,3 +118,3 @@
+  const focus=id=>{const d=devices.find(v=>v.device_id===id);selected=id;picker.value=id;if(!valid(d)){info.textContent=(d?.name||'This device')+' has not supplied a current location.';return;}lon=d.longitude;lat=d.latitude;pause();info.textContent=d.name+' · '+(d.location_state==='live'?'current location':'last known · not live')+(d.accuracy?' · ±'+Math.round(d.accuracy)+' m':'');paintMap();};
+- const draw=t=>{if(dead||!stage.isConnected)return;if(t-last>50&&!document.hidden&&!mapMode){const dt=Math.min(t-last,100);last=t;if(!drag&&!stage.classList.contains('paused')&&!matchMedia('(prefers-reduced-motion: reduce)').matches)lon+=dt*.0013;ctx.clearRect(0,0,420,420);hits=[];const R=166*zoom;
++ const draw=t=>{if(dead||!stage.isConnected)return;if(t-last>83&&!document.hidden&&!mapMode&&(!surface||surface.isVisible())&&(document.body.dataset.companion||'workspace')==='workspace'){const dt=Math.min(t-last,100);last=t;if(!drag&&!stage.classList.contains('paused')&&!matchMedia('(prefers-reduced-motion: reduce)').matches)lon+=dt*.0013;ctx.clearRect(0,0,420,420);hits=[];const R=166*zoom;
+  ctx.save();ctx.translate(210,210);ctx.strokeStyle='#bc9a6244';ctx.lineWidth=.65;for(let i=0;i<120;i++){const a=i*Math.PI/60;ctx.beginPath();ctx.moveTo(Math.cos(a)*197,Math.sin(a)*197);ctx.lineTo(Math.cos(a)*(i%5?200:205),Math.sin(a)*(i%5?200:205));ctx.stroke();}ctx.restore();
+@@ -120,5 +123,5 @@
+  ctx.save();ctx.translate(210,210);ctx.rotate(orbitPhase);for(let n=0;n<3;n++){ctx.strokeStyle=n===1?'#bda67988':'#8fdae877';ctx.lineWidth=n===1?1.8:.6;ctx.beginPath();ctx.arc(0,0,187+n*5,n*2.1,n*2.1+1.1);ctx.stroke();}ctx.restore();
+- ctx.save();ctx.beginPath();ctx.arc(210,210,R,0,Math.PI*2);ctx.clip();const g=ctx.createRadialGradient(210-R*.4,210-R*.5,R*.05,210,210,R);g.addColorStop(0,'#28617a');g.addColorStop(.46,'#123e57');g.addColorStop(.82,'#061c30');g.addColorStop(1,'#020912');ctx.fillStyle=g;ctx.fillRect(0,0,420,420);
++ ctx.save();ctx.beginPath();ctx.arc(210,210,R,0,Math.PI*2);ctx.clip();if(surface)surface.draw(ctx,210,210,R,lon,lat,t);else {const g=ctx.createRadialGradient(210-R*.4,210-R*.5,R*.05,210,210,R);g.addColorStop(0,'#28617a');g.addColorStop(.46,'#123e57');g.addColorStop(.82,'#061c30');g.addColorStop(1,'#020912');ctx.fillStyle=g;ctx.fillRect(0,0,420,420);
+  ctx.strokeStyle='#62bed32b';ctx.lineWidth=.55;for(let y=-60;y<=60;y+=20)line(Array.from({length:181},(_,i)=>[i*2-180,y]));for(let x=-180;x<180;x+=20)line(Array.from({length:91},(_,i)=>[x,i*2-90]));ctx.strokeStyle='#76d4eb28';ctx.lineWidth=2.5;land.forEach(line);ctx.strokeStyle='#9bd8e4';ctx.lineWidth=.7;land.forEach(line);
+- const shine=ctx.createRadialGradient(210-R*.35,210-R*.5,0,210-R*.25,210-R*.35,R*.95);shine.addColorStop(0,'#e3f8ff22');shine.addColorStop(.5,'#95deed07');shine.addColorStop(1,'#00000000');ctx.fillStyle=shine;ctx.fillRect(0,0,420,420);
++ const shine=ctx.createRadialGradient(210-R*.35,210-R*.5,0,210-R*.25,210-R*.35,R*.95);shine.addColorStop(0,'#e3f8ff22');shine.addColorStop(.5,'#95deed07');shine.addColorStop(1,'#00000000');ctx.fillStyle=shine;ctx.fillRect(0,0,420,420);}
+  for(const d of devices){if(!valid(d))continue;const p=project(d.longitude,d.latitude);if(p[2]<0)continue;const x=210+p[0]*R,y=210-p[1]*R,live=d.location_state==='live';ctx.strokeStyle=live?'#8df5d0':'#d0aa6c';ctx.fillStyle=live?'#c7ffec':'#d0aa6c';ctx.beginPath();ctx.arc(x,y,8,0,Math.PI*2);ctx.stroke();ctx.beginPath();ctx.arc(x,y,3,0,Math.PI*2);ctx.fill();hits.push({x,y,id:d.device_id});if(d.device_id===selected){ctx.font='500 11px sans-serif';ctx.fillStyle='#ecf8ff';ctx.fillText(d.name.slice(0,25),Math.max(12,Math.min(270,x+12)),Math.max(24,y-12));}}
+@@ -132,3 +135,3 @@
+  reactor.querySelector('[data-world]').onclick=()=>{mapMode=false;reactor.classList.remove('map-mode');reactor.querySelector('[data-map-toggle]').textContent='Map';zoom=1;lat=20;selected='';picker.value='';info.textContent='Drag to explore · choose a device to focus';};
+- frame=requestAnimationFrame(draw);return {getFocus(){const d=chosen();return d&&['live','place'].includes(d.location_state)?d:null;},explore(p){if(!Number.isFinite(p.latitude)||!Number.isFinite(p.longitude))return;exploredPlace={...p,location_state:'place'};selected='explore';lon=p.longitude;lat=p.latitude;zoom=1.6;picker.value='';pause();mapMode=true;reactor.classList.add('map-mode');reactor.querySelector('[data-map-toggle]').textContent='Globe';paintMap();},setDevices(d){devices=d;const previous=picker.value;picker.replaceChildren(new Option('Focus a device…',''));for(const row of devices.filter(d=>d.online||d.location_state==='live')){picker.add(new Option(row.name+' · '+(row.location_state==='live'?'live location':'location unavailable'),row.device_id));}picker.value=previous;const live=devices.find(d=>d.device_id===deviceIdentity().device_id&&d.location_state==='live');if(!autoFocused&&live){autoFocused=true;focus(live.device_id);}if(mapMode)paintMap();const status=stage.querySelector('[data-device-summary]');if(status)status.textContent=devices.filter(d=>d.location_state==='live').length+' current locations · '+devices.filter(d=>d.online).length+' reporting devices';},destroy(){dead=true;cancelAnimationFrame(frame);}};
++ frame=requestAnimationFrame(draw);return {getFocus(){const d=chosen();return d&&['live','place'].includes(d.location_state)?d:null;},explore(p){if(!Number.isFinite(p.latitude)||!Number.isFinite(p.longitude))return;exploredPlace={...p,location_state:'place'};selected='explore';lon=p.longitude;lat=p.latitude;zoom=1.6;picker.value='';pause();mapMode=true;reactor.classList.add('map-mode');reactor.querySelector('[data-map-toggle]').textContent='Globe';paintMap();},setDevices(d){devices=d;const previous=picker.value;picker.replaceChildren(new Option('Focus a device…',''));for(const row of devices.filter(d=>d.online||d.location_state==='live')){picker.add(new Option(row.name+' · '+(row.location_state==='live'?'live location':'location unavailable'),row.device_id));}picker.value=previous;const live=devices.find(d=>d.device_id===deviceIdentity().device_id&&d.location_state==='live');if(!autoFocused&&live){autoFocused=true;focus(live.device_id);}if(mapMode)paintMap();const status=stage.querySelector('[data-device-summary]');if(status)status.textContent=devices.filter(d=>d.location_state==='live').length+' current locations · '+devices.filter(d=>d.online).length+' reporting devices';},destroy(){dead=true;cancelAnimationFrame(frame);surface?.destroy();}};
+ }
+@@ -153,3 +156,3 @@
+  host.addEventListener('click',e=>{if(e.target.closest('[data-quote-open]'))navigate('trading');});
+- const keys=Object.keys(saved).filter(k=>catalog[k]);(localStorage.getItem('jjrvis-desk-v2')?keys:['mail','markets','devices','day','calls','messages','whatsapp','news','calendar']).forEach(pin);persist();
++ const keys=Object.keys(saved).filter(k=>catalog[k]);((new URLSearchParams(location.search).get('companion')==='1'||window.JJSettings?.preferences().startView==='companion')?[]:(localStorage.getItem('jjrvis-desk-v2')?keys:['mail','markets','devices','day','calls','messages','whatsapp','news','calendar'])).forEach(pin);if(new URLSearchParams(location.search).get('companion')!=='1'&&window.JJSettings?.preferences().startView!=='companion')persist();
+  stage.querySelectorAll('[data-pin]').forEach(b=>b.onclick=()=>{pin(b.dataset.pin);persist();});stage.querySelector('[data-reset]').onclick=()=>{localStorage.removeItem('jjrvis-desk-v2');overview();};
+@@ -158,3 +161,3 @@
+  const onSearch=e=>{if(!stage.isConnected)return;pin('search');const target=host.querySelector('[data-key="search"] .desk-search-results');if(target){target.innerHTML='<p>'+esc(e.detail.answer)+'</p>'+e.detail.results.map(r=>'<div class="hud-row">'+safeLink(r.url,r.title)+'<small>'+esc(r.snippet||'')+'</small></div>').join('');host.querySelector('[data-key="search"]').scrollIntoView({behavior:'smooth',block:'center'});}};window.addEventListener('jjrvis-search-results',onSearch);
+- let tick=0;const timer=setInterval(()=>{if(!stage.isConnected){clearInterval(timer);window.removeEventListener('jjrvis-search-results',onSearch);earth.destroy();return;}const now=new Date();stage.querySelector('time').textContent=now.toLocaleString('en-GB');stage.querySelector('[data-wall-clock]').textContent=now.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',second:'2-digit'});stage.querySelector('[data-wall-date]').textContent=now.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'});stage.querySelector('.desk-greeting h2').textContent=(now.getHours()<12?'Good morning':now.getHours()<18?'Good afternoon':'Good evening')+', James.';if(document.hidden)return;if(++tick%5===0&&host.querySelector('[data-key="markets"]'))refresh('markets');if(tick%30===0){updateConnectionStrip();refresh('devices');host.querySelectorAll('.hud-window').forEach(w=>{if(w.dataset.key!=='devices')refresh(w.dataset.key);});}},1000);
++ let tick=0;const timer=setInterval(()=>{if(!stage.isConnected){clearInterval(timer);window.removeEventListener('jjrvis-search-results',onSearch);earth.destroy();return;}const now=new Date();stage.querySelector('time').textContent=now.toLocaleString('en-GB');stage.querySelector('[data-wall-clock]').textContent=now.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',second:'2-digit'});stage.querySelector('[data-wall-date]').textContent=now.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'});stage.querySelector('.desk-greeting h2').textContent=(now.getHours()<12?'Good morning':now.getHours()<18?'Good afternoon':'Good evening')+', James.';if(document.hidden||document.body.dataset.companion!=='workspace'||document.body.dataset.companionHidden==='true'||streamingSpeech||$('#assistant-submit')?.disabled)return;if(++tick%5===0&&host.querySelector('[data-key="markets"]'))refresh('markets');if(tick%30===0){updateConnectionStrip();refresh('devices');host.querySelectorAll('.hud-window').forEach(w=>{if(w.dataset.key!=='devices')refresh(w.dataset.key);});}},1000);
+ }
+@@ -177,3 +180,6 @@
+ }
+-window.addEventListener('jjrvis-display-changed',applyPresenceChoice);
++window.addEventListener('jjrvis-display-changed',()=>{applyPresenceChoice();syncPresenceVisibility();});
++function syncPresenceVisibility(){const mode=document.body.dataset.companion||'workspace';postToPresence({type:'jjrvis-presence-visibility',visible:!document.hidden&&mode!=='icon'&&mode!=='hidden'&&document.body.dataset.companionHidden!=='true'&&current==='overview'&&document.documentElement.dataset.presenceMode!=='jarvis'});}
++document.addEventListener('visibilitychange',syncPresenceVisibility);
++window.addEventListener('jjrvis-companion-changed',syncPresenceVisibility);
+ function overview(){
+@@ -184,4 +190,4 @@
+  <header class="presence-heading"><div><p class="eyebrow">JJRVIS / PERSONAL CONCIERGE</p><h2>Your world.<br><em>In good hands.</em></h2></div><span class="owner-chip"><i></i> JAMES · PRIVATE WORKSPACE</span></header>
+- <div class="presence-scene"><section class="moneypenny-presence" aria-label="Moneypenny live 3D assistant"><div class="presence-top"><span>MONEYPENNY</span><b data-presence-state>PREPARING 3D</b></div><iframe id="moneypenny-presence" title="Live 3D Moneypenny" src="${['localhost','127.0.0.1'].includes(location.hostname)?'http://127.0.0.1:8090/?embed=jarvis':'about:blank'}" allow="autoplay" loading="eager"></iframe><div class="presence-footer"><span>YOUR FRONT OF HOUSE</span><div><button type="button" data-presence-wave>Wave</button><a href="http://127.0.0.1:8090/" target="_blank" rel="noopener">Customise Moneypenny ↗</a></div></div></section>
+- <div id="presence-atlas" class="presence-atlas" aria-label="Your interactive world"></div><div class="presence-scene-caption"><span>ONE CONVERSATION. YOUR CONNECTED WORLD.</span><p>Home, work and the day ahead.</p><button type="button" data-presence-talk>Talk to Moneypenny <span aria-hidden="true">↗</span></button><button type="button" class="quiet" data-go="connections">Apps & permissions</button></div></div>
++ <div class="presence-scene"><section class="moneypenny-presence" aria-label="Moneypenny live 3D assistant"><div class="presence-top"><span>MONEYPENNY</span><b data-presence-state>PREPARING 3D</b></div><iframe id="moneypenny-presence" title="Live 3D Moneypenny" src="/presence/?embed=jarvis" allow="autoplay" loading="eager"></iframe><div class="presence-footer"><span>YOUR FRONT OF HOUSE</span><div><button type="button" data-presence-wave>Wave</button>${['localhost','127.0.0.1'].includes(location.hostname)?'<a href="http://127.0.0.1:8090/" target="_blank" rel="noopener">Customise Moneypenny ↗</a>':'<button type="button" data-persona-options>Voice & persona</button>'}<button type="button" data-open-companion>Companion view</button></div></div></section>
++ <div id="presence-atlas" class="presence-atlas" aria-label="Your interactive world"></div><div class="presence-scene-caption"><span>ONE CONVERSATION. YOUR CONNECTED WORLD.</span><p>Home, work and the day ahead.</p><button type="button" data-presence-talk>Talk to Moneypenny <span aria-hidden="true">↗</span></button><button type="button" class="quiet" data-access-centre>Connections & access</button></div></div>
+  <div class="presence-status" role="status"><div><i></i><span data-ai-summary>Checking local intelligence…</span></div><span>JARVIS CORE <span aria-hidden="true">/</span> MONEYPENNY PRESENCE</span></div></section>
+@@ -198,10 +204,13 @@
+  mountPresenceChoices();
++ if((new URLSearchParams(location.search).get('companion')==='1'||window.JJSettings?.preferences().startView==='companion')&&!companionAutostarted){companionAutostarted=true;window.JJCompanion?.enter();}
+  const sky=document.createElement('section');document.querySelector('.connection-strip').after(sky);window.JJLifestyle?.mountSky(sky,{api});
+  const presence=$('#moneypenny-presence');if(presence){
+-  presence.addEventListener('load',()=>presence.contentWindow?.postMessage({type:'jjrvis-presence-status'},'http://127.0.0.1:8090'));
+-  document.querySelector('[data-presence-wave]').onclick=()=>presence.contentWindow?.postMessage({type:'jjrvis-wave'},'http://127.0.0.1:8090');
++  presence.addEventListener('load',()=>{postToPresence({type:'jjrvis-presence-status'});syncPresenceVisibility();});
++  document.querySelector('[data-presence-wave]').onclick=()=>postToPresence({type:'jjrvis-wave'});
++  document.querySelector('[data-open-companion]').onclick=()=>window.JJCompanion?.enter();
++  const personaOptions=document.querySelector('[data-persona-options]');if(personaOptions)personaOptions.onclick=()=>openSettings('voice');
+   document.querySelector('[data-presence-talk]').onclick=()=>chooseAssistant(document.documentElement.dataset.presenceMode==='jarvis'?'english':'moneypenny');
+-  if(!['localhost','127.0.0.1'].includes(location.hostname)){presence.removeAttribute('src');presence.hidden=true;presence.parentElement.querySelector('.presence-footer')?.remove();document.querySelector('[data-presence-state]').textContent='3D AVAILABLE ON YOUR MAC';const note=document.createElement('p');note.className='presence-remote-note';note.textContent='Moneypenny’s live 3D presence is available on your Mac. Conversation and device pairing stay available here.';presence.parentElement.append(note);}
+  }
+  updateConnectionStrip();
++ document.querySelector('[data-access-centre]').onclick=()=>openConnections();
+  const journey=$('#journey-form');journey.onsubmit=e=>{e.preventDefault();const origin=$('#journey-origin').value.trim()||'Current Location',destination=$('#journey-destination').value.trim();if(!destination)return;window.open('https://www.google.com/maps/dir/?api=1&origin='+encodeURIComponent(origin)+'&destination='+encodeURIComponent(destination)+'&travelmode=driving','_blank','noopener');};
+@@ -429,8 +438,8 @@
+  async start(){
+-  this.running=true;
++  this.running=true;let acquired=null;
+   try{
+-   if(!wakeMicStream)wakeMicStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}});
++   if(!wakeMicStream){acquired=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}});if(!this.running){acquired.getTracks().forEach(track=>track.stop());return;}wakeMicStream=acquired;}
+    if(!this.running)return;
+    localAudioContext ||= new AudioContext({sampleRate:16000});await localAudioContext.resume();
+-   if(!this.running)return;
++   if(!this.running)return; // Published streams belong to Stop/Lock, and may now be shared.
+    this.source=localAudioContext.createMediaStreamSource(wakeMicStream);
+@@ -476,3 +485,3 @@
+  // Order Stop acknowledgements, so an older click cannot stop a newer reply.
+- backendVoiceStop=backendVoiceStop.then(()=>fetch('/v1/workspace/voice/stop',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'})).catch(()=>{});
++ backendVoiceStop=backendVoiceStop.then(async()=>{const controller=new AbortController();let timer;try{await Promise.race([fetch('/v1/workspace/voice/stop',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}',signal:controller.signal}),new Promise(resolve=>{timer=setTimeout(()=>{controller.abort();resolve();},1200);})]);}finally{clearTimeout(timer);}}).catch(()=>{});
+  return backendVoiceStop;
+@@ -481,3 +490,4 @@
+ function resumeWake(){wakePaused=false;if(wakeEnabled&&!document.hidden&&!activeRecognition&&!activeUtterance)wakeStarter?.();}
+-function stopVoice(){presenceSpeech=null;speechController?.abort();speechController=null;if(cloudAudio){cloudAudio.pause();URL.revokeObjectURL(cloudAudio.src);cloudAudio=null;}document.querySelector('#moneypenny-presence')?.contentWindow?.postMessage({type:'jjrvis-stop'},'http://127.0.0.1:8090');clearTimeout(wakeRestart);wakePaused=true;if(activeRecognition){const recognition=activeRecognition;activeRecognition=null;try{recognition.abort();}catch{}}const dictate=$('#assistant-dictate');if(dictate){dictate.textContent='🎙 Speak';dictate.classList.remove('voice-active');}if('speechSynthesis' in window)window.speechSynthesis.cancel();const stopping=requestVoiceStop();activeUtterance=null;voiceState('Voice ready');return stopping;}
++function stopVoice(){streamingSpeech?.cancel();streamingSpeech=null;presenceSpeech?.segment?.done(new DOMException('Stopped','AbortError'));presenceSpeech=null;speechController?.abort();speechController=null;if(cloudAudio){cloudAudio.pause();URL.revokeObjectURL(cloudAudio.src);cloudAudio=null;}postToPresence({type:'jjrvis-stop'});clearTimeout(wakeRestart);wakePaused=true;if(activeRecognition){const recognition=activeRecognition;activeRecognition=null;try{recognition.abort();}catch{}}const dictate=$('#assistant-dictate');if(dictate){dictate.textContent='🎙 Speak';dictate.classList.remove('voice-active');}if('speechSynthesis' in window)window.speechSynthesis.cancel();const stopping=requestVoiceStop();activeUtterance=null;voiceState('Voice ready');return stopping;}
++function muteReply(){const request=assistantRequest;mutedSpeechRequest=request;voiceReplyRequested=false;const pending=stopVoice();voiceState('Speech stopped. Your text reply can continue.');Promise.resolve(pending).finally(()=>{if(request===assistantRequest&&!stopped)resumeWake();});return pending;}
+ function stopAllVoice(){assistantRequest++;assistantController?.abort();voiceReplyRequested=false;if($('#assistant-submit')){$('#assistant-submit').disabled=false;$('#assistant-submit').textContent='Ask';}const answer=$('#assistant-answer');if(answer?.getAttribute('aria-busy')==='true'){answer.removeAttribute('aria-busy');const note=document.createElement('small');note.textContent='Reply stopped — incomplete.';answer.append(note);}if($('#assistant-speak'))$('#assistant-speak').disabled=false;wakeEnabled=false;localStorage.setItem('jjrvis-wake-enabled','false');stopVoice();closeWakeMicrophone();const wake=$('#assistant-wake');if(wake){wake.textContent='◎ Wake off';wake.classList.remove('voice-active');}voiceState('Voice stopped. Tap Wake or Speak when you want the microphone.');}
+@@ -497,64 +507,42 @@
+ }
+-function speak(text,onStarted){
+- const chunks=splitVoiceText(text);
+- if(!chunks.length){voiceState('There is no answer to read yet.');return false;}
+- const presence=document.querySelector('#moneypenny-presence');
+- if(presence?.contentWindow&&presence.src&&document.querySelector('[data-presence-state]')?.dataset.state==='ready'&&selectedAssistantIdentity().name==='Moneypenny'&&document.documentElement.dataset.presenceMode!=='jarvis'){
+-  stopVoice();const requestId=String(++presenceSpeechSequence);presenceSpeech={requestId,onStarted};activeUtterance=presenceSpeech;
+-  presence.contentWindow.postMessage({type:'jjrvis-speak',requestId,text:chunks.join(' ')},'http://127.0.0.1:8090');
+-  voiceState('Preparing Moneypenny’s voice…',true);return true;
+- }
+- const previousStop=stopVoice(),marker={pending:true};activeUtterance=marker;
+- const controller=new AbortController();speechController=controller;
+- let playback=null,started=false;
+- const owns=()=>activeUtterance===marker||(playback&&activeUtterance===playback);
+- voiceState(`Preparing ${selectedAssistantIdentity().name}’s first sentence…`,true);
+- const prepare=async part=>{
+-  if(!owns()||controller.signal.aborted)throw new Error('Stopped');
+-  const timer=setTimeout(()=>controller.abort(),45000);
+-  try{
+-   const response=await fetch('/v1/workspace/voice/audio',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:part}),signal:controller.signal});
+-   if(!response.ok){const error=await response.json().catch(()=>({}));throw new Error(error.detail||'Your selected voice is unavailable.');}
+-   const blob=await response.blob();return {blob,provider:response.headers?.get('X-JJRVIS-Voice-Provider')||''};
+-  }finally{clearTimeout(timer);}
+- };
+- // Prepare one sentence ahead while the current sentence is playing. A caught
+- // result prevents an unhandled rejection if Stop interrupts the next request.
+- const prefetch=part=>prepare(part).then(value=>({value}),error=>({error}));
+- (async()=>{
+-  await previousStop;if(!owns())return;
+-  let pending=prefetch(chunks[0]);
+-  for(let i=0;i<chunks.length;i++){
+-   const result=await pending;if(!owns())return;if(controller.signal.aborted)throw new Error('Voice preparation took too long. Tap Read reply to retry.');if(result.error)throw result.error;
+-   const {blob,provider}=result.value,url=URL.createObjectURL(blob),audio=new Audio(url);
+-   if(window.jjAudioSink&&audio.setSinkId){try{await audio.setSinkId(window.jjAudioSink);}catch{window.jjAudioSink='';notify('Selected audio output unavailable. Using system output.');}}
+-   audio.volume=window.JJSettings?.preferences().volume??0.85;
+-   cloudAudio=audio;playback=audio;activeUtterance=audio;
+-   pending=i+1<chunks.length?prefetch(chunks[i+1]):null;
+-   await new Promise((resolve,reject)=>{
+-    let settled=false;
+-    const finish=error=>{if(settled)return;settled=true;controller.signal.removeEventListener('abort',cancel);URL.revokeObjectURL(url);error?reject(error):resolve();};
+-    const cancel=()=>finish(new Error('Voice preparation took too long. Tap Read reply to retry.'));
+-    audio.onended=()=>finish();audio.onerror=()=>finish(new Error('Audio playback failed. Tap Read reply to retry.'));
+-    controller.signal.addEventListener('abort',cancel,{once:true});
+-    Promise.resolve(audio.play()).then(()=>{
+-     if(!owns()||controller.signal.aborted)return;
+-     if(!started){started=true;onStarted?.();wakePaused=false;wakeStarter?.();}
+-     voiceState(provider==='local-kokoro'?`${selectedAssistantIdentity().name} speaking · British voice`:`${selectedAssistantIdentity().name} speaking · selected AI voice`,true);
+-    }).catch(finish);
+-   });
+-   if(!owns())return;
+-   activeUtterance=marker;cloudAudio=null;playback=null;
+-  }
+-  if(!owns())return;
+-  activeUtterance=null;speechController=null;speechEchoUntil=Date.now()+1200;wakeArmedUntil=Date.now()+45000;
+-  voiceState('Listening for your next question…');resumeWake();
+- })().catch(error=>{
+-  if(!owns())return;
+-  if(cloudAudio){cloudAudio.pause();URL.revokeObjectURL(cloudAudio.src);cloudAudio=null;}
+-  activeUtterance=null;speechController=null;controller.abort();
+-  requestVoiceStop();
+-  voiceState(error.message||'Voice could not start. Tap Read reply to retry.');resumeWake();
+- });return true;
+-}
++function presenceOrigin(){const frame=document.querySelector('#moneypenny-presence');try{const origin=new URL(frame?.src,location.href).origin;return [location.origin,'http://127.0.0.1:8090','http://localhost:8090'].includes(origin)?origin:null;}catch{return null;}}
++function postToPresence(message,transfer=[]){const frame=document.querySelector('#moneypenny-presence'),origin=presenceOrigin();if(frame?.contentWindow&&origin)frame.contentWindow.postMessage(message,origin,transfer);}
++function startSpokenReply(onStarted){
++ const previousStop=stopVoice(),requestId=String(++presenceSpeechSequence),marker={requestId,streaming:true};activeUtterance=marker;
++ const frame=document.querySelector('#moneypenny-presence');
++ const embedded=!!(frame?.contentWindow&&document.querySelector('[data-presence-state]')?.dataset.state==='ready'&&selectedAssistantIdentity().name==='Moneypenny'&&document.documentElement.dataset.presenceMode!=='jarvis');
++ let sequence=0,session;
++ const owns=()=>streamingSpeech===session&&activeUtterance===marker;
++ const waitForAvatar=(message,signal,end=false)=>new Promise((resolve,reject)=>{
++  const timeout=setTimeout(()=>done(new Error('Voice playback did not finish. Tap Read reply to retry.')),35000);
++  const abort=()=>done(new DOMException('Stopped','AbortError'));
++  function done(error){clearTimeout(timeout);signal?.removeEventListener('abort',abort);if(presenceSpeech?.segment?.done===done)presenceSpeech.segment=null;error?reject(error):resolve();}
++  presenceSpeech={requestId,onStarted:()=>message.onStarted?.(),streamedAudio:true,segment:{sequence:message.sequence,end,done}};
++  signal?.addEventListener('abort',abort,{once:true});if(signal?.aborted){abort();return;}
++  const {onStarted:unused,...payload}=message;postToPresence(payload,payload.audio?[payload.audio]:[]);
++ });
++ session=window.JJSpokenReply.create({
++  prepare:async(text,signal)=>{
++   await previousStop;if(!owns()||signal.aborted)throw new DOMException('Stopped','AbortError');
++   const response=await fetch('/v1/workspace/voice/audio',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text}),signal});
++   if(!response.ok){const data=await response.json().catch(()=>({}));throw new Error(data.detail||'The selected voice is unavailable.');}
++   return {blob:await response.blob(),provider:response.headers?.get('X-JJRVIS-Voice-Provider')||''};
++  },
++  play:async({blob,provider},{first,signal,onStarted:started})=>{
++   if(!owns()||signal.aborted)return;
++   const began=()=>{if(!owns())return;started();voiceState(`${selectedAssistantIdentity().name} speaking${provider==='local-kokoro'?' · British voice':''}`,true);wakePaused=false;wakeStarter?.();};
++   if(embedded){const audio=await blob.arrayBuffer();if(!owns()||signal.aborted)return;await waitForAvatar({type:'jjrvis-audio',requestId,sequence:sequence++,audio,first,final:false,onStarted:began},signal);return;}
++   const url=URL.createObjectURL(blob),audio=new Audio(url);cloudAudio=audio;audio.volume=window.JJSettings?.preferences().volume??0.85;
++   if(window.jjAudioSink&&audio.setSinkId){try{await audio.setSinkId(window.jjAudioSink);}catch{window.jjAudioSink='';}}
++   await new Promise((resolve,reject)=>{let settled=false;const finish=error=>{if(settled)return;settled=true;signal.removeEventListener('abort',abort);URL.revokeObjectURL(url);if(cloudAudio===audio)cloudAudio=null;error?reject(error):resolve();};const abort=()=>{audio.pause();finish(new DOMException('Stopped','AbortError'));};audio.onended=()=>finish();audio.onerror=()=>finish(new Error('Audio playback failed.'));signal.addEventListener('abort',abort,{once:true});if(signal.aborted){abort();return;}Promise.resolve(audio.play()).then(began).catch(finish);});
++  },
++  finish:async()=>{if(owns()&&embedded)await waitForAvatar({type:'jjrvis-audio-end',requestId},session.signal,true);},
++  onFirst:()=>{onStarted?.();},
++  onDone:()=>{if(!owns())return;presenceSpeech=null;activeUtterance=null;streamingSpeech=null;speechEchoUntil=Date.now()+800;wakeArmedUntil=Date.now()+45000;voiceState('Listening for your next question…');resumeWake();},
++  onError:error=>{if(!owns())return;postToPresence({type:'jjrvis-stop'});presenceSpeech=null;activeUtterance=null;streamingSpeech=null;voiceState(error.message||'Voice unavailable. Tap Read reply to retry.');resumeWake();}
++ });
++ streamingSpeech=session;voiceState(`Preparing ${selectedAssistantIdentity().name}’s first phrase…`,true);return session;
++}
++function speak(text,onStarted){if(!String(text||'').trim()){voiceState('There is no answer to read yet.');return false;}const session=startSpokenReply(onStarted);session.update(text,true);return true;}
++
+ async function junomo(version){
+@@ -647,3 +635,3 @@
+ async function render(){document.body.classList.toggle('orbital-view',current==='overview');const version=++renderVersion;if(current!=='overview')restoreAssistant();$('#section-label').textContent=current.toUpperCase();$('#page-title').textContent=titles[current];document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('active',b.dataset.view===current));try{if(current==='overview'){overview();mountSetupGuide();}if(current==='communications')communications();if(current==='junomo')await junomo(version);if(current==='trading')await trading(version);if(current==='rooms')roomStudio();if(current==='home')await house(version);if(current==='music')await music(version);if(current==='news'){content.innerHTML='<section class="panel news-workspace"><div class="section-heading"><div><p class="eyebrow">JJRVIS / INTELLIGENCE</p><h2>News &amp; live television</h2><p>World affairs, business and the stories shaping your day.</p></div></div><div id="news-workspace-media"></div></section>';window.mountMarketMedia($('#news-workspace-media'));}if(current==='research')research();if(current==='plan')await planView(version);if(current==='jarvis')jarvis();if(current==='library')await library(version);if(current==='connections')connections();wireReports();document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>navigate(b.dataset.go));}catch(e){notify(e.message);}}
+-function navigate(view){clearTimeout(marketRefreshTimer);marketRefreshTimer=null;stopVoice();voiceReplyRequested=false;if(current==='communications' && $('#body'))for(const id of ['channel','direction','address','subject','body','reply-instructions'])workingDraft[id]=$('#'+id).value;current=view;pageOffset=0;pageQuery=arguments[1]||'';notify();render();}
++function navigate(view){if(window.JJCompanion?.state().mode!=='workspace'||document.body.dataset.companionHidden==='true')window.JJCompanion?.exit();clearTimeout(marketRefreshTimer);marketRefreshTimer=null;stopVoice();voiceReplyRequested=false;if(current==='communications' && $('#body'))for(const id of ['channel','direction','address','subject','body','reply-instructions'])workingDraft[id]=$('#'+id).value;current=view;pageOffset=0;pageQuery=arguments[1]||'';notify();render();}
+ document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>navigate(b.dataset.view));
+@@ -677,2 +665,5 @@
+ $('#pair-phone').onclick=createPhoneLink;
++function openConnections(section='internet'){if(stopped){notify('Connect this browser first.');return;}window.JJAppleSetup?.open({api,pair:createPhoneLink,settings:openSettings,openAccount:id=>{pendingNativeSearch={source:'cloud:'+id,query:''};navigate('communications');}},section);}
++$('#access-centre').onclick=()=>openConnections();
++window.addEventListener('jjrvis-open-connections',event=>openConnections(event.detail?.section||'internet'));
+ const workspaceMenu=$('#workspace-menu');
+@@ -707,7 +698,7 @@
+ const assistantTools=document.createElement('div');assistantTools.className='assistant-panel-tools';
+-const expandAssistant=document.createElement('button');expandAssistant.type='button';expandAssistant.className='assistant-expand';expandAssistant.textContent='⤢';expandAssistant.title='Expand conversation';expandAssistant.setAttribute('aria-label','Expand conversation');expandAssistant.setAttribute('aria-expanded','false');
+-const setAssistantExpanded=expanded=>{assistantDock.classList.toggle('assistant-expanded',expanded);expandAssistant.setAttribute('aria-expanded',String(expanded));expandAssistant.textContent=expanded?'⤡':'⤢';expandAssistant.title=expanded?'Compact conversation':'Expand conversation';expandAssistant.setAttribute('aria-label',expandAssistant.title);};
++const expandAssistant=document.createElement('button');expandAssistant.type='button';expandAssistant.className='assistant-expand';expandAssistant.textContent='Expand';expandAssistant.title='Expand conversation';expandAssistant.setAttribute('aria-label','Expand conversation');expandAssistant.setAttribute('aria-expanded','false');
++const setAssistantExpanded=expanded=>{assistantDock.classList.toggle('assistant-expanded',expanded);expandAssistant.setAttribute('aria-expanded',String(expanded));expandAssistant.textContent=expanded?'Compact':'Expand';expandAssistant.title=expanded?'Compact conversation':'Expand conversation';expandAssistant.setAttribute('aria-label',expandAssistant.title);};
+ expandAssistant.onclick=()=>setAssistantExpanded(!assistantDock.classList.contains('assistant-expanded'));
+ const hideAssistant=()=>{assistantDock.classList.remove('assistant-overlay');setAssistantExpanded(false);assistantLaunch.querySelector('[data-open-assistant]').setAttribute('aria-expanded','false');assistantLaunch.querySelector('[data-open-assistant]').focus();};
+-const closeAssistant=document.createElement('button');closeAssistant.type='button';closeAssistant.className='assistant-close';closeAssistant.textContent='−';closeAssistant.title='Minimise conversation';closeAssistant.setAttribute('aria-label','Minimise conversation');closeAssistant.onclick=hideAssistant;
++const closeAssistant=document.createElement('button');closeAssistant.type='button';closeAssistant.className='assistant-close';closeAssistant.textContent='Close';closeAssistant.title='Minimise conversation';closeAssistant.setAttribute('aria-label','Minimise conversation');closeAssistant.onclick=hideAssistant;
+ assistantTools.append(expandAssistant,closeAssistant);assistantDock.querySelector('.assistant-intro').append(assistantTools);
+@@ -715,2 +706,4 @@
+ const showAssistant=()=>{if(stopped||!assistantDock){notify('Connect this browser first using the sign-in panel.');$('#connect-web-link')?.focus();return false;}assistantDock.classList.add('assistant-overlay');assistantLaunch.querySelector('[data-open-assistant]').setAttribute('aria-expanded','true');return true;};
++window.JJCompanion?.configure({showAssistant:()=>{if(!showAssistant())return false;if(document.documentElement.dataset.presenceMode==='jarvis')window.JJSettings?.setPresence('moneypenny');return true;},navigate,postToPresence,stopSpeaking:muteReply,connections:()=>openConnections()});
++$('#open-companion').onclick=()=>window.JJCompanion?.enter();
+ assistantLaunch.querySelector('[data-open-assistant]').onclick=()=>{if(assistantDock.classList.contains('assistant-overlay'))hideAssistant();else if(showAssistant())$('#assistant-input').focus();};
+@@ -718,14 +711,19 @@
+ window.addEventListener('message',event=>{
+- if(!['http://127.0.0.1:8090','http://localhost:8090'].includes(event.origin))return;
+- const frame=document.querySelector('#moneypenny-presence');if(!frame||event.source!==frame.contentWindow)return;
+- const state=document.querySelector('[data-presence-state]');
+- if(event.data?.type==='moneypenny-presence-ready'&&state){state.textContent='3D READY';state.dataset.state='ready';}
+- if(event.data?.type==='moneypenny-presence-error'){
+-  if(!event.data.requestId){if(state){state.textContent='3D UNAVAILABLE';state.dataset.state='unavailable';}}
+-  else if(event.data.requestId===presenceSpeech?.requestId){presenceSpeech=null;activeUtterance=null;if(state)state.textContent='3D READY';voiceState('Moneypenny’s voice could not finish. Try Read reply.');resumeWake();}
+- }
+- if(event.data?.type==='moneypenny-presence-speaking'&&event.data.requestId===presenceSpeech?.requestId){if(state)state.textContent='SPEAKING';voiceState('Moneypenny speaking · live 3D voice',true);presenceSpeech?.onStarted?.();wakePaused=false;wakeStarter?.();}
+- if(event.data?.type==='moneypenny-presence-idle'&&event.data.requestId===presenceSpeech?.requestId){presenceSpeech=null;activeUtterance=null;if(state)state.textContent='3D READY';speechEchoUntil=Date.now()+1200;wakeArmedUntil=Date.now()+45000;voiceState('Listening for your next question…');resumeWake();}
++ const frame=document.querySelector('#moneypenny-presence');if(!frame||event.source!==frame.contentWindow||event.origin!==presenceOrigin())return;
++ const state=document.querySelector('[data-presence-state]'),data=event.data||{};
++ if(data.type==='moneypenny-presence-activate'){window.JJCompanion?.enter();return;}
++ if(data.type==='moneypenny-presence-ready'&&state){state.textContent='3D READY';state.dataset.state='ready';}
++ if(data.type==='moneypenny-presence-error'){
++  if(!data.requestId){if(state){state.textContent='3D UNAVAILABLE';state.dataset.state='unavailable';}}
++  else if(data.requestId===presenceSpeech?.requestId){presenceSpeech.segment?.done(new Error('Moneypenny could not play this phrase.'));}
++ }
++ if(data.requestId!==presenceSpeech?.requestId)return;
++ if(data.type==='moneypenny-presence-speaking'&&data.sequence===presenceSpeech?.segment?.sequence){if(state)state.textContent='SPEAKING';presenceSpeech.onStarted?.();}
++ if(data.type==='moneypenny-presence-idle'){
++  const segment=presenceSpeech?.segment;
++  if(segment&&(segment.end?data.final===true:data.final===false&&data.sequence===segment.sequence)){segment.done();if(state)state.textContent='3D READY';}
++ }
+ });
+-document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!document.querySelector('dialog[open]')&&assistantDock.classList.contains('assistant-overlay'))hideAssistant();});
++
++document.addEventListener('keydown',e=>{if(!e.defaultPrevented&&e.key==='Escape'&&!document.querySelector('dialog[open]')&&assistantDock.classList.contains('assistant-overlay'))hideAssistant();});
+ const brand=document.querySelector('.brand');brand.onclick=()=>stopped?showAssistant():navigate('overview');brand.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();brand.click();}};
+@@ -758,3 +756,3 @@
+  // A previous permission grant can resume quietly. New permission and browser
+- // audio activation are requested only from a real interaction with the page.
++ // audio activation are requested only by the explicit Enable microphone button.
+  wakePaused=true;
+@@ -769,8 +767,8 @@
+   try{
++   localAudioContext ||= new AudioContext({sampleRate:16000});
++   const resuming=localAudioContext.resume();resuming.catch(()=>{});let activationTimer;
+    if(!wakeMicStream)wakeMicStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}});
+    if(stopped||!wakeEnabled){closeWakeMicrophone();return;}
+-   localAudioContext ||= new AudioContext({sampleRate:16000});
+-   const resuming=localAudioContext.resume();let activationTimer;
+    try{await Promise.race([resuming,new Promise(resolve=>{activationTimer=setTimeout(resolve,400);})]);}finally{clearTimeout(activationTimer);}
+-   if(localAudioContext.state==='suspended'){resuming.catch(()=>{});offer('Voice is ready. Tap the microphone or use the workspace to enable sound.');return;}
++   if(localAudioContext.state==='suspended'){resuming.catch(()=>{});offer('Voice is ready. Tap Enable microphone to enable sound.');return;}
+    if(stopped||!wakeEnabled){closeWakeMicrophone();return;}
+@@ -789,5 +787,4 @@
+   if(!event.isTrusted||(event.type==='keydown'&&!['Enter',' '].includes(event.key)))return;
+-  if(event.target.closest?.('#assistant-stop,#signout')){disarm();enable.hidden=true;return;}
+-  if(event.target.closest?.('#assistant-wake,#assistant-dictate,#assistant-speak,#assistant-form,[data-interrupt-assistant]')){disarm();enable.hidden=true;return;}
+-  disarm();start();
++  // Stop may dismiss the invitation; unrelated interaction never requests access.
++  if(event.target.closest?.('#assistant-stop,#signout')){disarm();enable.hidden=true;}
+  }
+@@ -799,6 +796,6 @@
+  else if(permission==='denied'){enable.hidden=false;voiceState('Microphone access is blocked. Allow it in your browser’s site settings, then tap Enable microphone.');}
+- else offer('Voice is ready. Your browser will ask for microphone access when you use the workspace.');
+-}
+-
+-async function streamAssistantAnswer(body,{signal,onDelta}={}){
++ else offer('Voice is ready. Tap Enable microphone when you want your browser to ask for access.');
++}
++
++async function streamAssistantAnswer(body,{signal,onDelta,onStatus}={}){
+  const epoch=sessionEpoch;
+@@ -815,2 +812,3 @@
+   if(event.type==='error')throw new Error(event.detail||'The reply could not be completed.');
++  if(event.type==='status')onStatus?.(event);
+   if(event.type==='delta'&&typeof event.text==='string')onDelta?.(event.text,event);
+@@ -839,3 +837,4 @@
+  const form=$('#assistant-form');if(!form)return;
+- form.onsubmit=async e=>{e.preventDefault();const input=$('#assistant-input'),question=input.value.trim();if(!question||!showAssistant())return;const requestId=++assistantRequest,shouldSpeak=voiceReplyRequested;voiceReplyRequested=false;assistantController?.abort();$('#assistant-answer').removeAttribute('aria-busy');$('#assistant-speak').disabled=false;stopVoice();
++ const spokenToggle=$('#spoken-replies');if(spokenToggle){spokenToggle.checked=localStorage.getItem('jjrvis-spoken-replies')==='true';spokenToggle.onchange=()=>{localStorage.setItem('jjrvis-spoken-replies',String(spokenToggle.checked));if(!spokenToggle.checked)muteReply();};}
++ form.onsubmit=async e=>{e.preventDefault();const input=$('#assistant-input'),question=input.value.trim();if(!question||!showAssistant())return;const requestId=++assistantRequest,shouldSpeak=voiceReplyRequested||$('#spoken-replies')?.checked===true;voiceReplyRequested=false;assistantController?.abort();$('#assistant-answer').removeAttribute('aria-busy');$('#assistant-speak').disabled=false;stopVoice();
+  if(/^(?:open|show|change|go to)(?: my| the)? (settings|preferences|voice settings|appearance|passwords|accounts)$/i.test(question)){openSettings(/voice/i.test(question)?'voice':/accounts|passwords/i.test(question)?'accounts':'appearance');input.value='';completeAssistantCommand('Opened your settings.',shouldSpeak);return;}
+@@ -858,14 +857,15 @@
+  const target=destinations.find(([pattern])=>pattern.test(question));if(target){navigate(target[1]);input.value='';completeAssistantCommand('Opened '+titles[target[1]],shouldSpeak);return;}
+- const submit=$('#assistant-submit'),usesWeb=/\b(?:latest|today|news|weather|price|search|online|web)\b/i.test(question)&&!(/inbox|emails|unread/i.test(question)&&!/search the web|search online|news|weather|market price/i.test(question));submit.disabled=true;submit.textContent='Thinking…';engineState(usesWeb?'WEB SEARCH':'WORKING',usesWeb?'web':'working');voiceState(usesWeb?'Searching public web…':'Preparing your local answer…');assistantController?.abort();assistantController=new AbortController();const requestController=assistantController;const requestTimeout=setTimeout(()=>requestController.abort(),35000),requestStarted=Date.now();$('#assistant-answer').textContent='Preparing your answer…';const progressTimer=setInterval(()=>{if(requestId===assistantRequest&&!requestController.signal.aborted)voiceState((usesWeb?'Checking current sources':'Preparing your answer')+' · '+Math.floor((Date.now()-requestStarted)/1000)+'s');},4000);
++ const submit=$('#assistant-submit'),usesWeb=/\b(?:latest|today|news|weather|price|search|online|web)\b/i.test(question)&&!(/inbox|emails|unread/i.test(question)&&!/search the web|search online|news|weather|market price/i.test(question));submit.disabled=true;submit.textContent='Thinking…';engineState(usesWeb?'WEB SEARCH':'WORKING',usesWeb?'web':'working');voiceState(usesWeb?'Searching public web…':'Preparing your local answer…');assistantController?.abort();assistantController=new AbortController();const requestController=assistantController;const requestTimeout=setTimeout(()=>requestController.abort(),35000),requestStarted=Date.now();$('#assistant-answer').textContent='Preparing your answer…';for(const key of ['firstTextMs','firstVoiceMs','completeMs'])delete $('#assistant-answer').dataset[key];const progressTimer=setInterval(()=>{if(requestId===assistantRequest&&!requestController.signal.aborted&&!streamingSpeech?.started)voiceState((usesWeb?'Checking current sources':'Preparing your answer')+' · '+Math.floor((Date.now()-requestStarted)/1000)+'s');},4000);
+  try{
+-  const answer=$('#assistant-answer'),draft=document.createElement('p');let receivedText=false;
++  const answer=$('#assistant-answer'),draft=document.createElement('p');let receivedText=false,spoken=null,allowEarlyVoice=false;
+   answer.setAttribute('aria-busy','true');$('#assistant-speak').disabled=true;
+-  const d=await streamAssistantAnswer({question,history:assistantHistory.slice(-8),file_id:assistantFile,device_id:deviceIdentity().device_id},{signal:requestController.signal,onDelta:(part,event)=>{
++  const d=await streamAssistantAnswer({question,history:assistantHistory.slice(-8),file_id:assistantFile,device_id:deviceIdentity().device_id},{signal:requestController.signal,onStatus:event=>{if(shouldSpeak&&mutedSpeechRequest!==requestId&&event.voice_stream_allowed===true)allowEarlyVoice=true;},onDelta:(part,event)=>{
+    if(stopped||requestId!==assistantRequest)return;
+    const following=answer.scrollHeight-answer.scrollTop-answer.clientHeight<70;
+-   if(event.type==='reset'){draft.textContent='';receivedText=false;return;}
+-   if(!receivedText){answer.replaceChildren(draft);receivedText=true;submit.textContent='Replying…';voiceState('Writing your reply…');}
+-   draft.textContent+=part;if(following)answer.scrollTop=answer.scrollHeight;
++   if(event.type==='reset'){if(spoken)stopVoice();spoken=null;allowEarlyVoice=false;draft.textContent='';receivedText=false;return;}
++   if(!receivedText){answer.dataset.firstTextMs=String(Date.now()-requestStarted);answer.replaceChildren(draft);receivedText=true;submit.textContent='Replying…';voiceState('Writing your reply…');}
++   draft.textContent+=part;if(allowEarlyVoice&&mutedSpeechRequest!==requestId){spoken=spoken||startSpokenReply(()=>{answer.dataset.firstVoiceMs=String(Date.now()-requestStarted);});spoken.update(draft.textContent);}if(following)answer.scrollTop=answer.scrollHeight;
+   }});
+   if(stopped||requestId!==assistantRequest)return;
++  answer.dataset.completeMs=String(Date.now()-requestStarted);
+   assistantHistory.push({role:'user',content:question.slice(0,2000)},{role:'assistant',content:d.answer.slice(0,2000)});assistantHistory=assistantHistory.slice(-8);input.value='';
+@@ -873,5 +873,6 @@
+   if(d.web_results?.length){window.dispatchEvent(new CustomEvent('jjrvis-search-results',{detail:{answer:d.answer,results:d.web_results}}));const results=document.createElement('div');results.className='web-results';const heading=document.createElement('strong');heading.textContent='Sources and options';results.append(heading);for(const item of d.web_results.slice(0,5)){const link=document.createElement('a');link.href=item.url;link.target='_blank';link.rel='noopener noreferrer';const title=document.createElement('b');title.textContent=item.title;const snippet=document.createElement('span');snippet.textContent=item.snippet||new URL(item.url).hostname;link.append(title,snippet);results.append(link);}answer.append(results);}
++  if(d.mode==='live_web_unavailable'){const link=document.createElement('a');link.className='web-search-handoff secondary';link.href='https://duckduckgo.com/?q='+encodeURIComponent(String(d.web_query||question).slice(0,300));link.target='_blank';link.rel='noopener noreferrer';link.textContent='Open search in your browser ↗';answer.append(link);}
+   const sources=document.createElement('div');sources.className='assistant-sources actions';for(const source of d.sources||[]){const b=document.createElement('button');b.className='secondary';b.textContent=source.title;if(source.report_id)b.dataset.report=source.report_id;else b.onclick=()=>navigate(source.view);sources.append(b);}answer.append(sources);
+-  const meta=document.createElement('small');meta.textContent=(d.web_results?.length?'Web-grounded answer · Sources and options shown above':d.sources?.length?'Answer · Sources shown above':'Assistant answer')+' · '+date(d.checked_at);answer.append(meta);wireReports();if(shouldSpeak)speak(d.answer);else{voiceState('Voice ready');resumeWake();}
+- }catch(error){if(requestId===assistantRequest){$('#assistant-answer').textContent=error.name==='AbortError'?'The reply was stopped. Your question is still here.':error.message;voiceState('Voice ready');resumeWake();}}
++  const meta=document.createElement('small');meta.textContent=(d.web_results?.length?'Web-grounded answer · Sources and options shown above':d.sources?.length?'Answer · Sources shown above':'Assistant answer')+' · '+date(d.checked_at);answer.append(meta);wireReports();if(shouldSpeak&&mutedSpeechRequest!==requestId){if(spoken){if(d.answer.trim()===draft.textContent.trim())spoken.update(draft.textContent,true);else{stopVoice();voiceState('The answer was updated. Tap Read reply to hear the final version.');}}else speak(d.answer,()=>{answer.dataset.firstVoiceMs=String(Date.now()-requestStarted);});}else{voiceState('Voice ready');resumeWake();}
++ }catch(error){if(requestId===assistantRequest){if(streamingSpeech)stopVoice();$('#assistant-answer').textContent=error.name==='AbortError'?'The reply was stopped. Your question is still here.':error.message;voiceState('Voice ready');resumeWake();}}
+  finally{clearTimeout(requestTimeout);clearInterval(progressTimer);if(requestId===assistantRequest){$('#assistant-answer').removeAttribute('aria-busy');$('#assistant-speak').disabled=false;assistantFile=null;submit.disabled=false;submit.textContent='Ask';checkAssistantEngine();}}
+diff --git a/workspace.css b/workspace.css
+--- a/workspace.css
++++ b/workspace.css
+@@ -585 +585,8 @@
+ .precision-letter-0,.precision-letter-1{animation-delay:.25s}.precision-letter-2{animation-delay:1.35s}.precision-letter-3{animation-delay:1.73s}.precision-letter-4{animation-delay:2.11s}.precision-letter-5{animation-delay:2.49s}.room-plan-svg{width:100%;max-height:400px}
++
++/* A single, explicit choice for automatically reading typed replies. */
++body .assistant-voice .spoken-replies-toggle{display:flex;align-items:center;gap:6px;margin:0;font:12px/1.3 system-ui;letter-spacing:0;text-transform:none;min-height:32px;white-space:nowrap}
++body .assistant-voice .spoken-replies-toggle input{width:15px;height:15px;min-height:0;margin:0;accent-color:var(--accent,#226e92)}
++
++body[data-hud-theme] .assistant-panel-tools button{font:600 11px/1.2 system-ui!important;min-width:46px;min-height:30px;padding:6px 8px!important;color:#254657!important;background:#e8f3f8!important;border:1px solid #b8cfdc!important;letter-spacing:0!important;clip-path:none!important}
++body[data-hud-theme] .assistant-panel-tools .assistant-expand{font-size:11px!important}
+diff --git a/workspace.html b/workspace.html
+--- a/workspace.html
++++ b/workspace.html
+@@ -1,3 +1,3 @@
+ <!doctype html>
+-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="color-scheme" content="dark"><meta name="theme-color" content="#08111f"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="JJRVIS"><meta name="application-name" content="JJRVIS"><meta name="format-detection" content="telephone=no"><title>JJRVIS · James’s command centre</title><link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" sizes="180x180" href="/assets/app-icon-180.png"><link rel="icon" type="image/png" sizes="192x192" href="/assets/app-icon-192.png"><link rel="stylesheet" href="/workspace.css"><link rel="stylesheet" href="/chart-station.css"><link rel="stylesheet" href="/communications-view.css"><link rel="stylesheet" href="/workspace/mail-accounts.css"><link rel="stylesheet" href="/settings-panel.css"><link rel="stylesheet" href="/music-controller.css"><script src="/market-media.js" defer></script><script src="/chart-tools.js" defer></script><script src="/calling-panel.js" defer></script><script src="/communications-view.js" defer></script><script src="/workspace/mail-accounts.js" defer></script><script src="/inbox-panel.js" defer></script><script src="/concierge.js" defer></script><script src="/settings-panel.js" defer></script><script src="/music-controller.js" defer></script><link rel="stylesheet" href="/lifestyle.css"><script src="/lifestyle.js" defer></script><script src="./workspace.js" defer></script></head>
++<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="color-scheme" content="dark"><meta name="theme-color" content="#08111f"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="JJRVIS"><meta name="application-name" content="JJRVIS"><meta name="format-detection" content="telephone=no"><title>JJRVIS · James’s command centre</title><link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" sizes="180x180" href="/assets/app-icon-180.png"><link rel="icon" type="image/png" sizes="192x192" href="/assets/app-icon-192.png"><link rel="stylesheet" href="/workspace.css"><link rel="stylesheet" href="/chart-station.css"><link rel="stylesheet" href="/communications-view.css"><link rel="stylesheet" href="/workspace/mail-accounts.css"><link rel="stylesheet" href="/settings-panel.css"><link rel="stylesheet" href="/music-controller.css"><script src="/market-media.js" defer></script><script src="/chart-tools.js" defer></script><script src="/calling-panel.js" defer></script><script src="/communications-view.js" defer></script><script src="/workspace/mail-accounts.js" defer></script><script src="/inbox-panel.js" defer></script><script src="/concierge.js" defer></script><script src="/settings-panel.js" defer></script><script src="/music-controller.js" defer></script><link rel="stylesheet" href="/lifestyle.css"><script src="/lifestyle.js" defer></script><link rel="stylesheet" href="/apple-setup.css"><link rel="stylesheet" href="/companion.css"><link rel="stylesheet" href="/globe-surface.css"><script src="/globe-surface.js" defer></script><script src="/spoken-reply.js" defer></script><script src="/apple-setup.js" defer></script><script src="/companion.js" defer></script><script src="/workspace.js" defer></script></head>
+ <body>
+@@ -19,3 +19,3 @@
+ </nav><div class="aside-foot"><span class="local-mark" aria-hidden="true">⌂</span> ON YOUR MAC<p>Your projects. Your information.<br>One place to bring them together.</p><small class="founder-footer">Created by James Johnston</small><p><a href="/brand-lab">Brand studio ↗</a></p></div></aside>
+-<main><header><div><p class="eyebrow">JJRVIS / <span id="section-label">OVERVIEW</span></p><h1 id="page-title">Your command centre.</h1></div><div class="header-right"><span id="broker-state" class="badge">Connecting</span><details id="workspace-menu" class="workspace-menu"><summary aria-controls="workspace-menu-actions">Workspace <span aria-hidden="true">⋯</span></summary><div id="workspace-menu-actions" class="workspace-menu-actions"><button id="open-settings" class="secondary" type="button" aria-haspopup="dialog">⚙ Settings</button><button id="pair-phone" class="secondary" type="button" aria-haspopup="dialog">Pair device</button><button id="install-app" class="secondary" type="button" hidden>Install app</button><button id="open-web" class="secondary" type="button">Open web app</button><button id="refresh" class="secondary" type="button">Refresh workspace</button><button id="signout" class="quiet" type="button">Lock workspace</button></div></details></div></header>
++<main><header><div><p class="eyebrow">JJRVIS / <span id="section-label">OVERVIEW</span></p><h1 id="page-title">Your command centre.</h1></div><div class="header-right"><span id="broker-state" class="badge">Connecting</span><details id="workspace-menu" class="workspace-menu"><summary aria-controls="workspace-menu-actions">Workspace <span aria-hidden="true">⋯</span></summary><div id="workspace-menu-actions" class="workspace-menu-actions"><button id="open-settings" class="secondary" type="button" aria-haspopup="dialog">⚙ Settings</button><button id="access-centre" class="secondary" type="button" aria-haspopup="dialog">Connections & access</button><button id="open-companion" class="secondary" type="button">Companion view</button><button id="pair-phone" class="secondary" type="button" aria-haspopup="dialog">Pair device</button><button id="install-app" class="secondary" type="button" hidden>Install app</button><button id="open-web" class="secondary" type="button">Open web app</button><button id="refresh" class="secondary" type="button">Refresh workspace</button><button id="signout" class="quiet" type="button">Lock workspace</button></div></details></div></header>
+ <div id="notice" role="status" hidden></div>
+@@ -24,3 +24,3 @@
+ <section id="login" hidden class="panel narrow"><h2>Connect this browser to JJRVIS</h2><p id="login-health" role="status">Checking the local service…</p><p><a id="connect-web-link" class="secondary" href="http://127.0.0.1:8766/workspace/local-connect">Connect through this Mac ↗</a></p><p>Your private session has ended. <strong>On this Mac:</strong> choose <strong>Connect through this Mac</strong>. <strong>On a phone:</strong> choose <strong>Pair device</strong> in your signed-in Mac workspace and scan the code. Return using the same browser and website address to stay signed in. Private browsing and other browsers use separate sessions.</p><p>Opening JJRVIS does not enable trading or send messages. Each connection shows its own status after sign-in.</p><details><summary>Advanced: pair another browser</summary><form id="pair-form"><label>Pairing key<input id="pair-token" type="password" required autocomplete="off"></label><button>Open workspace</button></form></details></section>
+-<section class="assistant-dock" aria-labelledby="assistant-heading"><div class="assistant-intro"><span class="assistant-orbit" aria-hidden="true"><i></i><b>JJ</b></span><div><p class="assistant-kicker">COMMAND INTERFACE</p><h2 id="assistant-heading">Speak to JJRVIS</h2><p>Ask, dictate, search or open your work.</p></div><span class="assistant-online" id="assistant-engine">CHECKING</span></div><form id="assistant-form"><label class="sr-only" for="assistant-input">Your question for JJRVIS</label><textarea id="assistant-input" rows="2" maxlength="2000" placeholder="What do you need, James?" required></textarea><button id="assistant-submit" type="submit">Run <span aria-hidden="true">↗</span></button></form><div class="assistant-voice actions"><button id="assistant-wake" class="quiet" type="button" hidden>◎ Wake off</button><button id="assistant-dictate" class="quiet" type="button" hidden>🎙 Speak</button><button id="assistant-speak" class="quiet" type="button">◉ Read reply</button><button id="assistant-stop" class="quiet" type="button">■ Stop</button></div><p id="voice-status" class="voice-status" role="status" aria-live="polite">Voice ready</p><div id="assistant-answer" role="status" aria-live="polite" aria-atomic="false"></div></section>
++<section class="assistant-dock" aria-labelledby="assistant-heading"><div class="assistant-intro"><span class="assistant-orbit" aria-hidden="true"><i></i><b>JJ</b></span><div><p class="assistant-kicker">COMMAND INTERFACE</p><h2 id="assistant-heading">Speak to JJRVIS</h2><p>Ask, dictate, search or open your work.</p></div><span class="assistant-online" id="assistant-engine">CHECKING</span></div><form id="assistant-form"><label class="sr-only" for="assistant-input">Your question for JJRVIS</label><textarea id="assistant-input" rows="2" maxlength="2000" placeholder="What do you need, James?" required></textarea><button id="assistant-submit" type="submit">Run <span aria-hidden="true">↗</span></button></form><div class="assistant-voice actions"><label class="spoken-replies-toggle"><input type="checkbox" id="spoken-replies">Speak replies</label><button id="assistant-wake" class="quiet" type="button" hidden>◎ Wake off</button><button id="assistant-dictate" class="quiet" type="button" hidden>🎙 Speak</button><button id="assistant-speak" class="quiet" type="button">◉ Read reply</button><button id="assistant-stop" class="quiet" type="button">■ Stop</button></div><p id="voice-status" class="voice-status" role="status" aria-live="polite">Voice ready</p><div id="assistant-answer" role="status" aria-live="polite" aria-atomic="false"></div></section>
+ <div id="content" tabindex="-1" hidden></div>
+diff --git a/jarvis_comm_broker.py b/jarvis_comm_broker.py
+--- a/jarvis_comm_broker.py
++++ b/jarvis_comm_broker.py
+@@ -537,4 +537,5 @@
+         response.headers["X-Content-Type-Options"] = "nosniff"
+-        response.headers["X-Frame-Options"] = "DENY"
+-        response.headers["Permissions-Policy"] = 'camera=(), microphone=(self), geolocation=(self), payment=(), usb=()'
++        response.headers["X-Frame-Options"] = "SAMEORIGIN" if getattr(request.state, "presence_frame", False) else "DENY"
++        response.headers["Permissions-Policy"] = ('camera=(), microphone=(), geolocation=(), payment=(), usb=()'
++            if getattr(request.state, "presence_frame", False) else 'camera=(self), microphone=(self), geolocation=(self), payment=(), usb=()')
+         if request.url.scheme == "https":
+@@ -545,3 +546,3 @@
+         response.headers["Referrer-Policy"] = "strict-origin" if request.url.path == "/workspace/phone-connect" else "no-referrer"
+-        response.headers["Content-Security-Policy"] = "default-src 'self'; base-uri 'none'; object-src 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: https://ichef.bbci.co.uk https://e3.365dm.com https://i.guim.co.uk https://s.france24.com https://a57.foxnews.com https://static.foxnews.com; frame-src http://127.0.0.1:8090 http://localhost:8090 https://schwabnetwork.com https://www.tradingview-widget.com https://www.youtube-nocookie.com; connect-src 'self'; media-src 'self' blob:; frame-ancestors 'none'"
++        response.headers["Content-Security-Policy"] = getattr(request.state, "presence_csp", None) or "default-src 'self'; base-uri 'none'; object-src 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: https://ichef.bbci.co.uk https://e3.365dm.com https://i.guim.co.uk https://s.france24.com https://a57.foxnews.com https://static.foxnews.com; frame-src 'self' http://127.0.0.1:8090 http://localhost:8090 https://schwabnetwork.com https://www.tradingview-widget.com https://www.youtube-nocookie.com; connect-src 'self'; media-src 'self' blob:; frame-ancestors 'none'"
+         return response
+@@ -571,2 +572,7 @@
+     app.state.cloud_mail = cloud_mail_accounts.register_routes(app, secure, native, workspace.mail)
++    import presence_proxy
++    presence_proxy.register_routes(app, secure)
++    import apple_connections
++    apple_connections.register_routes(app, secure, settings, native, app.state.cloud_mail,
++        paired_count=lambda request: len(sessions.devices(request.cookies.get("jarvis_session", ""), time.time())))
+ 
+@@ -661,2 +667,34 @@
+         return FileResponse(HERE / "lifestyle.js", media_type="text/javascript")
++
++    @app.get("/globe-surface.js", include_in_schema=False)
++    async def globe_surface_js():
++        return FileResponse(HERE / "globe-surface.js", media_type="text/javascript")
++
++    @app.get("/globe-surface.css", include_in_schema=False)
++    async def globe_surface_css():
++        return FileResponse(HERE / "globe-surface.css", media_type="text/css")
++
++    @app.get("/globe-earth.jpg", include_in_schema=False)
++    async def globe_earth_jpg():
++        return FileResponse(HERE / "globe-earth.jpg", media_type="image/jpeg")
++
++    @app.get("/spoken-reply.js", include_in_schema=False)
++    async def spoken_reply_js():
++        return FileResponse(HERE / "spoken-reply.js", media_type="text/javascript")
++
++    @app.get("/companion.js", include_in_schema=False)
++    async def companion_js():
++        return FileResponse(HERE / "companion.js", media_type="text/javascript")
++
++    @app.get("/companion.css", include_in_schema=False)
++    async def companion_css():
++        return FileResponse(HERE / "companion.css", media_type="text/css")
++
++    @app.get("/apple-setup.js", include_in_schema=False)
++    async def apple_setup_js():
++        return FileResponse(HERE / "apple-setup.js", media_type="text/javascript")
++
++    @app.get("/apple-setup.css", include_in_schema=False)
++    async def apple_setup_css():
++        return FileResponse(HERE / "apple-setup.css", media_type="text/css")
+ 
+diff --git a/jjrvis_core.py b/jjrvis_core.py
+--- a/jjrvis_core.py
++++ b/jjrvis_core.py
+@@ -513,3 +513,5 @@
+                     'You are '+persona['name']+', James’s assistant inside JJRVIS. Your name is '+persona['name']+'. '
+-                    'Answer directly in concise British English, with warmth and quiet wit, normally under 90 words. '
++                    'Answer directly in concise British English, with warmth and quiet wit. '
++                    'Start with the useful answer, without a preamble. Keep the first sentence to about 6–10 words so speech can begin promptly. Normally use 25–45 words in two or three short, natural spoken sentences. '
++                    'Use more detail only when the user explicitly asks for it, within 180 words. '
+                     'Use general knowledge for ordinary conversation. Do not invent current facts, access, or completed actions. '
+@@ -520,2 +522,16 @@
+                 timeout = min(settings.model_timeout, 45)
++                # Early speech is reserved for neutral local chat: no source
++                # context, reviewed decisions, or provider switch can opt in.
++                sensitive_voice = re.compile(
++                    r'\b(?:emails?|mailboxes?|inbox|messages?|contacts?|clients?|calendar|appointments?|tasks?|files?|documents?|projects?|'
++                    r'home|house|devices?|accounts?|passwords?|credentials?|secret|token|private|personal|address|location|'
++                    r'trad(?:e|es|ing)|invest(?:ment|ments|ing)?|financ(?:e|es|ial)|shares?|stocks?|bonds?|pension|mortgage|tax|bank|money|portfolio|'
++                    r'interest|budgets?|debt|loans?|payments?|payroll|crypto(?:currency)?|bitcoin|ethereum|insurance|profits?|revenue|income|salary|savings?|pounds?|euros?|dollars?|' 
++                    r'medic(?:al|ine)|diagnos(?:e|is)|prescri(?:be|ption)|symptoms?|legal|lawyer|solicitor|lawsuit|'
++                    r'today|tomorrow|latest|current|live|search|news|weather|forecast)\b|[£$€]', re.I)
++                review_text = question + ' ' + ' '.join(str(item.get('content','')) for item in list(history)[-8:])
++                chosen = cloud_ai.answer_preference()['model']
++                local_answer = chosen == 'local-moneypenny' or chosen.startswith('ollama:') or not cloud_ai.enabled()
++                if emit is not None and local_answer and not sensitive_voice.search(review_text) and redact(review_text) == review_text:
++                    emit({'type':'status','text':'Replying','voice_stream_allowed':True,'provisional':True})
+                 try:
+@@ -526,5 +542,7 @@
+                         response.raise_for_status(); payload=response.json()
+-                        if not payload.get('done') or payload.get('done_reason') == 'length':
++                        if not payload.get('done'):
+                             raise ValueError('Incomplete model answer')
+                         value=json.loads(payload['message']['content'])
++                    if not isinstance(value,dict) or set(value) != {'answer'}:
++                        raise ValueError('Invalid conversational schema')
+                     answer=value['answer']
+@@ -535,3 +553,4 @@
+                             'mode':'local_conversation','actions_executed':False}
+-                except (TimeoutError,httpx.HTTPError,ValueError,KeyError,TypeError):
++                except (TimeoutError,httpx.HTTPError,ValueError,KeyError,TypeError) as error:
++                    LOGGER.warning('Conversation rejected category=%s elapsed_seconds=%.1f', type(error).__name__, time.monotonic()-started)
+                     raise HTTPException(503, 'The answer could not finish. Please retry; your workspace remains available.')
+@@ -767,2 +786,3 @@
+                         pass
++                web_lookup_issue = None
+                 try:
+@@ -772,3 +792,5 @@
+                         result.raise_for_status()
+-                    pairs = re.findall(r'class="result__a"\s+href="([^"]+)"[^>]*>(.*?)</a>.*?class="result__snippet"[^>]*>(.*?)</a>', result.text, re.S)[:5]
++                        if result.status_code == 202 and any(marker in result.text.casefold() for marker in ('anomaly-modal','anomaly.js','captcha')):
++                            web_lookup_issue = 'browser_verification_needed'
++                    pairs = [] if web_lookup_issue else re.findall(r'class="result__a"\s+href="([^"]+)"[^>]*>(.*?)</a>.*?class="result__snippet"[^>]*>(.*?)</a>', result.text, re.S)[:5]
+                     items=[]
+@@ -790,5 +812,8 @@
+             if explicit_search and not web_results:
+-                return {'answer': 'The web lookup did not return usable sources, so I cannot provide verified links for that search. Please retry in a moment.',
++                return {'answer': ('The search provider asked for browser verification. Open the search in your browser to continue; I have not verified any results for this query.'
++                                   if web_lookup_issue == 'browser_verification_needed' else
++                                   'The web lookup did not return usable sources, so I cannot provide verified links for that search. Please retry in a moment.'),
+                         'sources': [{k:v for k,v in source.items() if k!='text'} for source in sources if source['title']=='Current web search'],
+-                        'web_results': [], 'model': 'direct-web-results', 'checked_at': now(),
++                        'web_results': [], 'web_state': web_lookup_issue or 'unavailable', 'web_query': query,
++                        'model': 'direct-web-results', 'checked_at': now(),
+                         'mode': 'live_web_unavailable', 'actions_executed': False}
+diff --git a/tests/test_answer_stream.py b/tests/test_answer_stream.py
+--- a/tests/test_answer_stream.py
++++ b/tests/test_answer_stream.py
+@@ -127,3 +127,5 @@
+     assert not task.done()
+-    assert emitted == [{'type': 'delta', 'text': 'Hello ', 'provisional': True}]
++    assert emitted == [
++        {'type':'status','text':'Replying','voice_stream_allowed':True,'provisional':True},
++        {'type': 'delta', 'text': 'Hello ', 'provisional': True}]
+     release.set()
+@@ -132,3 +134,3 @@
+     assert result['mode'] == 'local_conversation'
+-    assert ''.join(item['text'] for item in emitted) == result['answer']
++    assert ''.join(item['text'] for item in emitted if item['type']=='delta') == result['answer']
+ 
+@@ -234 +236,53 @@
+     assert await ordinary(broker.AssistantQuestion(question='New question'), Request()) == {'answer': 'A new answer'}
++
++
++@pytest.mark.anyio
++@pytest.mark.parametrize('question,history', [
++    ('Explain compound interest simply.', []),
++    ('Tell a short joke about a penguin.', [{'role':'user','content':'My private inbox has a bank statement.'}]),
++    ('Tell a short joke about a penguin.', [{'role':'user','content':'The fixture password=DO_NOT_READ_ALOUD is private.'}]),
++])
++async def test_sensitive_conversation_never_opts_into_early_speech(core, monkeypatch, question, history):
++    async def streaming(*args, **kwargs):
++        yield {'text':'{"answer":"A concise reply."}', 'done':True, 'done_reason':'stop'}
++    monkeypatch.setattr(cloud_ai, 'chat_stream', streaming)
++    events=[]
++    result=await core.ask(question, broker.Settings(token=TOKEN), history=history, emit=events.append)
++    assert result['mode']=='local_conversation'
++    assert not any(event.get('voice_stream_allowed') for event in events)
++
++
++@pytest.mark.anyio
++async def test_cloud_conversation_does_not_opt_into_early_local_speech(core, monkeypatch):
++    monkeypatch.setattr(cloud_ai.voice_profiles, 'selected', lambda: {'model':'gpt-4.1-mini','profile':'moneypenny','speed':1.0})
++    monkeypatch.setenv('JJRVIS_CLOUD_AI','1')
++    async def streaming(*args, **kwargs):
++        yield {'text':'{"answer":"A concise reply."}', 'done':True, 'done_reason':'stop'}
++    monkeypatch.setattr(cloud_ai, 'chat_stream', streaming)
++    events=[]
++    await core.ask('Explain why leaves are green.', broker.Settings(token=TOKEN), emit=events.append)
++    assert not any(event.get('voice_stream_allowed') for event in events)
++
++
++@pytest.mark.anyio
++async def test_complete_conversation_json_at_token_limit_is_usable(core, monkeypatch):
++    calls=[]
++    async def streaming(*args, **kwargs):
++        calls.append(kwargs['json'])
++        yield {'text':'{"answer":"Leaves look green because chlorophyll reflects green light."}', 'done':True, 'done_reason':'length'}
++    monkeypatch.setattr(cloud_ai, 'chat_stream', streaming)
++    result=await core.ask('Explain why leaves are green.', broker.Settings(token=TOKEN), emit=lambda event:None)
++    assert result['answer']=='Leaves look green because chlorophyll reflects green light.'
++    assert len(calls)==1
++    assert '25–45 words' in calls[0]['messages'][0]['content']
++
++
++@pytest.mark.anyio
++@pytest.mark.parametrize('content', ['{"answer":"Unfinished', '{"answer":"Complete.","unexpected":"field"}'])
++async def test_incomplete_or_extra_conversation_fields_still_fail(core, monkeypatch, content):
++    async def streaming(*args, **kwargs):
++        yield {'text':content, 'done':True, 'done_reason':'length'}
++    monkeypatch.setattr(cloud_ai, 'chat_stream', streaming)
++    with pytest.raises(HTTPException) as failure:
++        await core.ask('Explain why leaves are green.', broker.Settings(token=TOKEN), emit=lambda event:None)
++    assert failure.value.status_code==503

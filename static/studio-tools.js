@@ -1,4 +1,5 @@
 import { chooseModel } from './model-choice.js';
+import {studioFetch as fetch} from './studio-paths.js';
 const $=id=>document.getElementById(id);
 export class StudioTools {
   constructor(api){this.api=api;this.records=[];this.loadedId=null;this.dirty=false;this.bind();}

@@ -50,7 +50,7 @@ export function prepareSampleMaterials(root){
 // The local asset already owns its textures, skin rig and facial shapes. Improve
 // sampling and light response without replacing those production data.
 export function prepareCharacterMaterials(root,renderer){
-  const anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
+  const anisotropy=Math.min(4,renderer.capabilities.getMaxAnisotropy());
   const seen=new Set();
   root.traverse(node=>{
     if(!node.isMesh)return;
@@ -69,6 +69,14 @@ export function prepareCharacterMaterials(root,renderer){
         // Coverage antialiasing softens cutout strand edges in the MSAA canvas.
         // Keep depth writing and the authored alpha threshold for card sorting.
         material.alphaToCoverage=true;
+        material.roughness=Math.max(material.roughness,.66);
+      }
+      if(material.name==='Corneal optical surface'&&material.isMeshPhysicalMaterial){
+        // A thin corneal highlight does not need a full-scene transmission
+        // capture every frame. The detailed iris remains in the original atlas.
+        material.transmission=0;material.transparent=true;material.opacity=.08;
+        material.depthWrite=false;material.clearcoat=.35;material.clearcoatRoughness=.12;
+        material.envMapIntensity=.65;
       }
       if(material.name.startsWith('Performance skin')){
         material.envMapIntensity=.8;

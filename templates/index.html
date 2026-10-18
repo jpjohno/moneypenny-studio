@@ -4,13 +4,13 @@
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#eae9e4"><title>Moneypenny — Persona Studio</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='18' fill='%231b332f'/%3E%3Ctext x='12' y='47' font-size='44' fill='%23c7e3ad' font-family='serif'%3Em%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="/static/studio.css">
+  <link rel="stylesheet" href="./static/studio.css">
   <script>if(new URLSearchParams(location.search).get('embed')==='jarvis')document.documentElement.classList.add('jarvis-embed')</script>
-  <script type="importmap">{"imports":{"three":"/vendor/three/build/three.module.js","three/addons/":"/vendor/three/examples/jsm/"}}</script>
+  <script type="importmap">{"imports":{"three":"./vendor/three/build/three.module.js","three/addons/":"./vendor/three/examples/jsm/"}}</script>
 </head>
 <body class="studio-body">
   <header class="topbar">
-    <a class="brand" href="/" aria-label="Moneypenny studio home"><span class="monogram">m.</span><span>MONEYPENNY<small>PERSONA STUDIO</small></span></a>
+    <a class="brand" href="./" aria-label="Moneypenny studio home"><span class="monogram">m.</span><span>MONEYPENNY<small>PERSONA STUDIO</small></span></a>
     <div class="top-caption">A little more human.</div>
     <div class="top-actions"><span class="local-label"><i></i> On this Mac</span><button class="quiet" id="exportPersona">Export persona ↗</button></div>
   </header>
@@ -115,7 +115,7 @@
       <div class="composer-wrap"><form id="chatForm"><label class="visually-hidden" for="userInput">Message your character</label><textarea id="userInput" placeholder="Say something…" maxlength="4000" rows="2"></textarea><div class="composer-actions"><button type="button" class="mic-button" id="record" title="Record a note for review" aria-label="Record a message">◉ <span id="recordLabel">Record note</span></button><button type="button" id="stop" class="stop-button" hidden>■ Stop</button><button id="send" type="submit" class="send-button" aria-label="Send message">↑</button></div></form><div class="composer-footer"><label class="toggle-label"><input type="checkbox" id="autoSpeak" checked> Speak replies</label><span id="chatMetrics">Local conversation</span></div><p class="privacy-note">Live mode keeps the microphone open and sends each spoken turn automatically on this Mac. Speak to interrupt. Stop live mode to close the microphone.</p></div>
     </section>
   </main>
-  <script src="/vendor/vad/bundle.min.js"></script>
-  <script type="module" src="/static/studio.js"></script>
+  <script src="./vendor/vad/bundle.min.js"></script>
+  <script type="module" src="./static/studio.js"></script>
 </body>
 </html>
