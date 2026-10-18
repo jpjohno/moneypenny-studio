@@ -3,7 +3,15 @@
 Updated: 18 October 2026. Checkout: `/Users/jamesjohnston/Documents/Moneypenny-Studio`. Repository: `jpjohno/moneypenny-studio`, branch `codex/live-3d-persona`, draft PR [#1](https://github.com/jpjohno/moneypenny-studio/pull/1). Local URL: http://127.0.0.1:8090.
 
 
-## Latest continuation: VS Code / Continue repair
+## Latest continuation: Dolphin retained at user request
+
+The user explicitly chose the existing Dolphin model over the optional Qwen coding alternative. `qwen3.5:9b-q4_K_M` was downloaded and its native tool capability confirmed, but its disposable Continue check was stopped before any edit or test command completed. It read two fixture files; that is not evidence of a completed coding task or a benchmark. The optional Qwen tag was then deleted through Ollama and its absence verified. The existing Dolphin tag was retained. No Qwen dependency is added to this repository.
+
+The known-working Dolphin YAML was restored from a private backup, and Continue's **Only use system message tools** setting was restored to ON. VS Code is left with **Dolphin Llama 3 - Local** selected in **Chat** mode. For actual reviewed changes, use the previously verified selected-code **⌘I / Edit** workflow. Agent reliability and live spoken-request acceptance remain unresolved; do not describe this as unrestricted autonomous coding or a VPS deployment. The installed model is described as uncensored by its publisher, which is not a guarantee of every response or of coding correctness.
+
+All tracked source and portable setup instructions are on `codex/live-3d-persona` / PR #1. Private model weights, personal configuration/backups, recordings, generated character assets and disposable verification files remain excluded. The separate Desktop checkout and unsaved Blender scene are preserved.
+
+## Earlier continuation: VS Code / Continue repair
 
 On 18 October the active `~/.continue/config.yaml` contained a Blender Python function after its YAML model list. Continue displayed **config error** and no selectable model. Pasted third-party instructions repeatedly rewrote deprecated `config.json` instead, including instructions to blindly overwrite `app.py`; those claims were not proof of a functioning agent. Both original files were backed up privately under `~/.continue/backups/studio-config-20261018-174440/`. The unchanged stale JSON was disabled into that backup directory. No pasted Blender code was executed.
 
