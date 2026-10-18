@@ -86,7 +86,19 @@ export class RigController {
   poseSkill(skill,weight,side='right'){
     const hips=this.neutral.Hips.clone(),left=this.neutral.LeftFoot.clone(),right=this.neutral.RightFoot.clone();
     if(!hips||!left||!right)return;
-    if(skill==='supported_step'){
+    if(skill==='bend_forward'){
+      const scale=(hips.y-left.y)/.9;
+      hips.y-=.04*scale*weight;hips.z-=.12*scale*weight;this.setHips(hips);
+      const pelvis=this.bones.Hips,spine=this.bones.Spine;
+      const from=point(spine).sub(point(pelvis));
+      const direction=this.world(new THREE.Vector3(0,Math.cos(.9*weight),Math.sin(.9*weight))).sub(this.world(new THREE.Vector3()));
+      aim(pelvis,from,direction);
+      this.limb('LeftFoot',left);this.limb('RightFoot',right);
+      for(const [name,sign] of [['LeftHand',1],['RightHand',-1]]){
+        const target=this.neutral[name].clone().lerp(new THREE.Vector3(sign*.19*scale,hips.y-.24*scale,.20*scale),weight);
+        this.limb(name,target);
+      }
+    }else if(skill==='supported_step'){
       const step=this.supportedStep(side);
       // Shift towards the supporting leg before lifting, retaining a small
       // bend in both knees. This is a kinematic study, not balance simulation.

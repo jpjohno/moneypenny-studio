@@ -1,0 +1,57 @@
+{
+  "scope": "Saved local files only. Unsaved Blender edits are not included.",
+  "asset_contents_published_to_git": false,
+  "commercial_redistribution_cleared": false,
+  "rebuild": "See CHARACTER_WORKSHOP.md and Build Performance Character.command",
+  "files": [
+    {
+      "path": ".runtime/character-workshop/Moneypenny-Adult-Body-Source.blend",
+      "role": "Parametric body source",
+      "present": true,
+      "bytes": 56261576,
+      "sha256": "2b26290a38eeaae94f8e17df81d0ab1982624ba5b25885d24b2b88debbc5d4ae"
+    },
+    {
+      "path": ".runtime/character-workshop/Moneypenny-Adult-Anatomy-Study-v3.blend",
+      "role": "Earlier editable anatomical study",
+      "present": true,
+      "bytes": 71535851,
+      "sha256": "9100e9eeccc78d996632bb126e69b319997b79250fa156d123e35ee587fee5ab"
+    },
+    {
+      "path": ".runtime/character-workshop/Moneypenny-Performance-Final-Fit-v3.blend",
+      "role": "Latest dressed performance source",
+      "present": true,
+      "bytes": 143134786,
+      "sha256": "242b89c32b58b3d718f7ab258c17b7a0e5fb1eab7a0bec6123b3c8475f432aca"
+    },
+    {
+      "path": ".runtime/character-workshop/Moneypenny-Performance-Export-v6.blend",
+      "role": "Baked export source",
+      "present": true,
+      "bytes": 147768464,
+      "sha256": "fe6d62f74611b63842c87a76a3b4b09627bb775b184defec604ce19f03f989e8"
+    },
+    {
+      "path": ".runtime/character-workshop/Moneypenny-Performance-Candidate-v6.glb",
+      "role": "Geometry-verified private character candidate",
+      "present": true,
+      "bytes": 40309488,
+      "sha256": "c1853fd244826d53dcf43239f9f8965f06c23d764faab981133756b4e8e9c557"
+    },
+    {
+      "path": ".runtime/character-workshop/performance-skin-roughness.png",
+      "role": "Baked procedural roughness",
+      "present": true,
+      "bytes": 2770945,
+      "sha256": "1d4c012883e0bba4da19fe47a6aa02b3d4f218dbbf5539645c69f531dbb6883d"
+    },
+    {
+      "path": ".runtime/character-workshop/performance-skin-normal.png",
+      "role": "Baked procedural surface normal",
+      "present": true,
+      "bytes": 1894535,
+      "sha256": "1ae7be54b1e9b7f77131b53d0466fdcea47cb353c2300a1b745601a4c02c55bf"
+    }
+  ]
+}

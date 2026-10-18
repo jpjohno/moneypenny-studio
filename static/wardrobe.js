@@ -60,7 +60,7 @@ export class Wardrobe {
   }
   set(outfit,footwear='flats'){
     if(!this.reference)return false;
-    for(const item of this.original){item.mat.map=outfit==='original'?item.map:null;item.mat.color.set(outfit==='dress'?'#743a4c':outfit==='casual'?'#c4b294':'#34465d');if(outfit==='original')item.mat.color.copy(item.color);item.mat.needsUpdate=true;}
+    if(outfit!=='base')for(const item of this.original){item.mat.map=outfit==='original'?item.map:null;item.mat.color.set(outfit==='dress'?'#743a4c':outfit==='casual'?'#c4b294':'#34465d');if(outfit==='original')item.mat.color.copy(item.color);item.mat.needsUpdate=true;}
     this.skirt.visible=outfit==='office';this.vest.visible=outfit==='office';this.dress.visible=outfit==='dress';
     this.shoes.forEach(mesh=>{mesh.visible=mesh.userData.footwear===footwear;mesh.material.color.set(footwear==='trainers'?'#dcd8cb':'#1c2024');});
     this.current=outfit;return true;

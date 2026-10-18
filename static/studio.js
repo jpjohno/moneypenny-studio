@@ -13,6 +13,7 @@ import { StudioTools } from './studio-tools.js';
 import { prepareSampleMaterials, setLook } from './appearance.js';
 import { PoseCorrectives } from './correctives.js';
 import { SeatSupport } from './seat-support.js';
+import { actionOnly, movementAcknowledgement, wardrobeCommand } from './action-commands.js';
 
 const $ = id => document.getElementById(id);
 const owner = crypto.randomUUID();
@@ -200,7 +201,19 @@ async function initializeStage() {
     head.audioSpeechGainNode.disconnect(head.audioReverbNode); head.audioSpeechGainNode.connect(delay); delay.connect(speechGate);speechGate.connect(head.audioReverbNode);
     analyser=head.audioCtx.createAnalyser(); analyser.fftSize=256; head.audioSpeechGainNode.connect(analyser);
     lips.onvalue=(key,value)=>{const target=head.mtAvatar[key];if(target)Object.assign(target,{newvalue:value,needsUpdate:true});};
-    head.opt.update=dt=>{lips.update(dt);if(rig){if((busy||userSpeaking)&&motionLibrary?.currentSource==='persona')motionLibrary.stop();rig.resetBody(!!motion?.active||!!motion?.queue.length||motionLibrary?.playing||rig.targets.size>0);if(motionLibrary?.playing)motionLibrary.update(dt/1000);else if(motion){motion.engaged=busy||userSpeaking;motion.update(dt);}rig.update(dt/1000);poseCorrectives?.update(dt/1000);seatSupport?.update(motionLibrary?.playing?null:motion);rigView?.update();}};
+    head.opt.update=dt=>{
+      lips.update(dt);if(!rig)return;
+      const seconds=dt/1000;
+      if((busy||userSpeaking)&&motionLibrary?.currentSource==='persona')motionLibrary.stop();
+      rig.resetBody(!!motion?.active||!!motion?.queue.length||motionLibrary?.playing||rig.targets.size>0);
+      if(motionLibrary?.playing)motionLibrary.update(seconds);
+      else if(motion){motion.engaged=busy||userSpeaking;motion.update(dt);}
+      rig.update(seconds);
+      const stage=$('avatar'),skill=motion?.active?.skill||'idle',facing=String(Math.round((motion?.currentHeading||0)*180/Math.PI));
+      if(stage.dataset.motion!==skill)stage.dataset.motion=skill;
+      if(stage.dataset.facing!==facing)stage.dataset.facing=facing;
+      poseCorrectives?.update(seconds);seatSupport?.update(motionLibrary?.playing?null:motion);rigView?.update();
+    };
     liveSession=new LiveSession({audioContext:head.audioCtx,onState:value=>$('liveState').textContent=value,
       onStart:()=>{
         userSpeaking=true;listenEpoch++;liveTranscription?.abort();motion?.stop();
@@ -234,6 +247,8 @@ async function stopAll(clearNotice=true) {
 function performActions(performance={}) {
   if(!avatarReady)return;
   head.setMood(performance.mood||$('mood').value||'neutral');
+  const directed=motionLibrary?.playing&&motionLibrary.currentSource!=='persona'||[motion?.active,...(motion?.queue||[])].some(step=>step&&!['persona','conversation'].includes(step.source));
+  if(directed)return;
   const movement=Number($('movement').value);
   if(movement<.05)return;
   if(performance.gesture&&movement>.2)head.playGesture(performance.gesture,3);
@@ -312,12 +327,24 @@ async function sendMessage(event,spokenOverride=null) {
   try{if(await handleControl(prompt)){setBusy(false);return;}}catch(error){notify(error.message);setBusy(false);return;}
   const requestedMotion=movementFromText(prompt);
   const libraryMatch=(!requestedMotion||requestedMotion.steps.length===1)&&motionLibrary?.match(prompt);
-  if(libraryMatch){try{motion?.stop();await motionLibrary.play(libraryMatch.id);frameCharacter('full');}catch(error){notify(error.message);}}
-  else if(requestedMotion){motion?.plan(requestedMotion,'instruction');if(requestedMotion.steps.some(x=>['dance','jig','walk','splits','lie_back','kneel','sit','supported_step'].includes(x.skill)))frameCharacter('full',requestedMotion);}
-  if(/\b(?:wear|put on|change into|change clothes|remove (?:your )?(?:jacket|dress|outer))\b/i.test(prompt)){
-    if(/remove/i.test(prompt))$('wardrobe').value='base';else $('wardrobe').value=/dress/i.test(prompt)?'dress':/casual|trousers|jeans/i.test(prompt)?'casual':'office';
-    if(/trainer/i.test(prompt))$('footwear').value='trainers';else if(/heel/i.test(prompt))$('footwear').value='heels';updateSettings();
-    motion?.plan({steps:[{skill:'reach',target:'shoulder',side:'right',duration:2},{skill:'turn',duration:2}]},'wardrobe');
+  const clothes=wardrobeCommand(prompt);let localAck='',actionStatus='',queuedSkills=[];
+  try{
+    if((requestedMotion||libraryMatch||clothes)&&!avatarReady)throw new Error('The character is still loading. Try the action again once she appears.');
+    if(libraryMatch){motion?.stop();rig?.clear();await motionLibrary.play(libraryMatch.id);frameCharacter('full');localAck=`I’ll perform ${libraryMatch.name} now.`;actionStatus='Saved movement started';queuedSkills=['custom'];}
+    else if(requestedMotion){rig?.clear();if(!motion?.plan(requestedMotion,'instruction'))throw new Error('The movement could not be queued.');frameCharacter('full',requestedMotion);localAck=movementAcknowledgement(requestedMotion);actionStatus='Movement queued';queuedSkills=requestedMotion.steps.map(step=>step.skill);}
+    if(clothes){
+      if(!wardrobe?.reference)throw new Error('These outfit presets belong to the studio sample. Use this character’s fitted garment controls instead.');
+      if(clothes.outfit)$('wardrobe').value=clothes.outfit;if(clothes.footwear)$('footwear').value=clothes.footwear;updateSettings();
+      const outfitName=$('wardrobe').selectedOptions[0].textContent,shoeName=$('footwear').selectedOptions[0].textContent;
+      localAck+=(localAck?' ':'')+(clothes.outfit==='base'?'The added outer layers are hidden. This sample’s fixed base clothes stay on.':`Outfit selection updated: ${[clothes.outfit?outfitName:null,clothes.footwear?shoeName:null].filter(Boolean).join(', ')}.`);actionStatus+=(actionStatus?' · ':'')+'Wardrobe updated';
+    }
+  }catch(error){addMessage('user',prompt);addMessage('assistant',error.message);$('userInput').value='';notify(error.message);setBusy(false);scrollChat();return;}
+  if(token!==generation)return;
+  if(localAck&&actionOnly(prompt)){
+    addMessage('user',prompt);const entry=addMessage('assistant',localAck);entry.article.dataset.controller='local-action';entry.action.textContent=actionStatus;entry.action.hidden=false;
+    history.push({role:'user',content:prompt},{role:'assistant',content:localAck});history=history.slice(-20);$('userInput').value='';$('chatMetrics').textContent='Local action · no model wait';scrollChat();
+    try{if($('autoSpeak').checked&&voiceAllowed())await playSpeech(localAck,token);}catch(error){if(token===generation)notify(error.message);}finally{if(token===generation){setBusy(false);controller=null;setState('Here with you');}}
+    return;
   }
   const messages=history.slice(-20); addMessage('user',prompt);const reply=addMessage('assistant','…');$('userInput').value='';scrollChat();
   turnStarted=performanceNow();firstVoiceAt=0;delete $('chatMetrics').dataset.firstVoiceSeconds;delete $('chatMetrics').dataset.replyDoneSeconds;
@@ -333,7 +360,7 @@ async function sendMessage(event,spokenOverride=null) {
   try {
     // Resume directly after the click; subsequent synthesis may take a moment.
     head?.audioCtx.resume();
-    const response=await api('/api/chat/stream',{prompt,history:messages,persona_id:tools?.personaId,avatar_motion:requestedMotion?.steps.map(step=>step.skill)||[],model:$('modelSelect').value,system:`Character name: ${$('personaName').value||'Moneypenny'}.\n${$('systemPrompt').value}`,temperature:Number($('temperature').value),max_tokens:Number($('maxTokens').value)},controller.signal);
+    const response=await api('/api/chat/stream',{prompt,history:messages,persona_id:tools?.personaId,avatar_motion:queuedSkills,model:$('modelSelect').value,system:`Character name: ${$('personaName').value||'Moneypenny'}.\n${$('systemPrompt').value}`,temperature:Number($('temperature').value),max_tokens:Number($('maxTokens').value)},controller.signal);
     const reader=response.body.getReader(),decoder=new TextDecoder();let pending='';
     let result;
     while(true){

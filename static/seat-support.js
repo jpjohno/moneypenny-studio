@@ -21,7 +21,10 @@ export class SeatSupport {
     const step=this.rig.supportedStep(active.side),anchor=step.target.clone();
     anchor.y=step.height;anchor.z+=.08*step.scale;
     this.group.position.copy(this.rig.world(anchor));
-    this.rig.space.decompose(new THREE.Vector3(),this.group.quaternion,this.group.scale);
+    this.rig.root.updateWorldMatrix(true,false);
+    const orientation=this.rig.root.matrixWorld.clone().multiply(this.rig.space.clone().invert());
+    this.group.position.applyMatrix4(orientation);
+    this.rig.root.matrixWorld.decompose(new THREE.Vector3(),this.group.quaternion,this.group.scale);
     this.group.quaternion.multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0),step.raised==='LeftFoot'?Math.PI/2:-Math.PI/2));
     this.group.scale.multiplyScalar(step.scale);
   }

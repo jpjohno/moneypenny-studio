@@ -7,3 +7,8 @@ def test_supported_step_preserves_side_and_is_bounded():
     assert validate_plan({'steps': [{'skill': 'supported_step', 'duration': 900, 'side': 'right'}]})['steps'][0]['duration'] == 20
     assert direct_plan("Don't put your foot on the seat") is None
     assert direct_plan('Insert a tampon') is None
+
+
+def test_bend_over_is_a_supported_direct_movement():
+    assert direct_plan('Can you bend over?')['steps'][0]['skill'] == 'bend_forward'
+    assert direct_plan("Don't bend over") is None

@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 
-export const MOTION_SKILLS=['reach','jig','dance','walk','turn','stretch','bow','sit','kneel','lie_back','splits','supported_step','idle','custom'];
+export const MOTION_SKILLS=['reach','jig','dance','walk','turn','stretch','bow','sit','kneel','lie_back','splits','supported_step','bend_forward','idle','custom'];
 const ease=x=>x*x*(3-2*x);
 const clamp=(x,a,b)=>Math.min(b,Math.max(a,x));
 
@@ -14,11 +14,12 @@ export class MotionDirector {
     head.armature.traverse(bone=>{if(bone.isBone){this.bones[bone.name]=bone;this.rest[bone.name]=(head.poseBase?.props[`${bone.name}.quaternion`]||bone.quaternion).clone();}});
     this.hipsPosition=this.bones.Hips.position.clone();this.autonomous=true;this.activity=.45;this.persona='';this.engaged=false;
     this.height=head.avatarHeight||1.75;
-    this.onChoosePlan=null;this.planning=false;
+    this.onChoosePlan=null;this.planning=false;this.heading=0;this.currentHeading=0;
   }
-  stop(){this.queue=[];if(this.active)this.active.release=this.clock;this.nextDecision=this.clock+5;}
+  stop(){this.queue=[];if(this.active){this.active.release=this.clock;this.active.frozenHeading=this.currentHeading;this.heading=this.currentHeading;}this.nextDecision=this.clock+5;}
   plan(plan,source='instruction') {
     if(!plan?.steps?.length)return false;
+    if(['conversation','persona'].includes(source)&&[this.active,...this.queue].some(step=>step&&!['conversation','persona'].includes(step.source)))return false;
     this.stop();this.active=null;
     this.queue=plan.steps.filter(x=>MOTION_SKILLS.includes(x.skill)).map(x=>({...x,duration:clamp(Number(x.duration)||4,1,20),intensity:clamp(Number(x.intensity)||.6,.1,1),source}));
     return !!this.queue.length;
@@ -72,12 +73,19 @@ export class MotionDirector {
     const skill=choices[Math.floor(Math.random()*choices.length)];
     this.queue=[{skill,duration:skill==='idle'?3:5+Math.random()*3,intensity:.25+this.activity*.5,source:'persona'}];
   }
+  applyHeading(heading){
+    const root=this.head.armature,yaw=new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0),heading);
+    const relative=this.rootRotation.clone().invert().multiply(root.quaternion);
+    root.quaternion.copy(this.rootRotation).multiply(yaw).multiply(relative);
+    const offset=root.position.clone().sub(this.origin).applyQuaternion(yaw);
+    root.position.copy(this.origin).add(offset);this.currentHeading=heading;
+  }
   update(milliseconds) {
     const dt=Math.min(milliseconds/1000,.1);this.clock+=dt;
     if(this.engaged&&this.active?.source==='persona'&&this.active.release===undefined)this.stop();
     if(!this.active&&this.queue.length){this.active={...this.queue.shift(),start:this.clock};this.onState(`${this.active.source==='persona'?'Persona chose':'Moving'} · ${this.active.skill.replaceAll('_',' ')}`);}
     if(!this.active){
-      this.head.armature.position.copy(this.origin);this.head.armature.quaternion.copy(this.rootRotation);
+      this.head.armature.position.copy(this.origin);this.head.armature.quaternion.copy(this.rootRotation);this.applyHeading(this.heading);
       if(this.autonomous&&!this.engaged&&this.clock>=this.nextDecision){
         this.autonomousChoice();this.nextDecision=this.clock+12+(1-this.activity)*25;
         if(this.onChoosePlan&&!this.planning){this.planning=true;Promise.resolve(this.onChoosePlan()).finally(()=>{this.planning=false;});}
@@ -85,7 +93,8 @@ export class MotionDirector {
       return;
     }
     const a=this.active,t=this.clock-a.start,p=clamp(t/a.duration,0,1),k=a.intensity;
-    const fade=a.skill==='supported_step'?1.2:.65,releaseTime=a.skill==='supported_step'?1.2:.4;
+    const deliberate=['supported_step','bend_forward'].includes(a.skill);
+    const fade=deliberate?1.2:.65,releaseTime=deliberate?1.2:.4;
     let w=ease(clamp(t/fade,0,1))*ease(clamp((a.duration-t)/fade,0,1));
     if(a.release!==undefined)w*=1-ease(clamp((this.clock-a.release)/releaseTime,0,1));
     const pose={};let root=new THREE.Euler(),offset=new THREE.Vector3();
@@ -103,13 +112,14 @@ export class MotionDirector {
         offset.y=Math.abs(cycle)*.045*k;offset.x=Math.sin(t*2)*.055*k;root.y=Math.sin(t*.8)*.22*k;break;
       }
       case 'walk':set('LeftUpLeg',beat*.35*k);set('RightUpLeg',other*.35*k);set('LeftLeg',Math.max(0,-beat)*.55*k);set('RightLeg',Math.max(0,beat)*.55*k);set('LeftArm',other*.22*k);set('RightArm',beat*.22*k);offset.y=Math.abs(beat)*.015;offset.x=Math.sin(p*Math.PI*2)*.22*k;break;
-      case 'turn':root.y=Math.sin(p*Math.PI)*Math.PI*1.1*k;break;
+      case 'turn':if(['persona','conversation'].includes(a.source))root.y=Math.sin(p*Math.PI)*.45*k;break;
       case 'stretch':set('LeftArm',-.2,0,-1.75*k);set('RightArm',-.2,0,1.75*k);set('Spine',-.12*k,0,.08*Math.sin(t)*k);break;
       case 'bow':set('Spine',.55*k);set('Spine1',.25*k);set('Head',.15*k);break;
       case 'sit':break;
       case 'kneel':break;
       case 'lie_back':break;
       case 'splits':break;
+      case 'supported_step':case 'bend_forward':break;
       case 'reach':break;
       case 'custom': {
         const frames=a.frames||[];
@@ -122,10 +132,13 @@ export class MotionDirector {
     const q=this.rootRotation.clone().multiply(new THREE.Quaternion().setFromEuler(root));
     this.head.armature.quaternion.copy(this.rootRotation).slerp(q,w);
     this.head.armature.position.copy(this.origin).addScaledVector(offset,w);
-    if(this.rig&&['splits','sit','kneel','lie_back','supported_step'].includes(a.skill))this.rig.poseSkill(a.skill,w,a.side);
+    if(this.rig&&['splits','sit','kneel','lie_back','supported_step','bend_forward'].includes(a.skill))this.rig.poseSkill(a.skill,w,a.side);
     if(a.skill==='reach')this.reach(a.target,a.side,w);
+    const directTurn=a.skill==='turn'&&!['persona','conversation'].includes(a.source);
+    const heading=a.frozenHeading??(this.heading+(directTurn?Math.PI*ease(clamp(t/Math.max(.2,a.duration-.3),0,1)):0));
+    this.applyHeading(heading);
     this.head.armature.updateMatrixWorld(true);
-    if(p>=1||a.release!==undefined&&this.clock-a.release>releaseTime){this.active=null;this.rig?.releasePose();this.onState(this.autonomous?'Persona movement enabled':'Movement paused');}
+    if(p>=1||a.release!==undefined&&this.clock-a.release>releaseTime){this.heading=heading%(Math.PI*2);this.active=null;this.rig?.releasePose();this.onState(this.autonomous?'Persona movement enabled':'Movement paused');}
   }
 }
 
@@ -133,6 +146,8 @@ export function movementFromText(value) {
   const lower=value.toLowerCase(),found=[];
   if(/\b(?:don't|do not|avoid|without|stop)\b/.test(lower))return null;
   const duration=lower.match(/(?:for|hold)\s+(\d+)\s*seconds?/);
+  const bend=lower.match(/\bbend\s+(?:over|forward|down)\b/);
+  if(bend)found.push({at:bend.index,step:{skill:'bend_forward',duration:duration?clamp(Number(duration[1]),1,20):8,intensity:1}});
   const step=lower.match(/\b(?:(?:put|place|rest|raise|lift)\s+(?:(?:your|her|my|one|the)\s+)?(?:(left|right)\s+)?(?:foot|leg)|one\s+(?:foot|leg))\s+(?:up\s+)?on\s+(?:(?:the|a|toilet|closed)\s+)*(?:seat|step|stool|lid)\b/);
   if(step)found.push({at:step.index,step:{skill:'supported_step',side:step[1]||'right',duration:duration?clamp(Number(duration[1]),1,20):8,intensity:1}});
   for(const match of lower.matchAll(/(?:touch|rest|place|put|reach)[^.?!]{0,45}?(shoulder|belly button|belly|navel|head|chin|chest|hip|knee|ear|nose)/g))found.push({at:match.index,step:{skill:'reach',target:/belly|navel/.test(match[1])?'belly':match[1],side:match[0].includes('left hand')?'left':'right',duration:duration?clamp(Number(duration[1]),1,20):5}});
