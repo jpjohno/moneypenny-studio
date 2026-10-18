@@ -150,6 +150,20 @@
       "present": true,
       "bytes": 49995700,
       "sha256": "0e9f4ba692e1b33d098e0e84a883329e377823c868125cbe1bbfbd11eb06c540"
+    },
+    {
+      "path": ".runtime/character-workshop/Moneypenny-Style-v25.blend",
+      "role": "v25 complete local source with stronger cheekbone definition",
+      "present": true,
+      "bytes": 234741712,
+      "sha256": "7c7da350f0e7347ac971ec227de52ee7bd92369e2da8f6077a89cbf859441989"
+    },
+    {
+      "path": ".runtime/character-workshop/Moneypenny-Style-v25.glb",
+      "role": "v25 clothed browser candidate; natural eye atlas and cutout bob",
+      "present": true,
+      "bytes": 49883680,
+      "sha256": "03f917c59dfc1a2650f944b0e1ce7870cdd98e48ce796c8b117d9c3f5317bde0"
     }
   ]
 }

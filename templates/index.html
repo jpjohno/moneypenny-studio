@@ -66,6 +66,7 @@
       </details>
       <details class="character-details" open><summary>Character & appearance <span>＋</span></summary>
         <p class="hint" id="avatarLabel">Studio character · CC0 sample</p>
+        <label for="hairTone">Hair colour</label><select id="hairTone"><option value="original">Light blonde</option><option value="warm">Warm blonde</option><option value="darkblonde" selected>Dark blonde</option><option value="brunette">Soft brunette</option></select>
         <label for="lightingLook">Lighting</label><select id="lightingLook"><option value="daylight">Soft daylight</option><option value="portrait">Portrait studio</option><option value="neutral">Neutral fitting light</option></select>
         <label for="lightBrightness">Brightness</label><input id="lightBrightness" type="range" min=".65" max="1.25" step=".05" value="1">
         <label for="wardrobe">Outfit</label><select id="wardrobe"><option value="office">Office · waistcoat & skirt</option><option value="casual" selected>Casual · top & trousers</option><option value="dress">Evening · dress</option><option value="base">Base clothes · hide added layers</option><option value="original">Original sample outfit</option></select>
@@ -81,6 +82,8 @@
         <label for="modelSelect">Answer model</label><select id="modelSelect"><option>Checking Ollama…</option></select>
         <div class="voice-card"><span class="tiny-wave">▂▆▃▇▃▅</span><div>British Moneypenny<small>Kokoro · bf_emma · local</small></div></div>
         <div class="label-line"><label for="speed">Voice speed</label><output id="speedValue">1.00×</output></div><input id="speed" type="range" min=".8" max="1.5" value="1" step=".05">
+        <div class="label-line"><label for="mouthTiming">Mouth timing</label><output id="mouthTimingValue">100 ms</output></div><input id="mouthTiming" type="range" min="0" max="240" value="100" step="10">
+        <p class="small-note">If the voice arrives before her lips move, increase this setting. If it arrives afterwards, decrease it.</p>
         <div class="label-line"><label for="temperature">Creativity</label><output id="temperatureValue">0.70</output></div><input id="temperature" type="range" min=".1" max="1.5" value=".7" step=".05">
         <label for="maxTokens">Reply length</label><select id="maxTokens"><option value="128">Brief</option><option value="256" selected>Conversational</option><option value="512">Detailed</option><option value="1024">Extended</option></select>
         <p class="hint">Changing the answer model keeps her voice. The first reply may take longer while local models load.</p>

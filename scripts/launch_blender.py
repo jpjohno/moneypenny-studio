@@ -26,7 +26,7 @@ def main():
         raise SystemExit('Blender was not found. Set MONEYPENNY_BLENDER to its executable path.')
     workshop = ROOT / '.runtime/character-workshop'
     source = args.file or next((workshop / name for name in (
-        'Moneypenny-Style-v24.blend', 'Moneypenny-Free-Surface-Reviewed.blend', 'Moneypenny-Surface-Look-v9.blend', 'Moneypenny-Performance-Final-Fit-v3.blend')
+        'Moneypenny-Style-v25.blend', 'Moneypenny-Free-Surface-Reviewed.blend', 'Moneypenny-Surface-Look-v9.blend', 'Moneypenny-Performance-Final-Fit-v3.blend')
         if (workshop / name).is_file()), workshop / 'Moneypenny-Performance-Final-Fit-v3.blend')
     if not source.is_file():
         raise SystemExit('Local character source was not found. Use --file /path/to/source.blend or build the performance source first.')

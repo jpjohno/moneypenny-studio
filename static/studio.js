@@ -10,7 +10,7 @@ import { RigController, authoredNeutral } from './rig.js';
 import { RigView } from './rig-view.js';
 import { MotionLibrary } from './motion-library.js';
 import { StudioTools } from './studio-tools.js';
-import { prepareSampleMaterials, setLook } from './appearance.js';
+import { prepareSampleMaterials, setLook, setHairTone } from './appearance.js';
 import { PoseCorrectives } from './correctives.js';
 import { SeatSupport } from './seat-support.js';
 import { actionOnly, movementAcknowledgement, wardrobeCommand } from './action-commands.js';
@@ -24,14 +24,14 @@ const presets = {
   companion: 'You are Moneypenny, a friendly adult British conversation companion. Be curious, thoughtful and warm. Listen carefully, remember what has been said within this conversation and ask natural follow-up questions. Use gentle humour and a relaxed manner.',
   playful: 'You are Moneypenny, an adult British woman with a confident, witty and subtly flirtatious personality. Use warm smiles, gentle teasing and clever wordplay when welcome. Keep flirtation non-explicit and responsive. Shift to a clear, considerate manner when the topic calls for it. Speak like a natural conversation.',
 };
-const settingIds = ['personaName','personaPreset','systemPrompt','movement','mood','wardrobe','footwear','lightingLook','lightBrightness','autonomy','aiMotion','activity','behaviourPrompt','modelSelect','speed','temperature','maxTokens','autoSpeak'];
+const settingIds = ['personaName','personaPreset','systemPrompt','movement','mood','wardrobe','footwear','hairTone','lightingLook','lightBrightness','autonomy','aiMotion','activity','behaviourPrompt','modelSelect','speed','mouthTiming','temperature','maxTokens','autoSpeak'];
 let head, lips, analyser, visualizer, avatarReady = false, lipReady = false;
 let generation = 0, controller = null, busy = false, currentSource = null, speechEnded = null;
 let history = [], statusData = {}, avatarURL = null, portraitURL = null, recordingPending = false;
 let studioOutfit = [],disposeAppearance=null;
 let actionTimers=[];
 let activeReply=null;
-let motion=null,wardrobe=null,liveSession=null,speechGate=null,userSpeaking=false,listenEpoch=0,liveTranscription=null,interruption=Promise.resolve();
+let motion=null,wardrobe=null,liveSession=null,speechGate=null,speechDelay=null,userSpeaking=false,listenEpoch=0,liveTranscription=null,interruption=Promise.resolve();
 let quietUntil=Number(localStorage.getItem('moneypenny-quiet-until')||0),reminderPolling=false;
 let turnStarted=0,firstVoiceAt=0;
 let rig=null,rigView=null,motionLibrary=null,tools=null,poseCorrectives=null,seatSupport=null;
@@ -68,6 +68,8 @@ function applySettings(value) {
 function updateSettings() {
   $('characterTitle').textContent = $('personaName').value.trim() || 'Moneypenny';
   $('speedValue').textContent = `${Number($('speed').value).toFixed(2)}×`;
+  $('mouthTimingValue').textContent = `${Number($('mouthTiming').value)} ms`;
+  if(speechDelay)speechDelay.delayTime.setTargetAtTime(Number($('mouthTiming').value)/1000,head.audioCtx.currentTime,.04);
   $('temperatureValue').textContent = Number($('temperature').value).toFixed(2);
   const movement = Number($('movement').value);
   $('movementValue').textContent = movement<.3 ? 'Subtle' : movement>.8 ? 'Expressive' : 'Natural';
@@ -76,6 +78,7 @@ function updateSettings() {
     head.opt.avatarIdleHeadMove = movement * .4;
     head.opt.avatarSpeakingHeadMove = movement * .6;
     setLook(head,$('lightingLook').value,$('lightBrightness').value);
+    if(head.studioNeutral&&head.armature)setHairTone(head.armature,$('hairTone').value);
   }
   if(statusData.models?.length)$('connectionNote').textContent=`${$('modelSelect').value} · ${statusData.voice_ready?'British voice connected':'voice needs setup'}`;
   wardrobe?.set($('wardrobe').value,$('footwear').value);
@@ -148,7 +151,7 @@ async function showAvatar(file=null, localCharacter=null) {
     motion.onChoosePlan=async()=>{
       if(busy||userSpeaking||!$('autonomy').checked)return;
       const choices=motionLibrary.items.filter(item=>motionLibrary.autoIds.includes(item.id));
-      if(choices.length&&!$('aiMotion').checked){motion.queue=[];motion.active=null;motion.nextDecision=motion.clock+20+(1-motion.activity)*20;motionLibrary.loop=false;try{await motionLibrary.play(choices[Math.floor(Math.random()*choices.length)].id,0,'persona');}catch{}return;}
+      if(choices.length&&!$('aiMotion').checked&&!head.studioNeutral){motion.queue=[];motion.active=null;motion.nextDecision=motion.clock+20+(1-motion.activity)*20;motionLibrary.loop=false;try{await motionLibrary.play(choices[Math.floor(Math.random()*choices.length)].id,0,'persona');}catch{}return;}
       if(!$('aiMotion').checked||!$('modelSelect').value)return;
       const epoch=generation,persona=$('behaviourPrompt').value;
       try{
@@ -194,7 +197,7 @@ async function initializeStage() {
     let saved=null; try {saved=await asset('avatar');}catch{}
     if(saved) { try{await showAvatar(saved);}catch{notify('The saved character is incompatible. The studio character has been restored.'); await showAvatar();} }
     else if(statusData.character_candidate_ready) {
-      try{await showAvatar(null,{url:'/api/character/default',label:statusData.character_revision==='style-v24'?'Moneypenny · styled character v24':statusData.character_revision==='free-surface-reviewed'?'Moneypenny · free character study':statusData.character_revision==='surface-v9'?'Moneypenny · surface study v9':'Moneypenny · local performance candidate'});}
+      try{await showAvatar(null,{url:'/api/character/default',label:statusData.character_revision==='style-v25'?'Moneypenny · styled character v25':statusData.character_revision==='free-surface-reviewed'?'Moneypenny · free character study':statusData.character_revision==='surface-v9'?'Moneypenny · surface study v9':'Moneypenny · local performance candidate'});}
       catch{notify('The local performance character could not load. The studio sample has been restored.');await showAvatar();}
     } else await showAvatar();
     const floor=new THREE.Mesh(new THREE.PlaneGeometry(6,6),new THREE.ShadowMaterial({opacity:.22}));floor.rotation.x=-Math.PI/2;floor.position.y=-.003;floor.receiveShadow=true;head.scene.add(floor);
@@ -202,7 +205,7 @@ async function initializeStage() {
     lips=new HeadAudio(head.audioCtx,{parameterData:{vadGateActiveDb:-40,vadGateInactiveDb:-55,speakerMeanHz:220}});
     await lips.loadModel('/static/vendor/headaudio/model-en-mixed.bin');
     head.audioSpeechGainNode.connect(lips);
-    const delay=head.audioCtx.createDelay(1); delay.delayTime.value=.08;
+    const delay=head.audioCtx.createDelay(1);speechDelay=delay;delay.delayTime.value=Number($('mouthTiming').value)/1000;
     speechGate=head.audioCtx.createGain();
     head.audioSpeechGainNode.disconnect(head.audioReverbNode); head.audioSpeechGainNode.connect(delay); delay.connect(speechGate);speechGate.connect(head.audioReverbNode);
     analyser=head.audioCtx.createAnalyser(); analyser.fftSize=256; head.audioSpeechGainNode.connect(analyser);

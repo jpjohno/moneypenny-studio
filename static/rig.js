@@ -116,7 +116,12 @@ export class RigController {
   poseSkill(skill,weight,side='right',time=0){
     const hips=this.neutral.Hips.clone(),left=this.neutral.LeftFoot.clone(),right=this.neutral.RightFoot.clone();
     if(!hips||!left||!right)return;
-    if(skill==='wave'){
+    if(skill==='stretch'){
+      for(const [name,sign] of [['LeftHand',1],['RightHand',-1]]){
+        const target=this.neutral[name].clone().add(new THREE.Vector3(sign*.08,.08,.06));
+        this.limb(name,this.neutral[name].clone().lerp(target,weight));
+      }
+    }else if(skill==='wave'){
       const name=side==='left'?'LeftHand':'RightHand',arm=side==='left'?'LeftArm':'RightArm',sign=side==='left'?1:-1;
       const target=this.neutral[arm].clone().add(new THREE.Vector3(sign*.12,.12,.15));
       this.limb(name,this.neutral[name].clone().lerp(target,weight));

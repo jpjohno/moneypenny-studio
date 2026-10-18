@@ -177,11 +177,11 @@ The new source has a 54-bone humanoid/gaze rig and a mouth/eye FACS bridge expos
 **The 1,000-preview sweep actually completed:** 1,000 unique 128×160 four-sample renders, in 597.1 seconds. `verification/surface-sweep-index.html` browses the full local set and lists settings. These compare the v7 source; they are separate from the subsequent new CC0 character assembly. They do not establish photographic quality.
 
 
-## Current clothed styling revision v24
+## Current clothed styling revision v25
 
 The free full-character experiments were visually rejected. v14/v15 had neck seam problems; v16 welded 4,222 duplicate boundary vertices and passed the geometry checks, but still looked CG in the isolated browser review. None is the normal app default. Only the CC0 bob is reused in the current MPFB-based clothed character, fitted to its Head bone. No user photograph is bundled, uploaded or used as a texture.
 
-`style_character.py` derives v24 from the preserved v9 source. It narrows the frame by 6%, adds a substantially fuller bust with shared body/garment deformation, makes subtle jaw/lip changes, brightens the iris to blue-green, and replaces the striped clothing with matte champagne/ink tailoring and an embedded weave normal. The CC0 bob is lengthened, given slight wave and a lighter varied blonde atlas. These are authored changes, not a photographic scan or measured bra cup size.
+`style_character.py` derives v25 from the preserved v9 source. It narrows the frame by 6%, adds a substantially fuller bust with shared body/garment deformation, makes subtle jaw/lip changes, brightens the iris to blue-green, and replaces the striped clothing with matte champagne/ink tailoring and an embedded weave normal. The CC0 bob is lengthened, given slight wave and a lighter varied blonde atlas. These are authored changes, not a photographic scan or measured bra cup size.
 
 The complete Blender source is saved before an under-garment face mask is applied to the clothed browser export. This prevents covered skin showing through the blouse; hiding that garment is not a complete undressed-body view. v17/v18 were rejected for visible clothing breakthrough; v19 fixed coverage but its bob was too dark/short. All previous sources remain local.
 
@@ -189,7 +189,7 @@ The player now captures the imported bind pose before TalkingHead replaces it wi
 
 ```sh
 "$HOME/Applications/Blender-4.5-LTS.app/Contents/MacOS/Blender" -b --python-exit-code 1 --python scripts/character/style_character.py -- "$PWD"
-node scripts/character/verify_performance_glb.mjs .runtime/character-workshop/Moneypenny-Style-v24.glb
+node scripts/character/verify_performance_glb.mjs .runtime/character-workshop/Moneypenny-Style-v25.glb
 ```
 
 The build needs the existing local v9 and free v16 sources. Binary sources, render variants, private media and generated exports remain ignored/local; the repository holds the scripts, pinned free-data manifest and continuation instructions. Photographic realism, broad extreme-pose fit and natural speech/motion acceptance remain unfinished.
@@ -199,3 +199,5 @@ The final v22 styling pass removes solid eyebrow cards while keeping expression-
 The user then preferred warmer, longer blonde hair and accepted the bust size. v23 keeps that bust, subtly slims the cheeks, uses the existing natural MakeHuman blue-eye atlas, and corrects 4,672 chest weights on body/blouse. Native hair is still card-based and has no collision physics; shoulder-length hair and clothing need broad motion review.
 
 v24 adds root coverage under the bob and exports it with alpha MASK rather than BLEND to prevent card self-sorting gaps. The default local wave uses IK on one hand and retains the authored clavicles. Library clips remain available but are not certified for the enlarged outfit. Photographic quality has not been achieved.
+
+Latest v25 adds cheekbone definition and exposes saved hair shades in Character & appearance. Voice & engine → Mouth timing adjusts audible delay from 0–240 ms (100 ms default), for human calibration against this Mac audio output. Natural lip-licking still requires an authored tongue/face clip. The existing 1,000-preview sweep remains the only completed 1,000-render batch; no new sweep or photographic-quality acceptance is claimed.

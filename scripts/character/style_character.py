@@ -7,8 +7,8 @@ from mathutils import Vector
 from mathutils.bvhtree import BVHTree
 root=Path(sys.argv[sys.argv.index('--')+1]).resolve()
 out=root/'.runtime/character-workshop'
-dest=out/'Moneypenny-Style-v24.blend'; glb=out/'Moneypenny-Style-v24.glb'
-if dest.exists() or glb.exists(): raise SystemExit('Existing v24 preserved')
+dest=out/'Moneypenny-Style-v25.blend'; glb=out/'Moneypenny-Style-v25.glb'
+if dest.exists() or glb.exists(): raise SystemExit('Existing v25 preserved')
 bpy.ops.wm.open_mainfile(filepath=str(out/'Moneypenny-Surface-Look-v9.blend'))
 rig=bpy.data.objects['Adult_Body_Rig']; body=bpy.data.objects['Adult_Anatomy_Surface']; garment=bpy.data.objects['Office_Blouse_And_Skirt']
 parts=[o for o in bpy.data.objects if o.parent==rig and o.type=='MESH' and not o.hide_render]
@@ -33,7 +33,7 @@ def reshape(p):
   q.x*=1-.035*math.exp(-((p.z-1.402)/.012)**2)
   cheek=max(0,min(1,(abs(p.x)-.022)/.025))
   q.x*=1-.065*cheek*math.exp(-((p.z-1.451)/.018)**2)
-  q.x*=1+.012*cheek*math.exp(-((p.z-1.477)/.012)**2)
+  q.x*=1+.035*cheek*math.exp(-((p.z-1.477)/.012)**2)
   lip=math.exp(-((p.x/.028)**4+((p.z-1.431)/.008)**4))
   q.y-=.002*lip; q.z+=(p.z-1.431)*.20*lip
  return q
@@ -80,7 +80,7 @@ rng=np.random.default_rng(17); size=512
 y,x=np.mgrid[:size,:size]
 n=np.empty((size,size,4),dtype=np.float32)
 n[:,:,0]=.5+.025*np.sin(x*np.pi/2);n[:,:,1]=.5+.025*np.sin(y*np.pi/2);n[:,:,2]=1;n[:,:,3]=1
-weave=bpy.data.images.new('v24 subtle fabric weave',width=size,height=size,alpha=True)
+weave=bpy.data.images.new('v25 subtle fabric weave',width=size,height=size,alpha=True)
 weave.colorspace_settings.name='Non-Color';weave.pixels.foreach_set(n.ravel());weave.pack()
 materials=[]
 for name,color in [('Champagne matte blouse',(.62,.55,.45,1)),('Ink tailored skirt',(.018,.027,.041,1))]:
@@ -107,7 +107,7 @@ for obj in parts:
    for node in m.node_tree.nodes:
     if node.type!='TEX_IMAGE' or not node.image or 'eye' not in node.image.name:continue
     image=bpy.data.images.load(str(root/'.runtime/character-tools/assets/makehuman_system_assets/eyes/materials/blue_eye.png'),check_existing=False)
-    image.name='v24 natural blue eye atlas';image.pack();node.image=image
+    image.name='v25 natural blue eye atlas';image.pack();node.image=image
 
 # Remove the solid brow cards; retain the expression-linked individual hairs.
 for obj in list(parts):
@@ -139,7 +139,7 @@ modifier=hair.modifiers.new('Head skinning','ARMATURE');modifier.object=rig
 for m in hair.data.materials:
  for node in m.node_tree.nodes:
   if node.type=='TEX_IMAGE' and node.image and 'diff' in node.image.name.lower():
-   image=node.image.copy();image.name='v24 golden blonde bob colour'
+   image=node.image.copy();image.name='v25 golden blonde bob colour'
    image.pixels[0];a=np.array(image.pixels[:],dtype=np.float32).reshape(-1,4)
    lum=a[:,:3].mean(axis=1);tone=np.clip(lum/max(.001,float(np.quantile(lum,.95))),0,1)**.55
    a[:,0]=.24+tone*.32;a[:,1]=.18+tone*.30;a[:,2]=.095+tone*.24
@@ -167,7 +167,7 @@ shader=root_material.node_tree.nodes.get('Principled BSDF');shader.inputs['Base 
 cap.data.materials.clear();cap.data.materials.append(root_material);parts.append(cap)
 
 # Local rig and clothing remain available for further refinement.
-rig['surface_revision']='v24 — fuller bust, narrower frame, relaxed authored pose, loose blonde bob, blue eyes and matte tailoring'
+rig['surface_revision']='v25 — fuller bust, narrower frame, relaxed authored pose, loose blonde bob, blue eyes and matte tailoring'
 for obj in bpy.context.selected_objects:obj.select_set(False)
 rig.select_set(True)
 for obj in parts:
@@ -192,6 +192,6 @@ for obj in parts:obj.select_set(True)
 bpy.context.view_layer.objects.active=rig
 bpy.ops.export_scene.gltf(filepath=str(glb),export_format='GLB',use_selection=True,export_animations=False,export_morph=True,export_skins=True,export_extras=True,export_apply=False)
 if glb.stat().st_size>80*1024*1024:raise ValueError('Browser asset exceeds size budget')
-report={'revision':'v24','bytes':glb.stat().st_size,'bust_projection_max_m':.16,'frame_width_scale':.94,'garment_clearance_corrections':fit,'photographic_realism_verified':False,'source_v9_preserved':True,'export_covered_faces':masked,'chest_weight_corrections':rebound}
-(out/'style-v24-report.json').write_text(json.dumps(report,indent=2))
+report={'revision':'v25','bytes':glb.stat().st_size,'bust_projection_max_m':.16,'frame_width_scale':.94,'garment_clearance_corrections':fit,'photographic_realism_verified':False,'source_v9_preserved':True,'export_covered_faces':masked,'chest_weight_corrections':rebound}
+(out/'style-v25-report.json').write_text(json.dumps(report,indent=2))
 print('STYLE_COMPLETE',json.dumps(report),flush=True)

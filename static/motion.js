@@ -113,7 +113,7 @@ export class MotionDirector {
       }
       case 'walk':set('LeftUpLeg',beat*.35*k);set('RightUpLeg',other*.35*k);set('LeftLeg',Math.max(0,-beat)*.55*k);set('RightLeg',Math.max(0,beat)*.55*k);set('LeftArm',other*.22*k);set('RightArm',beat*.22*k);offset.y=Math.abs(beat)*.015;offset.x=Math.sin(p*Math.PI*2)*.22*k;break;
       case 'turn':if(['persona','conversation'].includes(a.source))root.y=Math.sin(p*Math.PI)*.45*k;break;
-      case 'stretch':set('LeftArm',-.2,0,-1.75*k);set('RightArm',-.2,0,1.75*k);set('Spine',-.12*k,0,.08*Math.sin(t)*k);break;
+      case 'stretch':if(!this.head.studioNeutral){set('LeftArm',-.2,0,-1.75*k);set('RightArm',-.2,0,1.75*k);}set('Spine',-.06*k,0,.025*Math.sin(t)*k);break;
       case 'bow':set('Spine',.55*k);set('Spine1',.25*k);set('Head',.15*k);break;
       case 'sit':break;
       case 'kneel':break;
@@ -133,6 +133,7 @@ export class MotionDirector {
     this.head.armature.quaternion.copy(this.rootRotation).slerp(q,w);
     this.head.armature.position.copy(this.origin).addScaledVector(offset,w);
     if(this.rig&&['splits','sit','kneel','lie_back','supported_step','bend_forward','wave'].includes(a.skill))this.rig.poseSkill(a.skill,w,a.side,t);
+    if(this.rig&&this.head.studioNeutral&&a.skill==='stretch')this.rig.poseSkill('stretch',w*k);
     if(a.skill==='reach')this.reach(a.target,a.side,w);
     const directTurn=a.skill==='turn'&&!['persona','conversation'].includes(a.source);
     const heading=a.frozenHeading??(this.heading+(directTurn?Math.PI*ease(clamp(t/Math.max(.2,a.duration-.3),0,1)):0));

@@ -6,6 +6,19 @@ const looks={
   neutral:{ambient:.35,key:1.3,fill:.7,exposure:.88,keyColor:'#ffffff',fillColor:'#ffffff'},
 };
 
+const hairOriginals=new WeakMap();
+export function setHairTone(root,tone='darkblonde'){
+  const tint=new THREE.Color(({original:'#ffffff',warm:'#e4c9a4',darkblonde:'#b8a591',brunette:'#82634d'})[tone]||'#ffffff');
+  root.traverse(node=>{
+    if(!node.isMesh)return;
+    for(const material of [node.material].flat()){
+      if(!material?.color||!['VitHair','Soft blonde root underlayer'].includes(material.name))continue;
+      if(!hairOriginals.has(material))hairOriginals.set(material,material.color.clone());
+      material.color.copy(hairOriginals.get(material)).multiply(tint);
+    }
+  });
+}
+
 // Material-only sample improvements preserve all original rig and mouth geometry.
 // Imported production materials remain untouched.
 export function prepareSampleMaterials(root){
