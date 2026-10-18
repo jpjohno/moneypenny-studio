@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 
-export const MOTION_SKILLS=['reach','jig','dance','walk','turn','stretch','bow','sit','kneel','lie_back','splits','idle','custom'];
+export const MOTION_SKILLS=['reach','jig','dance','walk','turn','stretch','bow','sit','kneel','lie_back','splits','supported_step','idle','custom'];
 const ease=x=>x*x*(3-2*x);
 const clamp=(x,a,b)=>Math.min(b,Math.max(a,x));
 
@@ -85,8 +85,9 @@ export class MotionDirector {
       return;
     }
     const a=this.active,t=this.clock-a.start,p=clamp(t/a.duration,0,1),k=a.intensity;
-    let w=ease(clamp(t/.65,0,1))*ease(clamp((a.duration-t)/.65,0,1));
-    if(a.release!==undefined)w*=1-ease(clamp((this.clock-a.release)/.4,0,1));
+    const fade=a.skill==='supported_step'?1.2:.65,releaseTime=a.skill==='supported_step'?1.2:.4;
+    let w=ease(clamp(t/fade,0,1))*ease(clamp((a.duration-t)/fade,0,1));
+    if(a.release!==undefined)w*=1-ease(clamp((this.clock-a.release)/releaseTime,0,1));
     const pose={};let root=new THREE.Euler(),offset=new THREE.Vector3();
     const set=(name,x=0,y=0,z=0)=>{pose[name]=[x,y,z];};
     const beat=Math.sin(t*Math.PI*3.4),other=Math.sin(t*Math.PI*3.4+Math.PI);
@@ -121,10 +122,10 @@ export class MotionDirector {
     const q=this.rootRotation.clone().multiply(new THREE.Quaternion().setFromEuler(root));
     this.head.armature.quaternion.copy(this.rootRotation).slerp(q,w);
     this.head.armature.position.copy(this.origin).addScaledVector(offset,w);
-    if(this.rig&&['splits','sit','kneel','lie_back'].includes(a.skill))this.rig.poseSkill(a.skill,w);
+    if(this.rig&&['splits','sit','kneel','lie_back','supported_step'].includes(a.skill))this.rig.poseSkill(a.skill,w,a.side);
     if(a.skill==='reach')this.reach(a.target,a.side,w);
     this.head.armature.updateMatrixWorld(true);
-    if(p>=1||a.release!==undefined&&this.clock-a.release>.4){this.active=null;this.onState(this.autonomous?'Persona movement enabled':'Movement paused');}
+    if(p>=1||a.release!==undefined&&this.clock-a.release>releaseTime){this.active=null;this.rig?.releasePose();this.onState(this.autonomous?'Persona movement enabled':'Movement paused');}
   }
 }
 
@@ -132,6 +133,8 @@ export function movementFromText(value) {
   const lower=value.toLowerCase(),found=[];
   if(/\b(?:don't|do not|avoid|without|stop)\b/.test(lower))return null;
   const duration=lower.match(/(?:for|hold)\s+(\d+)\s*seconds?/);
+  const step=lower.match(/\b(?:(?:put|place|rest|raise|lift)\s+(?:(?:your|her|my|one|the)\s+)?(?:(left|right)\s+)?(?:foot|leg)|one\s+(?:foot|leg))\s+(?:up\s+)?on\s+(?:(?:the|a|toilet|closed)\s+)*(?:seat|step|stool|lid)\b/);
+  if(step)found.push({at:step.index,step:{skill:'supported_step',side:step[1]||'right',duration:duration?clamp(Number(duration[1]),1,20):8,intensity:1}});
   for(const match of lower.matchAll(/(?:touch|rest|place|put|reach)[^.?!]{0,45}?(shoulder|belly button|belly|navel|head|chin|chest|hip|knee|ear|nose)/g))found.push({at:match.index,step:{skill:'reach',target:/belly|navel/.test(match[1])?'belly':match[1],side:match[0].includes('left hand')?'left':'right',duration:duration?clamp(Number(duration[1]),1,20):5}});
   for(const [pattern,skill] of [[/\bjig\b/,'jig'],[/\bdanc(?:e|ing)\b/,'dance'],[/\bsplits\b/,'splits'],[/lie.*back|lying.*back/,'lie_back'],[/\bkneel/,'kneel'],[/\bsit\b/,'sit'],[/\bstretch/,'stretch'],[/\bwalk/,'walk'],[/turn around|\bspin\b/,'turn'],[/\bbow\b/,'bow']]){
     const match=lower.match(pattern);if(match&&!(skill==='dance'&&found.some(x=>x.step.skill==='jig')))found.push({at:match.index,step:{skill,duration:duration?clamp(Number(duration[1]),1,20):['jig','dance','walk'].includes(skill)?10:6,intensity:.8}});

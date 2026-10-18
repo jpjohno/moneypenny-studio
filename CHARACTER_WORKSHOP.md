@@ -2,6 +2,20 @@
 
 Implemented on 18 October 2026. This is the source-editing and animation pipeline; the photographic adult character and realistic dressing asset remain unfinished.
 
+## Latest dressed performance candidate
+
+Double-click **Open Performance Character.command** to open the local `Moneypenny-Performance-Final-Fit-v3.blend`. This preserves the anatomy study and every earlier iteration. **Build Performance Character.command** reproduces the successive build stages after the anatomy source exists; builders preserve existing scenes rather than overwrite artist edits.
+
+The new dressed source adds 15 Oculus speech shapes and 52 ARKit facial shapes, separate gaze-weighted eyes and corneal caps, transferred teeth/tongue/lash deformations, and a 54-bone skeleton. It has an actual CC0 2048px skin colour texture, procedural pores/roughness and subsurface shading. The export bakes the procedural surface to actual 2048px normal/roughness maps. These are not photogrammetry or scanned PBR textures. The restored ponytail is supplemented by 3,248 individually modelled and skinned strands; this is an original procedural groom, not scanned hair.
+
+The office blouse/skirt and ankle shoes are separate fitted, skinned source meshes with wardrobe-slot extras. Fit iterations repaired bust penetration and toe exposure. Four small authored elbow/knee volume shapes are driven by measured joint bend in Blender and by `static/correctives.js` in the studio. They are modest volume corrections, not a complete sculpted pose-space, muscle, collision or cloth system. Neutral outfit, moderate arm pose, hands, bare feet, shoe coverage, portrait, mouth opening and blink renders are available under local ignored `verification/`.
+
+The private self-contained `Moneypenny-Performance-Candidate-v6.glb` is 40,309,488 bytes, under the studio's 80 MiB limit. `node scripts/character/verify_performance_glb.mjs` loads its actual skeleton, skinning and morph geometry with Three.js and checks real mouth/blink displacement and corrective bindings. Image definitions are removed only in that geometry test: it does **not** certify browser texture decoding, real-time speech playback, visual acceptance or character import. No earlier declined character upload has been retried or bypassed. The speaking website still uses the clothed sample.
+
+Reproducible stages are `build_performance_character.py`, `polish_performance_fit.py`, `detail_performance_character.py`, `finish_performance_fit.py` and `prepare_performance_export.py`. `review_performance_details.py` renders the saved final-fit scene independently. Reports remain in `.runtime/character-workshop/`. The current result is visibly computer-generated. Photographic realism, unrestricted natural movement, clothing fit during extreme poses, dressing simulation and soft-tissue dynamics remain unfinished. Native render/morph checks are separate from live audio-to-face acceptance.
+
+`finish-assets.json` pins skin, hair and facial-data downloads with hashes, sizes, licences and official catalogue links. The selected skin is MargaretToigo's CC0 natural-makeup skin. The exploratory Elvaerwyn Lara hair is CC-BY and hidden in the final source; its attribution remains. The anatomy patch's unresolved licence notice still prevents claiming commercial redistribution clearance. No generated model, texture, render or source asset is pushed to the public repository.
+
 ## What is installed on this Mac
 
 - Blender 4.5.14 LTS, Apple Silicon, in `~/Applications/Blender-4.5-LTS.app`.
@@ -55,7 +69,7 @@ The genuine NVIDIA motion setup and native Mac tests are described in `NVIDIA_MO
 
 The body resets to a stable reference before each frame, avoiding feedback from the avatar's automatic hip-balance pass. Two-bone IK preserves limb lengths, uses a consistent bend plane and clamps unreachable targets. Output interpolation is time-based. These controls improve the motion foundation; they are not a complete muscle, contact or cloth simulation.
 
-Splits now use leg IK and planted feet rather than raw local thigh rotations. Kneeling/seated poses use grounded targets. The lying study rotates around the pelvis rather than the feet. These are pose studies, not a finished motion-captured lowering/recovery sequence.
+Splits now use leg IK and planted feet rather than raw local thigh rotations. Kneeling/seated poses use grounded targets. The lying study rotates around the pelvis rather than the feet. **Foot on seat** adds a clothed supported-step study with either foot, a closed opaque seat, a planted standing foot, a pelvis shift and eased lift/lower. Stop releases it and lets the rig settle back to rest. Text such as “Put your left foot on the toilet seat” selects the same study. It is excluded from the default autonomous pool and does not infer intimate hygiene actions. These are kinematic pose studies, not physics balance, collision-certified contact or finished motion-captured sequences.
 
 ## Garments and dressing
 

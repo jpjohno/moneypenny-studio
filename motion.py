@@ -3,7 +3,7 @@ import math
 import re
 import requests
 
-SKILLS={'reach','jig','dance','walk','turn','stretch','bow','sit','kneel','lie_back','splits','idle','custom'}
+SKILLS={'reach','jig','dance','walk','turn','stretch','bow','sit','kneel','lie_back','splits','supported_step','idle','custom'}
 TARGETS={'shoulder','head','chin','chest','belly','hip','knee','ear','nose'}
 BONES={'Hips','Spine','Spine1','Spine2','Neck','Head'} | {side+name for side in ('Left','Right') for name in ('Shoulder','Arm','ForeArm','Hand','UpLeg','Leg','Foot')}
 
@@ -45,6 +45,9 @@ def validate_plan(value):
 def direct_plan(text):
     lower=text.lower();steps=[]
     if re.search(r"\b(?:don't|do not|avoid|without|stop)\b",lower):return None
+    step=re.search(r'\b(?:(?:put|place|rest|raise|lift)\s+(?:(?:your|her|my|one|the)\s+)?(?:(left|right)\s+)?(?:foot|leg)|one\s+(?:foot|leg))\s+(?:up\s+)?on\s+(?:(?:the|a|toilet|closed)\s+)*(?:seat|step|stool|lid)\b',lower)
+    if step:
+        steps.append({'_at':step.start(),'skill':'supported_step','side':step.group(1) or 'right','duration':8,'intensity':1})
     for match in re.finditer(r'(?:touch|rest|place|put|reach)[^.?!]{0,45}?(shoulder|belly button|belly|navel|head|chin|chest|hip|knee|ear|nose)',lower):
         target=match.group(1);target='belly' if target in {'belly button','navel'} else target
         steps.append({'_at':match.start(),'skill':'reach','target':target,'side':'left' if 'left hand' in match.group() else 'right','duration':4})

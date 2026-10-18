@@ -35,6 +35,8 @@
         <label for="behaviourPrompt">Movement personality</label><textarea id="behaviourPrompt" rows="3" maxlength="3000">Move naturally and attentively. Stay composed during work; be more expressive when relaxed. Choose occasional stretches, turns and small movements without waiting for a command.</textarea>
         <label for="motionPrompt">Direct or choreograph movement</label><input id="motionPrompt" maxlength="2000" placeholder="Dance a jig, then bow">
         <button id="planMotion" class="file-button">Perform movement ↗</button><button id="stopMotion" class="text-button">Stop movement</button>
+        <div class="control-pair"><select id="seatPoseSide" aria-label="Foot to raise"><option value="right">Right foot</option><option value="left">Left foot</option></select><button id="previewSeatPose" class="text-button">Foot on seat</button></div>
+        <p class="hint">Clothed pose study with a closed seat support. Stop movement to lower the foot.</p>
         <p class="hint" id="motionState" role="status">Independent body controller preparing…</p>
       </details>
       <details open><summary>Motion library <span>＋</span></summary>

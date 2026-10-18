@@ -1,4 +1,5 @@
 """Download pinned local authoring data; never install the legacy MHX addon."""
+import argparse
 import hashlib
 import json
 from pathlib import Path
@@ -14,12 +15,16 @@ def verified(path, expected):
 
 
 def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--performance', action='store_true', help='Include skin, hair and facial-data packs.')
+    args = parser.parse_args()
     root = Path(__file__).resolve().parents[2]
     manifest = json.loads(Path(__file__).with_name('body-assets.json').read_text())
+    finish = json.loads(Path(__file__).with_name('finish-assets.json').read_text()) if args.performance else {'packs': []}
     tools = root / '.runtime/character-tools'
     assets = tools / 'assets'
     assets.mkdir(parents=True, exist_ok=True)
-    for pack in manifest['packs']:
+    for pack in manifest['packs'] + finish['packs']:
         archive = assets / (pack['name'] + '.zip')
         if not archive.exists():
             partial = archive.with_suffix('.download')

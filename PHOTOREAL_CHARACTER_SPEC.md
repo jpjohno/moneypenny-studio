@@ -27,6 +27,8 @@ Requested target: a fictional adult human who remains convincing at photographic
 
 ## Current implementation versus target
 
+A later local dressed performance source now supplies 15 speech visemes, 52 facial-expression shapes, gaze eyes/corneal caps, procedural strand hair, fitted office clothes/shoes, four elbow/knee volume correctives and baked browser PBR maps. The current `Moneypenny-Performance-Candidate-v6.glb` passes geometry/rig/morph checks with Three.js; live character import and audio-to-face acceptance remain unverified. Its 2048px skin colour image and baked procedural normals are **not** a photographic scan. It remains visibly CG, and commercial rights to the legacy anatomical patch remain unresolved. See the latest candidate section in `CHARACTER_WORKSHOP.md`; the table below describes the live studio sample, not a replacement that has already been activated.
+
 | Area | Current studio | Missing production work |
 | --- | --- | --- |
 | Person | Existing CC0 MPFB character | Original photographic-quality face/body/hair/eyes |
@@ -45,7 +47,7 @@ Requested target: a fictional adult human who remains convincing at photographic
 
 The existing avatar remains clearly labelled as a sample until a production asset passes the visual and motion checks. No naked generated photograph, private portrait, borrowed likeness or non-commercial sample has been substituted and represented as the finished commercial character.
 
-## Workshop progress, 18 October 2026
+## Earlier workshop foundation, 18 October 2026
 
 Blender 4.5.14 LTS and MPFB 2.0.18 are now installed on the Mac. The local editable workshop contains a separate adult female MPFB base and Mixamo rig, hidden as unfinished source. This is actual source geometry, but the requested anatomical detail, skin/hair/eye finish, facial mapping, garment fitting and photographic review have not been completed or certified. The live stage continues to use the clothed CC0 sample. The expandable animation library, rig targets and garment markers are implemented; they do not certify body quality or realistic cloth handling. See `CHARACTER_WORKSHOP.md`.
 

@@ -1,0 +1,42 @@
+{
+  "packs": [
+    {
+      "name": "skins01",
+      "url": "https://files.makehumancommunity.org/asset_packs/skins01/skins01_cc0.zip",
+      "sha256": "7495ab99287053bd19ff1636114e64b608994d9f7437fea6cc75ea387f96dba9",
+      "bytes": 104227958,
+      "licence": "CC0",
+      "catalogue": "https://static.makehumancommunity.org/assets/assetpacks/skins01.html"
+    },
+    {
+      "name": "hair02",
+      "url": "https://files.makehumancommunity.org/asset_packs/hair02/hair02_ccby.zip",
+      "sha256": "c681e5efd37df4007a52253a8d071aedbfe3b614f199d8dae4ae76d5bd7d95c9",
+      "bytes": 72283345,
+      "licence": "CC-BY (individual author notices retained)",
+      "catalogue": "https://static.makehumancommunity.org/assets/assetpacks/hair02.html"
+    },
+    {
+      "name": "visemes02",
+      "url": "https://files.makehumancommunity.org/functional/visemes02.zip",
+      "sha256": "a69ab6fb95ddd5f56f70acc7e859f5f9c6ae613c527d577ea1571eff2183d29e",
+      "bytes": 130733,
+      "licence": "CC0",
+      "catalogue": "https://static.makehumancommunity.org/assets/assetpacks/visemes02.html"
+    },
+    {
+      "name": "faceunits01",
+      "url": "https://files.makehumancommunity.org/functional/faceunits01.zip",
+      "sha256": "d113107bd7eb59f3af4df6fc0ec29bfcc593f496d0b336aec14f086a80ce7146",
+      "bytes": 257821,
+      "licence": "CC0",
+      "catalogue": "https://static.makehumancommunity.org/assets/assetpacks/faceunits01.html"
+    }
+  ],
+  "selected_hair": {
+    "asset": "elvs_lara_hair",
+    "author": "Elvaerwyn",
+    "licence": "CC-BY",
+    "catalogue": "https://static.makehumancommunity.org/assets/assetpacks/hair02.html"
+  }
+}

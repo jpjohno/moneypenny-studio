@@ -49,7 +49,7 @@ export class RigController {
     this.rootOutput={q:this.root.quaternion.clone(),p:this.root.position.clone()};this.lastStatus='';
   }
   resetBody(neutral=true){
-    if(neutral)for(const name of this.bodyNames){this.bones[name].quaternion.copy(this.rest[name].q);this.bones[name].position.copy(this.rest[name].p);}
+    if(neutral||this.settling>0)for(const name of this.bodyNames){this.bones[name].quaternion.copy(this.rest[name].q);this.bones[name].position.copy(this.rest[name].p);}
     this.bones.Hips.position.copy(this.rest.Hips.p);
     this.root.position.copy(this.origin);this.root.quaternion.copy(this.rootRest);this.root.updateMatrixWorld(true);
   }
@@ -63,6 +63,7 @@ export class RigController {
   }
   release(name){this.targets.delete(name);}
   clear(){this.targets.clear();this.onState('Rig targets released');}
+  releasePose(){this.settling=.8;}
   setHips(target){
     const b=this.bones.Hips;const local=b.parent.worldToLocal(this.world(target));b.position.copy(local);this.root.updateMatrixWorld(true);
   }
@@ -76,10 +77,26 @@ export class RigController {
     if(leg){end.quaternion.copy(end.parent.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(this.footRotations[name]));end.updateWorldMatrix(false,true);}
     return result;
   }
-  poseSkill(skill,weight){
+  supportedStep(side='right'){
+    const raised=side==='left'?'LeftFoot':'RightFoot',standing=side==='left'?'RightFoot':'LeftFoot';
+    const scale=(this.neutral.Hips.y-this.neutral[standing].y)/.9;
+    const target=this.neutral[raised].clone().add(new THREE.Vector3(0,.4*scale,.28*scale));
+    return {raised,standing,target,height:.4*scale,scale};
+  }
+  poseSkill(skill,weight,side='right'){
     const hips=this.neutral.Hips.clone(),left=this.neutral.LeftFoot.clone(),right=this.neutral.RightFoot.clone();
     if(!hips||!left||!right)return;
-    if(skill==='splits'){
+    if(skill==='supported_step'){
+      const step=this.supportedStep(side);
+      // Shift towards the supporting leg before lifting, retaining a small
+      // bend in both knees. This is a kinematic study, not balance simulation.
+      hips.x+=(this.neutral[step.standing].x-hips.x)*.75*weight;
+      hips.y-=.025*step.scale*weight;this.setHips(hips);
+      this.limb(step.standing,this.neutral[step.standing].clone());
+      const raised=this.neutral[step.raised].clone().lerp(step.target,weight);
+      raised.y=this.neutral[step.raised].y+step.height*Math.min(1,weight*2)+.05*step.scale*Math.sin(Math.PI*weight);
+      this.limb(step.raised,raised);
+    }else if(skill==='splits'){
       const drop=hips.y-(left.y+(this.neutral.Hips.y-this.neutral.LeftUpLeg.y)+.035);
       hips.y-=drop*weight;this.setHips(hips);
       for(const [name,target,sign] of [['LeftFoot',left,1],['RightFoot',right,-1]]){
@@ -106,6 +123,7 @@ export class RigController {
     }
   }
   update(dt){
+    this.settling=Math.max(0,(this.settling||0)-dt);
     if(this.targets.has('Hips'))this.setHips(this.targets.get('Hips'));
     let clamped=false;
     for(const [name,target] of this.targets)if(name!=='Hips')clamped=this.limb(name,target).clamped||clamped;

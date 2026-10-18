@@ -59,6 +59,8 @@ Independent movement has its own persona, activity level and toggle. Local proce
 
 The wardrobe now adds separate skinned waistcoat/skirt/dress-skirt meshes and prototype footwear. The original outfit remains as a coverage layer. This is not a completed anatomical body, cloth simulation or realistic undressing system. See [PHOTOREAL_CHARACTER_SPEC.md](PHOTOREAL_CHARACTER_SPEC.md) and the proposed [BUSINESS_PLAN.md](BUSINESS_PLAN.md).
 
+The separate local **Open Performance Character.command** now opens a dressed Blender source with facial speech/expression shapes, skin maps, individual hair strands, fitted office clothes/shoes and moderate elbow/knee volume correctives. Its private GLB candidate has passed geometry checks but has not replaced the speaking sample or passed live browser acceptance. It still looks computer-generated; photographic realism and unrestricted motion remain unfinished. See [CHARACTER_WORKSHOP.md](CHARACTER_WORKSHOP.md) for build steps, licence limits and actual verification. **Independent movement → Foot on seat** previews a clothed supported-step study on either side; Stop lowers the foot. Intimate hygiene is not animated.
+
 For higher-quality local transcription on a Mac with whisper.cpp:
 
 ```sh

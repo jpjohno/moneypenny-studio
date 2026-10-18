@@ -9,7 +9,7 @@
     "three": "0.180.0"
   },
   "scripts": {
-    "check": "node --check static/studio.js && node --check static/recorder.js && node --check static/live.js && node --check static/motion.js && node --check static/wardrobe.js && node --check static/rig.js && node --check static/rig-view.js && node --check static/motion-library.js && node --check static/studio-tools.js && node --check static/appearance.js",
+    "check": "node --check static/studio.js && node --check static/recorder.js && node --check static/live.js && node --check static/motion.js && node --check static/wardrobe.js && node --check static/rig.js && node --check static/rig-view.js && node --check static/motion-library.js && node --check static/studio-tools.js && node --check static/appearance.js && node --check static/correctives.js && node --check static/seat-support.js",
     "test": "node --test tests/*.test.mjs"
   }
 }
