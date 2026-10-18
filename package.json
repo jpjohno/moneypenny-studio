@@ -1,0 +1,9 @@
+{
+  "name": "moneypenny-studio",
+  "private": true,
+  "type": "module",
+  "version": "2.0.0",
+  "description": "Local conversational 3D persona studio",
+  "dependencies": { "three": "0.180.0" },
+  "scripts": { "check": "node --check static/studio.js && node --check static/recorder.js" }
+}

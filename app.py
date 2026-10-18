@@ -1,234 +1,233 @@
-from flask import Flask, render_template_string, request, jsonify
-import requests
+"""Local Moneypenny Studio. Inference, speech, and dictation stay on this Mac."""
+import io
+import json
+import math
+import os
+from pathlib import Path
 import re
+import time
+import wave
 
+from flask import Flask, Response, jsonify, render_template, request, send_from_directory, stream_with_context
+import requests
+from werkzeug.exceptions import HTTPException
+from speech import Voice, transcribe, voice_config
+
+ROOT = Path(__file__).resolve().parent
+OLLAMA = os.environ.get("MONEYPENNY_OLLAMA_URL", "http://127.0.0.1:11434").rstrip("/")
 app = Flask(__name__)
+app.config["MAX_CONTENT_LENGTH"] = 4 * 1024 * 1024
+app.config["TEMPLATES_AUTO_RELOAD"] = True
+voice = Voice()
 
-HTML_TEMPLATE = """
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>MoneyPenny Enterprise AI Studio</title>
-    <style>
-        :root {
-            --bg-base: #030712;
-            --bg-panel: #0b0f19;
-            --border: #1f293d;
-            --accent: #38bdf8;
-            --accent-glow: rgba(56, 189, 248, 0.2);
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
-            --action-color: #f43f5e;
-        }
-        body { background: var(--bg-base); color: var(--text-main); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; display: flex; height: 100vh; margin: 0; overflow: hidden; }
-        
-        .sidebar { width: 380px; background: var(--bg-panel); border-right: 1px solid var(--border); display: flex; flex-direction: column; padding: 20px; box-sizing: border-box; overflow-y: auto; }
-        .sidebar::-webkit-scrollbar { width: 6px; }
-        .sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
-        
-        h2 { color: var(--accent); font-size: 1.2rem; margin-top: 0; display: flex; align-items: center; gap: 8px; }
-        .section-title { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); margin: 15px 0 5px 0; font-weight: bold; }
-        
-        label { font-size: 0.85rem; color: var(--text-muted); display: block; margin-top: 8px; }
-        select, textarea, input[type="text"], input[type="file"], input[type="range"] { width: 100%; background: #131b2e; border: 1px solid var(--border); color: #fff; padding: 10px; border-radius: 8px; margin-top: 4px; box-sizing: border-box; font-size: 0.9rem; }
-        textarea { resize: vertical; height: 70px; }
-        .slider-row { display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; color: var(--text-muted); margin-top: 8px; }
-        .slider-val { color: var(--accent); font-weight: bold; }
 
-        button { background: linear-gradient(135deg, #0284c7, #0369a1); color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 15px; width: 100%; transition: opacity 0.2s; box-shadow: 0 4px 12px var(--accent-glow); }
-        button:hover { opacity: 0.9; }
+@app.before_request
+def local_only():
+    # Loopback binding alone does not prevent malicious sites posting to localhost.
+    if request.host.split(":")[0] not in {"127.0.0.1", "localhost"}:
+        return jsonify(error="Open the studio using localhost or 127.0.0.1."), 403
+    if request.method == "POST":
+        origin = request.headers.get("Origin")
+        if (origin and origin != request.host_url.rstrip("/")) or request.headers.get("Sec-Fetch-Site") == "cross-site":
+            return jsonify(error="Cross-site requests are not allowed."), 403
+        if request.headers.get("X-Studio-Client") != "moneypenny":
+            return jsonify(error="Use the studio to make this request."), 403
 
-        .main-stage { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; position: relative; background: radial-gradient(circle at center, #0f172a 0%, var(--bg-base) 100%); }
-        
-        .stage-box { width: 420px; height: 480px; background: var(--bg-panel); border-radius: 24px; border: 1px solid var(--border); display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; box-shadow: 0 30px 60px rgba(0,0,0,0.7); overflow: hidden; }
-        
-        /* Advanced Photo Animator CSS */
-        .avatar-canvas { width: 100%; height: 100%; object-fit: cover; transition: transform 0.6s cubic-bezier(0.25, 1, 0.5, 1), filter 0.3s ease; }
-        .anim-lean-in { transform: scale(1.08) translateY(-8px); filter: contrast(1.05); }
-        .anim-tilt-head { transform: scale(1.04) rotate(-3deg); }
-        .anim-whisper { transform: scale(1.12) translateY(-12px); filter: brightness(0.95); }
-        .speaking-pulse { animation: speechGlow 0.6s infinite alternate; }
-        @keyframes speechGlow {
-            0% { filter: brightness(1); }
-            100% { filter: brightness(1.18) saturate(1.1); }
-        }
-        
-        .chat-card { width: 700px; background: var(--bg-panel); border: 1px solid var(--border); border-radius: 14px; padding: 20px; margin-top: 20px; box-sizing: border-box; box-shadow: 0 10px 30px rgba(0,0,0,0.4); }
-        .action-text { color: var(--action-color); font-style: italic; font-size: 0.95rem; margin-bottom: 6px; min-height: 22px; }
-        .dialogue-text { color: var(--text-main); font-size: 1.15rem; font-weight: 500; line-height: 1.5; }
-        
-        .status-badge { display: inline-block; width: 8px; height: 8px; background: #22c55e; border-radius: 50%; box-shadow: 0 0 8px #22c55e; margin-right: 6px; }
-    </style>
-</head>
-<body>
-    <div class="sidebar">
-        <h2><span class="status-badge"></span> Enterprise Studio</h2>
-        
-        <div class="section-title">Model & Character</div>
-        <label>Active Engine / Model</label>
-        <select id="modelSelect">
-            <option value="slutbags">slutbags (Uncensored 3B)</option>
-            <option value="MoneyPenny">MoneyPenny</option>
-        </select>
 
-        <label>Upload Character Portrait</label>
-        <input type="file" id="photoUpload" accept="image/*" onchange="loadPhoto(event)">
+@app.after_request
+def private_response(response):
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["Referrer-Policy"] = "no-referrer"
+    response.headers["Content-Security-Policy"] = (
+        "default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; "
+        "img-src 'self' blob: data:; connect-src 'self' blob:; worker-src 'self' blob:; "
+        "media-src 'self' blob:; object-src 'none'; frame-ancestors 'none'; base-uri 'self'"
+    )
+    if request.path.startswith(("/api/", "/chat")):
+        response.headers["Cache-Control"] = "no-store"
+    return response
 
-        <div class="section-title">Advanced Parameters</div>
-        <label>System Prompt / Personality Override</label>
-        <textarea id="systemPrompt">You are MoneyPenny, sharp-witted and flirtatious. Always interweave physical actions and expressions inside asterisks (*action*), followed by your spoken dialogue in quotation marks ("speech").</textarea>
 
-        <div class="slider-row">
-            <span>Temperature</span>
-            <span class="slider-val" id="tempVal">0.75</span>
-        </div>
-        <input type="range" id="tempRange" min="0.1" max="1.5" step="0.05" value="0.75" oninput="document.getElementById('tempVal').innerText=this.value">
+@app.errorhandler(Exception)
+def errors(error):
+    if isinstance(error, HTTPException):
+        return jsonify(error=error.description), error.code
+    if isinstance(error, ValueError):
+        return jsonify(error=str(error)), 400
+    app.logger.error("Studio request failed: %s", type(error).__name__)
+    return jsonify(error="The local service could not complete this request. Please retry."), 503
 
-        <div class="slider-row">
-            <span>Max Tokens</span>
-            <span class="slider-val" id="tokenVal">256</span>
-        </div>
-        <input type="range" id="tokenRange" min="64" max="1024" step="32" value="256" oninput="document.getElementById('tokenVal').innerText=this.value">
 
-        <div class="section-title">Interaction</div>
-        <label>Your Message</label>
-        <textarea id="userInput" style="height: 60px;">Hello, tell me something interesting.</textarea>
-        <button onclick="sendPrompt()">Generate Response & Animate</button>
-    </div>
+def body():
+    value = request.get_json()
+    if not isinstance(value, dict):
+        raise ValueError("Expected a JSON object.")
+    return value
 
-    <div class="main-stage">
-        <div class="stage-box">
-            <img id="avatarImage" class="avatar-canvas" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=600&auto=format&fit=crop&q=80" alt="Avatar">
-        </div>
 
-        <div class="chat-card">
-            <div class="action-text" id="actionDisplay">*Studio initialized. Ready for prompt execution.*</div>
-            <div class="dialogue-text" id="dialogueDisplay">Type a message on the left to begin session.</div>
-        </div>
-    </div>
+def text(value, label, limit, empty=False):
+    if not isinstance(value, str) or len(value) > limit or (not empty and not value.strip()):
+        raise ValueError(f"{label} must contain {'0' if empty else '1'}–{limit} characters.")
+    return value.strip()
 
-    <script>
-        function loadPhoto(event) {
-            const reader = new FileReader();
-            reader.onload = function(){
-                document.getElementById('avatarImage').src = reader.result;
-            }
-            reader.readAsDataURL(event.target.files[0]);
-        }
 
-        async function sendPrompt() {
-            const prompt = document.getElementById('userInput').value;
-            const model = document.getElementById('modelSelect').value;
-            const system = document.getElementById('systemPrompt').value;
-            const temperature = parseFloat(document.getElementById('tempRange').value);
-            const max_tokens = parseInt(document.getElementById('tokenRange').value);
+def number(value, label, lower, upper, integer=False):
+    if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value) or not lower <= value <= upper:
+        raise ValueError(f"{label} must be between {lower} and {upper}.")
+    if integer and int(value) != value:
+        raise ValueError(f"{label} must be a whole number.")
+    return int(value) if integer else float(value)
 
-            document.getElementById('actionDisplay').innerText = "*Processing local inference...*";
-            document.getElementById('dialogueDisplay').innerText = "...";
 
-            const response = await fetch('/chat', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ prompt, model, system, temperature, max_tokens })
-            });
-            const data = await response.json();
-            
-            document.getElementById('actionDisplay').innerText = data.actions ? `*${data.actions}*` : "";
-            document.getElementById('dialogueDisplay').innerText = `"${data.dialogue}"`;
+def chat_payload(data):
+    prompt = text(data.get("prompt"), "Message", 4000)
+    model = text(data.get("model", "MoneyPenny:latest"), "Model", 150)
+    system = text(data.get("system", "You are Moneypenny, a warm, witty British assistant."), "Personality", 6000, empty=True)
+    history = data.get("history", [])
+    if not isinstance(history, list) or len(history) > 40:
+        raise ValueError("Conversation history is limited to 40 messages.")
+    messages = [{"role": "system", "content": system + "\n\n" + (
+        "Reply in conversational English. Keep replies concise unless detail is requested. "
+        "Optionally begin with one short physical expression between asterisks, e.g. *smiles and nods*. "
+        "Then speak naturally, without quotation marks, markdown, or role labels. "
+        "Never claim to have used tools, sent a message, accessed files or completed an action: this studio only chats."
+    )}]
+    total = 0
+    for item in history:
+        if not isinstance(item, dict) or item.get("role") not in {"user", "assistant"}:
+            raise ValueError("Invalid conversation history.")
+        content = text(item.get("content"), "Previous message", 8000)
+        total += len(content)
+        if total > 32000:
+            raise ValueError("Conversation history is too long. Start a new conversation.")
+        messages.append({"role": item["role"], "content": content})
+    messages.append({"role": "user", "content": prompt})
+    return {"model": model, "messages": messages, "stream": True, "keep_alive": "10m", "options": {
+        "temperature": number(data.get("temperature", .7), "Creativity", .1, 1.5),
+        "num_predict": number(data.get("max_tokens", 256), "Reply length", 64, 1024, integer=True),
+        "num_ctx": 8192,
+    }}
 
-            // Drive photo animation and speech synchronously
-            animateAvatarBasedOnActions(data.actions);
-            speakDialogue(data.dialogue);
-        }
 
-        function animateAvatarBasedOnActions(actionText) {
-            const avatar = document.getElementById('avatarImage');
-            const text = actionText.toLowerCase();
-            
-            avatar.className = "avatar-canvas"; // reset
-            
-            if(text.includes('lean') || text.includes('closer') || text.includes('step')) {
-                avatar.classList.add('anim-lean-in');
-            } else if(text.includes('whisper') || text.includes('drop')) {
-                avatar.classList.add('anim-whisper');
-            } else {
-                avatar.classList.add('anim-tilt-head');
-            }
+def parse_reply(raw):
+    actions = " ".join(re.findall(r"\*([^*\n]+)\*", raw))[:300]
+    dialogue = re.sub(r"\*[^*]*\*", "", raw).strip().strip('"“”')
+    if not dialogue:
+        raise ValueError("The model returned no spoken reply. Try a shorter message or another model.")
+    lower = actions.lower()
+    mood = "happy" if re.search(r"smil|laugh|grin|wink|chuckl", lower) else "neutral"
+    if any(word in lower for word in ("sad", "frown", "concern")):
+        mood = "sad"
+    gesture = next((name for pattern, name in (
+        (r"shrug", "shrug"), (r"wave|greet", "handup"), (r"thumb", "thumbup"),
+        (r"point|index", "index"), (r"explain|palm|gesture", "side"), (r"\bok\b", "ok")
+    ) if re.search(pattern, lower)), None)
+    return dict(dialogue=dialogue, actions=actions, mood=mood, gesture=gesture)
 
-            setTimeout(() => {
-                avatar.className = "avatar-canvas";
-            }, 4000);
-        }
 
-        function speakDialogue(text) {
-            if ('speechSynthesis' in window) {
-                window.speechSynthesis.cancel();
-                const utterance = new SpeechSynthesisUtterance(text);
-                utterance.pitch = 1.0;
-                utterance.rate = 1.0;
-                
-                const voices = window.speechSynthesis.getVoices();
-                const ukVoice = voices.find(v => v.lang === 'en-GB' || v.name.includes('UK') || v.name.includes('British'));
-                if (ukVoice) utterance.voice = ukVoice;
-
-                const avatar = document.getElementById('avatarImage');
-                utterance.onstart = () => avatar.classList.add('speaking-pulse');
-                utterance.onend = () => avatar.classList.remove('speaking-pulse');
-
-                window.speechSynthesis.speak(utterance);
-            }
-        }
-    </script>
-</body>
-</html>
-"""
-
-@app.route('/')
-def index():
-    return render_template_string(HTML_TEMPLATE)
-
-@app.route('/chat', methods=['POST'])
-def chat():
-    data = request.json
-    prompt = data.get('prompt', '')
-    model_name = data.get('model', 'slutbags')
-    system_prompt = data.get('system', '')
-    temperature = data.get('temperature', 0.75)
-    max_tokens = data.get('max_tokens', 256)
-
-    full_prompt = f"{system_prompt}\n\nUser: {prompt}\nMoneyPenny:"
-
+def reply_events(payload):
+    started = time.monotonic()
     try:
-        ollama_res = requests.post('http://localhost:11434/api/generate', json={
-            "model": model_name,
-            "prompt": full_prompt,
-            "options": {
-                "temperature": temperature,
-            },
-            "stream": False
-        })
-        raw_output = ollama_res.json().get('response', '')
-    except Exception as e:
-        raw_output = f'*studies you closely* "Connection error with local backend: {str(e)}"'
+        with requests.post(f"{OLLAMA}/api/chat", json=payload, stream=True, timeout=(5, 120)) as upstream:
+            upstream.raise_for_status()
+            raw = ""
+            completed = False
+            for line in upstream.iter_lines(chunk_size=1):
+                if not line:
+                    continue
+                item = json.loads(line)
+                if item.get("error"):
+                    raise ValueError("Ollama could not generate this reply. Check the selected model.")
+                token = item.get("message", {}).get("content", "")
+                raw += token
+                if len(raw) > 16000:
+                    raise ValueError("The model reply exceeded the studio's limit.")
+                if token:
+                    yield {"type": "delta", "text": token}
+                if item.get("done"):
+                    completed = True
+                    yield {"type": "done", **parse_reply(raw), "elapsed": round(time.monotonic() - started, 2)}
+                    break
+            if not completed:
+                raise ValueError("Ollama disconnected before completing the reply. Please retry.")
+    except requests.RequestException:
+        yield {"type": "error", "error": "Cannot reach the selected Ollama model. Make sure Ollama is running and the model is installed."}
+    except (ValueError, KeyError, TypeError) as error:
+        yield {"type": "error", "error": str(error) if isinstance(error, ValueError) and not isinstance(error, json.JSONDecodeError) else "Ollama returned an invalid response."}
 
-    # Bulletproof Parser: Extract actions (*...*) and speech ("...")
-    actions = " ".join(re.findall(r'\*(.*?)\*', raw_output))
-    dialogue_matches = re.findall(r'"([^"]*)"', raw_output)
-    
-    if dialogue_matches:
-        dialogue = " ".join(dialogue_matches)
-    else:
-        # Fallback if quotes are missing: strip out actions and treat remaining text as dialogue
-        dialogue = re.sub(r'\*.*?\*', '', raw_output).strip()
-        if not dialogue:
-            dialogue = raw_output
 
-    if not actions:
-        actions = "maintains an intense, focused gaze"
+@app.get("/")
+def index():
+    return render_template("index.html")
 
-    return jsonify({"actions": actions, "dialogue": dialogue, "raw": raw_output})
 
-if __name__ == '__main__':
-    print("🚀 Starting Enterprise Studio at http://localhost:8090")
-    app.run(port=8090, debug=False)
+@app.get("/vendor/three/<path:filename>")
+def three(filename):
+    return send_from_directory(ROOT / "node_modules/three", filename)
+
+
+@app.get("/api/status")
+def status():
+    models, error = [], None
+    try:
+        response = requests.get(f"{OLLAMA}/api/tags", timeout=3)
+        response.raise_for_status()
+        models = [item["name"] for item in response.json().get("models", [])]
+    except (requests.RequestException, ValueError, KeyError):
+        error = "Ollama is unavailable. Start Ollama to chat."
+    config = voice_config()
+    return jsonify(app="moneypenny-studio", version="2.0.0", models=models, ollama_error=error, voice_ready=voice.available(),
+                   voice="Moneypenny · British English · bf_emma", voice_engine="Kokoro ONNX",
+                   microphone_ready=bool(config.get("transcribe_python") and Path(config.get("transcribe_model", "__missing__")).is_dir()),
+                   avatar_ready=(ROOT / "static/avatars/mpfb.glb").is_file())
+
+
+@app.post("/api/chat/stream")
+def chat_stream():
+    payload = chat_payload(body())
+    return Response(stream_with_context((json.dumps(event) + "\n" for event in reply_events(payload))), mimetype="application/x-ndjson")
+
+
+@app.post("/chat")
+def chat():
+    for event in reply_events(chat_payload(body())):
+        if event["type"] == "done":
+            return jsonify(event)
+        if event["type"] == "error":
+            return jsonify(error=event["error"]), 503
+    return jsonify(error="No reply was received."), 503
+
+
+@app.post("/api/speech")
+def speech():
+    data = body()
+    spoken = text(data.get("text"), "Speech", 2400)
+    speed = number(data.get("speed", 1), "Voice speed", .8, 1.5)
+    owner = text(data.get("owner"), "Session", 100)
+    return Response(voice.speak(spoken, speed, owner), mimetype="audio/wav", headers={"X-Studio-Voice": "bf_emma"})
+
+
+@app.post("/api/speech/stop")
+def stop_speech():
+    voice.cancel(text(body().get("owner"), "Session", 100))
+    return "", 204
+
+
+@app.post("/api/transcribe")
+def microphone():
+    value = request.get_data()
+    if not 44 < len(value) <= 960044:
+        raise ValueError("Recording must be no longer than 30 seconds.")
+    try:
+        with wave.open(io.BytesIO(value), "rb") as recording:
+            if (recording.getnchannels(), recording.getsampwidth(), recording.getframerate()) != (1, 2, 16000):
+                raise ValueError("Expected 16 kHz mono WAV audio.")
+            pcm = recording.readframes(recording.getnframes())
+    except (wave.Error, EOFError):
+        raise ValueError("Invalid microphone recording.")
+    return jsonify(text=transcribe(pcm))
+
+
+if __name__ == "__main__":
+    print("Moneypenny Studio: http://127.0.0.1:8090", flush=True)
+    app.run(host="127.0.0.1", port=int(os.environ.get("MONEYPENNY_PORT", "8090")), debug=False, threaded=True)

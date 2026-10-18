@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#eae9e4"><title>Moneypenny — Persona Studio</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='18' fill='%231b332f'/%3E%3Ctext x='12' y='47' font-size='44' fill='%23c7e3ad' font-family='serif'%3Em%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="/static/studio.css">
+  <script type="importmap">{"imports":{"three":"/vendor/three/build/three.module.js","three/addons/":"/vendor/three/examples/jsm/"}}</script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/" aria-label="Moneypenny studio home"><span class="monogram">m.</span><span>MONEYPENNY<small>PERSONA STUDIO</small></span></a>
+    <div class="top-caption">A little more human.</div>
+    <div class="top-actions"><span class="local-label"><i></i> On this Mac</span><button class="quiet" id="exportPersona">Export persona ↗</button></div>
+  </header>
+  <main class="workspace">
+    <aside class="settings" aria-label="Persona settings">
+      <div class="panel-heading"><span class="eyebrow">01 / CREATE</span><h1>Make her<br><em>your own.</em></h1><p>A personality. A presence.<br>A conversation that feels natural.</p></div>
+      <label for="personaName">Character name</label><input id="personaName" maxlength="60" value="Moneypenny">
+      <label for="personaPreset">Personality</label><select id="personaPreset"><option value="moneypenny">Moneypenny · witty & warm</option><option value="professional">Professional · calm & capable</option><option value="companion">Companion · curious & friendly</option><option value="playful">Playful · confident & flirtatious</option><option value="custom">Custom personality</option></select>
+      <label for="systemPrompt">In her own words</label><textarea id="systemPrompt" rows="5" maxlength="6000"></textarea>
+      <div class="setting-divider"></div>
+      <div class="label-line"><label for="movement">Body language</label><output id="movementValue">Natural</output></div><input id="movement" type="range" min="0" max="1" step=".05" value=".65">
+      <div class="range-ends"><span>Subtle</span><span>Expressive</span></div>
+      <label for="mood">Expression preview</label><div class="control-pair"><select id="mood"><option value="neutral">Composed</option><option value="happy">Warm smile</option><option value="love">Affectionate</option><option value="sad">Thoughtful</option><option value="angry">Serious</option></select><button class="square" id="previewMood" title="Preview expression">↗</button></div>
+      <details class="character-details" open><summary>Character & appearance <span>＋</span></summary>
+        <p class="hint" id="avatarLabel">Studio character · CC0 sample</p>
+        <label for="wardrobe">Studio wardrobe</label><select id="wardrobe"><option value="stone">Soft stone</option><option value="ink">Midnight ink</option><option value="original">Original sample outfit</option></select>
+        <label class="file-button" for="avatarUpload">＋ Import 3D character <small>.GLB</small></label><input class="visually-hidden" id="avatarUpload" type="file" accept=".glb">
+        <p class="hint">Use a TalkingHead-compatible character with a body rig and mouth shapes. Drag the stage to turn her.</p>
+        <button id="resetAvatar" class="text-button">Use studio character</button>
+        <label class="file-button secondary" for="portraitUpload">＋ Add reference portrait</label><input class="visually-hidden" id="portraitUpload" type="file" accept="image/png,image/jpeg,image/webp">
+        <div id="portraitReference" hidden><img id="portraitImage" alt="Character reference portrait"><p class="hint">Visual reference only. A photograph needs modelling and rigging to become a 3D likeness.</p></div>
+      </details>
+      <details><summary>Voice & engine <span>＋</span></summary>
+        <label for="modelSelect">Answer model</label><select id="modelSelect"><option>Checking Ollama…</option></select>
+        <div class="voice-card"><span class="tiny-wave">▂▆▃▇▃▅</span><div>British Moneypenny<small>Kokoro · bf_emma · local</small></div></div>
+        <div class="label-line"><label for="speed">Voice speed</label><output id="speedValue">1.00×</output></div><input id="speed" type="range" min=".8" max="1.5" value="1" step=".05">
+        <div class="label-line"><label for="temperature">Creativity</label><output id="temperatureValue">0.70</output></div><input id="temperature" type="range" min=".1" max="1.5" value=".7" step=".05">
+        <label for="maxTokens">Reply length</label><select id="maxTokens"><option value="128">Brief</option><option value="256" selected>Conversational</option><option value="512">Detailed</option><option value="1024">Extended</option></select>
+        <p class="hint">Changing the answer model keeps her voice. The first reply may take longer while local models load.</p>
+      </details>
+      <div class="settings-footer"><button class="text-button" id="importPersona">Import persona</button><input class="visually-hidden" id="personaFile" type="file" accept="application/json,.json"><a href="https://github.com/jpjohno/moneypenny-studio" target="_blank" rel="noreferrer">Project ↗</a></div>
+    </aside>
+
+    <section class="stage-panel" aria-label="Live 3D character">
+      <div class="stage-top"><span class="eyebrow">02 / PRESENCE</span><span class="stage-kind">LIVE 3D STAGE</span></div>
+      <div class="stage" id="stage">
+        <div class="stage-halo"></div><div class="stage-grain"></div>
+        <div id="avatar" aria-label="Interactive 3D avatar"></div>
+        <div class="stage-loader" id="stageLoader"><div class="loader-ring"></div><span id="loadLabel">Preparing her entrance…</span></div>
+        <div class="stage-watermark">A presence,<br><em>not just a reply.</em></div>
+        <div class="stage-status"><span id="stateDot" class="state-dot"></span><span id="stageState">Loading character</span><span class="waveform" id="waveform"><i></i><i></i><i></i><i></i><i></i></span></div>
+        <div class="stage-bottom"><div><span class="character-title" id="characterTitle">Moneypenny</span><span class="character-subtitle">Your personal presence</span></div><button class="stage-icon" id="fullscreen" title="Expand stage" aria-label="Expand stage">⛶</button></div>
+      </div>
+      <div class="stage-controls"><div class="view-switch" role="group" aria-label="Camera framing"><button data-view="head">Portrait</button><button data-view="upper" class="selected">Upper body</button><button data-view="full">Full body</button></div><button class="quiet" id="wave">Wave hello <span>✧</span></button></div>
+      <div class="preview-card"><div class="preview-copy"><span class="eyebrow">MEET YOUR CHARACTER</span><p>Hear her voice. See her come to life.</p></div><button id="previewVoice" class="preview-button"><span>▶</span> Preview voice & movement</button></div>
+      <div class="stage-note"><span id="connectionNote">Checking local services…</span><span>3D · voice · expression</span></div>
+    </section>
+
+    <section class="conversation" aria-label="Conversation">
+      <div class="chat-header"><div><span class="eyebrow">03 / CONNECT</span><h2>Conversation</h2></div><button id="newChat" class="square" title="New conversation" aria-label="New conversation">＋</button></div>
+      <div class="chat-scroll" id="chatScroll"><div class="welcome" id="welcome"><div class="welcome-symbol">✳</div><h3>Start with a hello.</h3><p>Talk things through, explore an idea,<br>or simply get to know her.</p><div class="suggestions"><button data-prompt="Hello! Tell me a little about yourself.">Introduce yourself ↗</button><button data-prompt="Help me organise my day. Ask me what I need to do.">Let's plan my day ↗</button><button data-prompt="Tell me something fascinating, in two sentences.">Surprise me ↗</button></div></div><div id="messages" aria-live="polite" aria-relevant="additions text"></div></div>
+      <div class="notice" id="notice" role="status" hidden></div>
+      <div class="composer-wrap"><form id="chatForm"><label class="visually-hidden" for="userInput">Message your character</label><textarea id="userInput" placeholder="Say something…" maxlength="4000" rows="2"></textarea><div class="composer-actions"><button type="button" class="mic-button" id="record" title="Record a message on this Mac" aria-label="Record a message">◉ <span id="recordLabel">Speak</span></button><button type="button" id="stop" class="stop-button" hidden>■ Stop</button><button id="send" type="submit" class="send-button" aria-label="Send message">↑</button></div></form><div class="composer-footer"><label class="toggle-label"><input type="checkbox" id="autoSpeak" checked> Speak replies</label><span id="chatMetrics">Local conversation</span></div><p class="privacy-note">Microphone recordings are transcribed on this Mac. Review the words before sending.</p></div>
+    </section>
+  </main>
+  <script type="module" src="/static/studio.js"></script>
+</body>
+</html>
