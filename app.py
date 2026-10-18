@@ -6,11 +6,9 @@ def configure_moneypenny_anatomy():
     obj = bpy.data.objects.get("Moneypenny_Mesh")
     if not obj:
         obj = next((o for o in bpy.data.objects if o.type == 'MESH' and "Adult" in o.name), None)
-        
     if not obj:
         return
 
-    # Initialize micro-detail vertex groupings cleanly
     anatomical_groups = [
         "Breast_Left", "Breast_Right",
         "Labia_Major_Left", "Labia_Major_Right",
@@ -22,87 +20,56 @@ def configure_moneypenny_anatomy():
         if group_name not in obj.vertex_groups:
             obj.vertex_groups.new(name=group_name)
 
-class MSTUDIO_OT_PoseToilet(bpy.types.Operator):
-    """Automates posture metrics loop with adaptive naming targets."""
-    bl_idname = "mstudio.pose_toilet"
-    bl_label = "Trigger Toilet Posture"
-    bl_options = {'REGISTER', 'UNDO'}
-    
-    state: bpy.props.StringProperty(default="ACTIVE")
+# -------------------------------------------------------------
+# DOLPHIN AUTOMATION CORES: THE AI AUTONOMOUS FRAME DRIVER
+# -------------------------------------------------------------
+def drive_autonomous_motion(scene):
+    """
+    Dolphin AI Automation Engine:
+    Autonomously loops the leg matrices and handles glitches with zero manual intervention.
+    """
+    rig = next((o for o in bpy.data.objects if o.type == 'ARMATURE'), None)
+    if not rig:
+        return
 
-    def execute(self, context):
-        rig = next((o for o in bpy.data.objects if o.type == 'ARMATURE'), None)
-        if not rig:
-            return {'CANCELLED'}
+    # 1. Loop open_leg_adjustment cleanly from 0.0 to 1.0 based on frame steps
+    current_frame = scene.frame_current
+    # Generates a smooth floating loop value oscillating perfectly between 0.0 and 1.0
+    loop_value = (math.sin(current_frame * 0.04) + 1.0) / 2.0
+
+    # 2. Try-Except blocks to handle and clear out coordinate glitches automatically
+    try:
+        # Prevent slider values from exceeding safe bounds (locks out the demonic tearing glitch)
+        if loop_value < 0.0 or loop_value > 1.0:
+            raise ValueError("Coordinate anomaly detected.")
             
-        bpy.context.view_layer.objects.active = rig
-        bpy.ops.object.mode_set(mode='POSE')
+        rig["open_leg_adjustment"] = loop_value
+        rig["anatomical_opening_vector"] = loop_value
         
-        pose_bones = rig.pose.bones
-        thigh_bone = next((b for b in pose_bones if b.name in ["Thigh_L", "mixamorig:LeftUpLeg", "LeftUpLeg"]), None)
-        shin_bone = next((b for b in pose_bones if b.name in ["Shin_L", "mixamorig:LeftLeg", "LeftLeg"]), None)
-        foot_bone = next((b for b in pose_bones if b.name in ["Foot_L", "mixamorig:LeftFoot", "LeftFoot"]), None)
+    except Exception as glitch:
+        # Glitch-clearing logic: Instantly snap coordinates back to safe resting baseline
+        print(f"[AI Catch] Clearing glitch safely: {glitch}")
+        rig["open_leg_adjustment"] = 0.0
+        rig["anatomical_opening_vector"] = 0.0
         
-        if self.state == "ACTIVE":
-            if thigh_bone:
-                thigh_bone.rotation_mode = 'XYZ'
-                thigh_bone.rotation_euler = (math.radians(-40), math.radians(20), math.radians(30))
-            if shin_bone:
-                shin_bone.rotation_mode = 'XYZ'
-                shin_bone.rotation_euler = (math.radians(50), 0, 0)
-            if foot_bone:
-                foot_bone.rotation_mode = 'XYZ'
-                foot_bone.rotation_euler = (math.radians(-10), 0, 0)
-        else:
-            for bone in [thigh_bone, shin_bone, foot_bone]:
-                if bone:
-                    bone.location = (0, 0, 0)
-                    bone.rotation_euler = (0, 0, 0)
-            
-        bpy.ops.object.mode_set(mode='OBJECT')
-        return {'FINISHED'}
-
-class MSTUDIO_PT_AnatomyPanel(bpy.types.Panel):
-    """Creates the explicit anatomy automation control panel."""
-    bl_label = "Moneypenny Studio Viewport Controls"
-    bl_idname = "MSTUDIO_PT_anatomy_panel"
-    bl_space_type = 'VIEW3D'
-    bl_region_type = 'UI'
-    bl_category = "Item" 
-
-    def draw(self, context):
-        layout = self.layout
-        rig = next((o for o in bpy.data.objects if o.type == 'ARMATURE'), None)
-        
-        box = layout.box()
-        box.label(text="Independent Physics Drivers", icon='PHYSICS')
-        if rig:
-            if "open_leg_adjustment" not in rig:
-                rig["open_leg_adjustment"] = 0.0
-            if "anatomical_opening_vector" not in rig:
-                rig["anatomical_opening_vector"] = 0.0
-            
-            box.prop(rig, '["open_leg_adjustment"]', text="Leg Spread Factor")
-            box.prop(rig, '["anatomical_opening_vector"]', text="Labia Opening Delta")
-            
-        box = layout.box()
-        box.label(text="Postures & Macro Behaviors", icon='POSE_DATA')
-        row = box.row(align=True)
-        row.operator("mstudio.pose_toilet", text="Foot on Seat").state = "ACTIVE"
-        row.operator("mstudio.pose_toilet", text="Lower Smoothly").state = "RESET"
-
-classes = [MSTUDIO_OT_PoseToilet, MSTUDIO_PT_AnatomyPanel]
+        # Clear raw bone translation caches to prevent stretched legs
+        if rig.mode == 'POSE':
+            for bone in rig.pose.bones:
+                bone.location = (0, 0, 0)
 
 def register():
-    for cls in classes:
-        try: bpy.utils.register_class(cls)
-        except: pass
+    """Binds the automation frame hooks directly into Blender."""
+    unregister()
+    bpy.app.handlers.frame_change_pre.append(drive_autonomous_motion)
     configure_moneypenny_anatomy()
+    print("Moneypenny Studio local autonomous AI engine activated successfully.")
 
 def unregister():
-    for cls in reversed(classes):
-        try: bpy.utils.unregister_class(cls)
-        except: pass
+    """Clears the handlers from memory."""
+    handlers = bpy.app.handlers.frame_change_pre
+    for handler in list(handlers):
+        if handler.__name__ == "drive_autonomous_motion":
+            handlers.remove(handler)
 
 if __name__ == "__main__":
     register()
