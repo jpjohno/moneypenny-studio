@@ -23,7 +23,7 @@ def configure_moneypenny_anatomy():
             obj.vertex_groups.new(name=group_name)
 
 class MSTUDIO_OT_PoseToilet(bpy.types.Operator):
-    """Automates the hygiene posture configuration loop with flexible naming targets."""
+    """Automates posture metrics loop with adaptive naming targets."""
     bl_idname = "mstudio.pose_toilet"
     bl_label = "Trigger Toilet Posture"
     bl_options = {'REGISTER', 'UNDO'}
@@ -33,14 +33,12 @@ class MSTUDIO_OT_PoseToilet(bpy.types.Operator):
     def execute(self, context):
         rig = next((o for o in bpy.data.objects if o.type == 'ARMATURE'), None)
         if not rig:
-            self.report({'ERROR'}, "Character Armature not found.")
             return {'CANCELLED'}
             
         bpy.context.view_layer.objects.active = rig
         bpy.ops.object.mode_set(mode='POSE')
         
         pose_bones = rig.pose.bones
-        
         thigh_bone = next((b for b in pose_bones if b.name in ["Thigh_L", "mixamorig:LeftUpLeg", "LeftUpLeg"]), None)
         shin_bone = next((b for b in pose_bones if b.name in ["Shin_L", "mixamorig:LeftLeg", "LeftLeg"]), None)
         foot_bone = next((b for b in pose_bones if b.name in ["Foot_L", "mixamorig:LeftFoot", "LeftFoot"]), None)
@@ -55,13 +53,11 @@ class MSTUDIO_OT_PoseToilet(bpy.types.Operator):
             if foot_bone:
                 foot_bone.rotation_mode = 'XYZ'
                 foot_bone.rotation_euler = (math.radians(-10), 0, 0)
-            self.report({'INFO'}, "Hygiene posture state activated cleanly.")
         else:
             for bone in [thigh_bone, shin_bone, foot_bone]:
                 if bone:
                     bone.location = (0, 0, 0)
                     bone.rotation_euler = (0, 0, 0)
-            self.report({'INFO'}, "Posture smoothly lowered and reset to zero baseline.")
             
         bpy.ops.object.mode_set(mode='OBJECT')
         return {'FINISHED'}
@@ -88,8 +84,6 @@ class MSTUDIO_PT_AnatomyPanel(bpy.types.Panel):
             
             box.prop(rig, '["open_leg_adjustment"]', text="Leg Spread Factor")
             box.prop(rig, '["anatomical_opening_vector"]', text="Labia Opening Delta")
-        else:
-            box.label(text="No character rig detected.", icon='ERROR')
             
         box = layout.box()
         box.label(text="Postures & Macro Behaviors", icon='POSE_DATA')
@@ -101,15 +95,14 @@ classes = [MSTUDIO_OT_PoseToilet, MSTUDIO_PT_AnatomyPanel]
 
 def register():
     for cls in classes:
-        try:
-            bpy.utils.register_class(cls)
-        except Exception:
-            pass
+        try: bpy.utils.register_class(cls)
+        except: pass
     configure_moneypenny_anatomy()
 
 def unregister():
     for cls in reversed(classes):
-        bpy.utils.unregister_class(cls)
+        try: bpy.utils.unregister_class(cls)
+        except: pass
 
 if __name__ == "__main__":
     register()
