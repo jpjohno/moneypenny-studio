@@ -2,14 +2,14 @@ import bpy
 import math
 
 def configure_moneypenny_anatomy():
-    """Initializes vertex groups and realistic skin PBR properties."""
+    """Initializes vertex groups cleanly inside the mesh configuration tree."""
     obj = bpy.data.objects.get("Moneypenny_Mesh")
     if not obj:
         obj = next((o for o in bpy.data.objects if o.type == 'MESH' and "Adult" in o.name), None)
     if not obj:
         return
 
-    # Initialize micro-detail vertex groupings cleanly
+    # Symmetrical vertex targets array
     anatomical_groups = [
         "Breast_Left", "Breast_Right",
         "Labia_Major_Left", "Labia_Major_Right",
@@ -37,17 +37,21 @@ def drive_autonomous_motion(scene):
     # Generates a smooth, continuous loop value oscillating between 0.0 and 1.0
     loop_value = (math.sin(current_frame * 0.04) + 1.0) / 2.0
 
-    # Explicitly pull the values from the master properties tree to sync them
+    # Explicitly lock custom properties to the timeline loop state
     rig["open_leg_adjustment"] = loop_value
     rig["anatomical_opening_vector"] = loop_value
 
-    # Target the inner skeleton bones directly to prevent mesh tearing or splitting
+    # Target the inner skeleton bones directly to prevent mesh scale tearing
     pose_bones = rig.pose.bones
     thigh_l = next((b for b in pose_bones if b.name in ["Thigh_L", "mixamorig:LeftUpLeg", "LeftUpLeg"]), None)
     thigh_r = next((b for b in pose_bones if b.name in ["Thigh_R", "mixamorig:RightUpLeg", "RightUpLeg"]), None)
 
+    # Force raw bone scales back to 1.0 automatically to prevent distortions
+    for b in pose_bones:
+        b.scale = (1.0, 1.0, 1.0)
+
     try:
-        # Drive symmetrical leg spreads smoothly entirely through code loops
+        # Drive symmetrical leg rotation spreads smoothly entirely through code loops
         if thigh_l:
             thigh_l.rotation_mode = 'XYZ'
             thigh_l.rotation_euler = (0, 0, math.radians(25 * loop_value))
@@ -56,8 +60,6 @@ def drive_autonomous_motion(scene):
             thigh_r.rotation_euler = (0, 0, math.radians(-25 * loop_value))
     except Exception as glitch:
         print(f"Clearing tracking anomaly safely: {glitch}")
-        for b in [thigh_l, thigh_r]:
-            if b: b.rotation_euler = (0, 0, 0)
 
 def register():
     """Binds the automation frame hooks directly into Blender."""
