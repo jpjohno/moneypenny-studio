@@ -1,6 +1,6 @@
 # Production adult character and wardrobe specification
 
-Requested target: a fictional adult human who remains convincing at photographic close-up and in full-body movement. Current status: **not achieved by the bundled CC0 sample**. This file makes the missing asset work concrete; it is not an asset-completion claim.
+Requested target: a fictional adult human who remains convincing at photographic close-up and in full-body movement. Current status: **not achieved by the bundled CC0 sample**. A separate local adult anatomical study now exists in Blender, with a welded external vulval surface, modelled nipple/umbilical detail, shallow perianal contour, individual body hair, fitted nails and facial parts, and five shape controls. Mesh continuity, skin weights, moderate posing and neutral front/rear/side views were checked. This is source progress, not photographic completion or live avatar replacement. Its legacy patch licence needs clarification before commercial redistribution. See `CHARACTER_WORKSHOP.md` for the exact scope and evidence.
 
 ## Required asset layers
 
@@ -30,7 +30,7 @@ Requested target: a fictional adult human who remains convincing at photographic
 | Area | Current studio | Missing production work |
 | --- | --- | --- |
 | Person | Existing CC0 MPFB character | Original photographic-quality face/body/hair/eyes |
-| Underlying anatomy | Not certified or completed | Complete adult anatomical source asset and explicit inspection |
+| Underlying anatomy | Separate local continuous adult source study; structural and neutral-view checks passed | Photographic finish, licence clarification, extreme-pose corrections and browser integration |
 | Clothing | Separate procedural skirt, dress-skirt and waistcoat layers over the original coverage outfit | Artist-fitted outfits, true underlayers and collision/corrective work |
 | Footwear | Simple skinned prototype shoe surfaces | Proper shoe lasts, soles, heels, fit and foot-pose corrections |
 | Movement | Procedural full-body skills, reach IK, autonomous planning and bounded custom joint timelines | Production motion clips, joint/contact/collision constraints and transition polish |
