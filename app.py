@@ -2,14 +2,14 @@ import bpy
 import math
 
 def configure_moneypenny_anatomy():
-    """Initializes vertex groups and realistic skin PBR properties cleanly."""
+    """Initializes vertex groups and realistic skin PBR properties."""
     obj = bpy.data.objects.get("Moneypenny_Mesh")
     if not obj:
         obj = next((o for o in bpy.data.objects if o.type == 'MESH' and "Adult" in o.name), None)
     if not obj:
         return
 
-    # Symmetrical structural definitions for the layout tree
+    # Initialize micro-detail vertex groupings cleanly
     anatomical_groups = [
         "Breast_Left", "Breast_Right",
         "Labia_Major_Left", "Labia_Major_Right",
@@ -21,94 +21,57 @@ def configure_moneypenny_anatomy():
         if group_name not in obj.vertex_groups:
             obj.vertex_groups.new(name=group_name)
 
-class MSTUDIO_OT_PoseToilet(bpy.types.Operator):
-    """Controls character posture variables cleanly without scaling or tearing geometry."""
-    bl_idname = "mstudio.pose_toilet"
-    bl_label = "Trigger Toilet Posture"
-    bl_options = {'REGISTER', 'UNDO'}
-    
-    state: bpy.props.StringProperty(default="ACTIVE")
+# -------------------------------------------------------------
+# AUTOMATED TIMELINE OVERRIDE: THE AI AUTONOMOUS DRIVER LOOP
+# -------------------------------------------------------------
+def drive_autonomous_motion(scene):
+    """
+    Dolphin AI Automation Core:
+    Bypasses UI selection locks to drive bone channels smoothly based on frame steps.
+    """
+    rig = next((o for o in bpy.data.objects if o.type == 'ARMATURE'), None)
+    if not rig:
+        return
 
-    def execute(self, context):
-        rig = next((o for o in bpy.data.objects if o.type == 'ARMATURE'), None)
-        if not rig:
-            return {'CANCELLED'}
-            
-        bpy.context.view_layer.objects.active = rig
-        bpy.ops.object.mode_set(mode='POSE')
-        
-        pose_bones = rig.pose.bones
-        thigh_bone = next((b for b in pose_bones if b.name in ["Thigh_L", "mixamorig:LeftUpLeg", "LeftUpLeg"]), None)
-        shin_bone = next((b for b in pose_bones if b.name in ["Shin_L", "mixamorig:LeftLeg", "LeftLeg"]), None)
-        foot_bone = next((b for b in pose_bones if b.name in ["Foot_L", "mixamorig:LeftFoot", "LeftFoot"]), None)
-        
-        # Ensure all bone scale parameters are strictly locked to normal 1.0 to prevent disappearing parts
-        for b in pose_bones:
-            b.scale = (1.0, 1.0, 1.0)
-            
-        if self.state == "ACTIVE":
-            if thigh_bone:
-                thigh_bone.rotation_mode = 'XYZ'
-                thigh_bone.rotation_euler = (math.radians(-35), math.radians(15), math.radians(20))
-            if shin_bone:
-                shin_bone.rotation_mode = 'XYZ'
-                shin_bone.rotation_euler = (math.radians(45), 0, 0)
-        else:
-            # Drop everything straight back to a solid balanced neutral standing stance
-            for bone in [thigh_bone, shin_bone, foot_bone]:
-                if bone:
-                    bone.location = (0, 0, 0)
-                    bone.rotation_euler = (0, 0, 0)
-            
-        bpy.ops.object.mode_set(mode='OBJECT')
-        return {'FINISHED'}
+    current_frame = scene.frame_current
+    # Generates a smooth, continuous loop value oscillating between 0.0 and 1.0
+    loop_value = (math.sin(current_frame * 0.04) + 1.0) / 2.0
 
-class MSTUDIO_PT_AnatomyPanel(bpy.types.Panel):
-    """Creates the explicit anatomy automation control panel."""
-    bl_label = "Moneypenny Studio Viewport Controls"
-    bl_idname = "MSTUDIO_PT_anatomy_panel"
-    bl_space_type = 'VIEW3D'
-    bl_region_type = 'UI'
-    bl_category = "Item" 
+    # Explicitly pull the values from the master properties tree to sync them
+    rig["open_leg_adjustment"] = loop_value
+    rig["anatomical_opening_vector"] = loop_value
 
-    def draw(self, context):
-        layout = self.layout
-        rig = next((o for o in bpy.data.objects if o.type == 'ARMATURE'), None)
-        
-        box = layout.box()
-        box.label(text="Independent Physics Drivers", icon='PHYSICS')
-        if rig:
-            if "open_leg_adjustment" not in rig:
-                rig["open_leg_adjustment"] = 0.0
-            if "anatomical_opening_vector" not in rig:
-                rig["anatomical_opening_vector"] = 0.0
-            
-            box.prop(rig, '["open_leg_adjustment"]', text="Leg Spread Factor")
-            box.prop(rig, '["anatomical_opening_vector"]', text="Labia Opening Delta")
-            
-        box = layout.box()
-        box.label(text="Postures & Macro Behaviors", icon='POSE_DATA')
-        row = box.row(align=True)
-        row.operator("mstudio.pose_toilet", text="Foot on Seat").state = "ACTIVE"
-        row.operator("mstudio.pose_toilet", text="Lower Smoothly").state = "RESET"
+    # Target the inner skeleton bones directly to prevent mesh tearing or splitting
+    pose_bones = rig.pose.bones
+    thigh_l = next((b for b in pose_bones if b.name in ["Thigh_L", "mixamorig:LeftUpLeg", "LeftUpLeg"]), None)
+    thigh_r = next((b for b in pose_bones if b.name in ["Thigh_R", "mixamorig:RightUpLeg", "RightUpLeg"]), None)
 
-classes = [MSTUDIO_OT_PoseToilet, MSTUDIO_PT_AnatomyPanel]
+    try:
+        # Drive symmetrical leg spreads smoothly entirely through code loops
+        if thigh_l:
+            thigh_l.rotation_mode = 'XYZ'
+            thigh_l.rotation_euler = (0, 0, math.radians(25 * loop_value))
+        if thigh_r:
+            thigh_r.rotation_mode = 'XYZ'
+            thigh_r.rotation_euler = (0, 0, math.radians(-25 * loop_value))
+    except Exception as glitch:
+        print(f"Clearing tracking anomaly safely: {glitch}")
+        for b in [thigh_l, thigh_r]:
+            if b: b.rotation_euler = (0, 0, 0)
 
 def register():
-    for cls in classes:
-        try: bpy.utils.register_class(cls)
-        except: pass
+    """Binds the automation frame hooks directly into Blender."""
+    unregister()
+    bpy.app.handlers.frame_change_pre.append(drive_autonomous_motion)
     configure_moneypenny_anatomy()
+    print("Moneypenny Studio local autonomous AI engine activated successfully.")
 
 def unregister():
-    for cls in reversed(classes):
-        try: bpy.utils.unregister_class(cls)
-        except: pass
+    """Clears the frame handlers cleanly from running memory blocks."""
+    handlers = bpy.app.handlers.frame_change_pre
+    for handler in list(handlers):
+        if handler.__name__ == "drive_autonomous_motion":
+            handlers.remove(handler)
 
 if __name__ == "__main__":
-    # Clear any active glitchy background frame loop handlers completely
-    try:
-        bpy.app.handlers.frame_change_pre.clear()
-    except:
-        pass
     register()
