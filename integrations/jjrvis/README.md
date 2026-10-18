@@ -6,6 +6,8 @@ The 18 October incremental release adds an isolated tester preview, local Jarvis
 
 A further performance, companion and Apple connections increment is included as `jjrvis-performance.patch`. See `PERFORMANCE_APPLE_RELEASE.md`, `PERFORMANCE_RELEASE_BASES.json` and `PERFORMANCE_VERIFICATION.json` for its exact six-file source basis, verified patch application, included helpers and limits. Apply this increment only after the existing patch chain and only when the receiving source matches the recorded bases; the earlier patches remain intact.
 
+The following daily-board and quieter-overview increment is `jjrvis-ux-polish.patch`. Apply it after the performance patch using `UX_RELEASE_BASES.json`; all three before hashes match that earlier patch's output. `UX_POLISH_RELEASE.md` lists its required helpers, saved-versus-current data labels, bounded news read and unchanged permission/provider review requirements.
+
 The running package is `outputs/communication_broker` in the JARVIS project. Its owner workspace is http://127.0.0.1:8766/workspace ; Moneypenny runs at http://127.0.0.1:8090/ . Synced `sources/` files are read-only.
 
 ## Included changes

@@ -92,3 +92,12 @@ test('light palettes, native keyboard choices and reduced motion work in the act
   assert.equal(await page.locator('.motion-test').evaluate(el=>getComputedStyle(el).animationName),'none');
  }finally{await browser.close();}
 });
+
+test('opening stays quiet unless the introduction was explicitly requested',()=>{
+ assert.equal(harness().settings.preferences().startup,false);
+ assert.equal(harness({startup:true,appearance:'sky'}).settings.preferences().startup,false,'A legacy automatic default is not an explicit request');
+ assert.equal(harness({startup:true,startupChosen:true}).settings.preferences().startup,true);
+ assert.equal(harness({startup:false,startupChosen:true}).settings.preferences().startup,false);
+ assert.equal(harness({startView:'invalid'}).settings.preferences().startView,'workspace');
+ assert.equal(harness({startView:'companion'}).settings.preferences().startView,'companion');
+});

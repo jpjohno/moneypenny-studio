@@ -1,0 +1,25 @@
+{
+  "checked_at": "2026-10-18T22:43:00Z",
+  "target": "existing owner loopback workspace",
+  "no_automatic_setup_dialog_after_reload": true,
+  "live_source_headline_links_visible": 5,
+  "weather_source_and_retrieval_time_visible": true,
+  "calendar_not_read_label_visible": true,
+  "saved_task_state_shown_without_inventing_tasks": true,
+  "saved_priority_date_visible": true,
+  "overview_task_management_collapsed": true,
+  "fullscreen_companion": "passed",
+  "small_icon": "passed",
+  "hide_and_restore": "passed",
+  "return_to_dashboard": "passed",
+  "stop_capture_clicked": true,
+  "appearance": "sky",
+  "horizontal_overflow": false,
+  "new_console_errors_since_reload": 0,
+  "new_permissions_granted": false,
+  "limits": [
+    "Visual check used existing desktop browser session; not an iPhone hardware test.",
+    "No claim of photographic character realism.",
+    "Apple, browser and provider sign-in requirements remain unchanged."
+  ]
+}
