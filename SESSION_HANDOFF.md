@@ -3,7 +3,23 @@
 Updated: 18 October 2026. Checkout: `/Users/jamesjohnston/Documents/Moneypenny-Studio`. Repository: `jpjohno/moneypenny-studio`, branch `codex/live-3d-persona`, draft PR [#1](https://github.com/jpjohno/moneypenny-studio/pull/1). Local URL: http://127.0.0.1:8090.
 
 
-## Latest handover: combined web, Blender motion and local Dolphin
+## Latest continuation: VS Code / Continue repair
+
+On 18 October the active `~/.continue/config.yaml` contained a Blender Python function after its YAML model list. Continue displayed **config error** and no selectable model. Pasted third-party instructions repeatedly rewrote deprecated `config.json` instead, including instructions to blindly overwrite `app.py`; those claims were not proof of a functioning agent. Both original files were backed up privately under `~/.continue/backups/studio-config-20261018-174440/`. The unchanged stale JSON was disabled into that backup directory. No pasted Blender code was executed.
+
+The active YAML now explicitly configures the installed `cognitivecomputations/dolphin-llama3:latest` for chat, edit and apply, with 8,192 context tokens and an installed Llama 3.2 fallback. Native Ollama tool calls fail for this Dolphin model. Continue 2.0.0's **Only use system message tools** option was enabled through its own settings, retaining normal tool/edit review. The actual installed compatibility protocol uses fenced `tool` blocks, not the XML described on some older documentation pages. Agent instructions emphasize real file tools, exact paths, honest edit status and reviewed changes. The portable example is `config/continue-local.example.yaml`; personal configuration and backups stay outside Git.
+
+VS Code now opens the complete `Moneypenny.code-workspace`, rather than the old Desktop checkout. The existing Python 3.12 environment was explicitly selected and the editor displays its correct `.venv/bin/python` path. VS Code's Python extension created the relative project environment entry in `.vscode/settings.json`. The separate built-in chat sidebar was hidden so the user can identify Continue/Dolphin clearly.
+
+Real acceptance check: Dolphin invoked `read_file`, then `single_find_and_replace`, and Continue displayed an actual one-line diff changing subtraction to addition in private `verification/continue-agent-check.py`. That diff was accepted. An independent Python process confirmed the saved file and checked positive, mixed-sign and zero inputs. Early model responses only printed code or claimed success, and malformed/hallucinated paths caused genuine tool errors; those failed attempts are not counted as edits. This small local model still needs clear file context and careful review, and is not a guarantee of autonomous correctness. Keep normal edit acceptance enabled.
+
+VS Code's **Edit → Start Dictation** is present and macOS Dictation is already enabled. The microphone was not started and actual spoken-request acceptance remains unverified. No VPS deployment, cloud model service, global permission weakening, Blender scene edit, application-code change or trading service modification was performed for this repair.
+
+Further fresh-session Agent checks remained unreliable: Dolphin sometimes printed code instead of issuing an edit call, invented `write_file`, or missed requested punctuation. Prefer the selected-code **⌘I / Edit** workflow for this model and review its generated diff. Neither the working connection nor the accepted arithmetic edit establishes reliable unattended coding. Do not repeat the earlier claim that configuration alone makes an unrestricted autonomous coding agent.
+
+The direct **⌘I / Edit** path was also verified against private `verification/dolphin-greeting-check.py`. A first proposal omitted the requested exclamation mark and was rejected. After a more explicit return-statement instruction, Dolphin generated the correct inline diff, it was accepted, and an independent Python process verified three different names. Together with the arithmetic check, six assertions passed against two actual saved model edits. No model-generated terminal command or application-code edit was executed. These are small workflow checks, not a coding-quality benchmark.
+
+## Earlier handover: combined web, Blender motion and local Dolphin
 
 Use this complete checkout: `/Users/jamesjohnston/Documents/Moneypenny-Studio`, branch `codex/live-3d-persona`, [PR #1](https://github.com/jpjohno/moneypenny-studio/pull/1). Open `Moneypenny.code-workspace` in VS Code. The branch now incorporates main through `e85c2f7` in its history while preserving the Flask `app.py`; main had replaced that server with a Blender-only script. Do not start the web app from the old Desktop checkout. Its three untracked files (`.editorconfig`, `run_blender_patch.py`, `save_recovery.py`) were inspected only and left untouched. The recovery script writes a source scene; it was not executed. No unsaved Blender work was saved or discarded.
 

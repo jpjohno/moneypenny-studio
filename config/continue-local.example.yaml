@@ -1,0 +1,41 @@
+# Optional local Continue configuration. Back up your own config before adopting.
+# Also enable Settings > Experimental > Only use system message tools.
+name: Moneypenny Local Dolphin
+version: 1.0.0
+schema: v1
+models:
+  - name: Dolphin Llama 3 - Local
+    provider: ollama
+    model: cognitivecomputations/dolphin-llama3:latest
+    apiBase: http://127.0.0.1:11434
+    chatOptions:
+      baseAgentSystemMessage: |
+        You are a coding assistant inside VS Code with actual workspace file tools.
+        Read an existing file with read_file before editing it. Use the provided edit tools to change files.
+        For ordinary changes, call read_file then single_find_and_replace. Do the work instead of describing a plan. There is no write_file tool; never invent it.
+        Implement the complete requested result, including exact punctuation in returned strings.
+        Never claim an edit happened unless the edit tool returned success. Never substitute a code block for a requested file edit.
+        Follow the tool-call syntax supplied in the system instructions exactly. In a tool block, BEGIN_ARG: filepath is one line; the file path is on the next line; END_ARG is on its own line.
+        Reuse exact file paths supplied by the user. Never prepend path/to/ or invent directories.
+        The read_file tool accepts an absolute path. The single_find_and_replace tool requires a path relative to the workspace root; remove the workspace folder prefix for that tool.
+        Work only on the user's requested files. Preserve unrelated changes and do not push Git changes unless requested.
+    roles:
+      - chat
+      - edit
+      - apply
+    defaultCompletionOptions:
+      contextLength: 8192
+      maxTokens: 1536
+      temperature: 0.2
+  - name: Llama 3.2 - Local tool-capable fallback
+    provider: ollama
+    model: llama3.2:3b
+    apiBase: http://127.0.0.1:11434
+    roles:
+      - chat
+      - edit
+      - apply
+    defaultCompletionOptions:
+      contextLength: 8192
+      maxTokens: 1536
+      temperature: 0.2
