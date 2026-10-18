@@ -1,5 +1,6 @@
 import io
 import json
+import struct
 import wave
 from unittest.mock import Mock
 
@@ -120,3 +121,27 @@ def test_private_audio_response(client, monkeypatch):
     assert result.status_code==200
     assert result.headers['Cache-Control']=='no-store'
     assert result.mimetype=='audio/wav'
+
+
+def test_fixed_local_character_is_reported_and_served(client, monkeypatch, tmp_path):
+    candidate = tmp_path / 'candidate.glb'
+    payload = b'{}  '
+    candidate.write_bytes(b'glTF' + struct.pack('<IIII', 2, 20 + len(payload), len(payload), 0x4e4f534a) + payload)
+    monkeypatch.setattr(studio, 'LOCAL_CHARACTER', candidate)
+    monkeypatch.setattr(studio.requests, 'get', Mock(side_effect=requests.ConnectionError()))
+    status = client.get('/api/status').json
+    assert status['character_candidate_ready'] is True
+    assert status['character_source'] == 'local-performance-candidate'
+    response = client.get('/api/character/default')
+    assert response.status_code == 200
+    assert response.mimetype == 'model/gltf-binary'
+    assert response.data == candidate.read_bytes()
+
+
+def test_missing_local_character_keeps_sample_fallback(client, monkeypatch, tmp_path):
+    monkeypatch.setattr(studio, 'LOCAL_CHARACTER', tmp_path / 'missing.glb')
+    monkeypatch.setattr(studio.requests, 'get', Mock(side_effect=requests.ConnectionError()))
+    status = client.get('/api/status').json
+    assert status['character_candidate_ready'] is False
+    assert status['character_source'] == 'bundled-cc0-sample'
+    assert client.get('/api/character/default').status_code == 404

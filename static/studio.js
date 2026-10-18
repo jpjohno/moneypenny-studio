@@ -124,14 +124,14 @@ function frameCharacter(view,plan=null) {
   head.setView(view,{cameraY:view==='full'?(lying?.75:low?.35:0):.6,cameraDistance:view==='head'?.8:0,cameraRotateX:lying?-.35:0});
   document.querySelectorAll('[data-view]').forEach(button=>button.classList.toggle('selected',button.dataset.view===view));
 }
-async function showAvatar(file=null) {
+async function showAvatar(file=null, localCharacter=null) {
   avatarReady=false; setBusy(busy); $('stageLoader').hidden=false; $('loadLabel').textContent='Preparing her entrance…';
   const previous=avatarURL;
   let next=null;
   try {
     if (file) { if(file.size>80*1024*1024)throw new Error('Use a GLB smaller than 80 MB.'); validateGLB(await file.arrayBuffer()); next=URL.createObjectURL(file); }
     wardrobe?.dispose();rigView?.dispose();motionLibrary?.dispose();seatSupport?.dispose();disposeAppearance?.();disposeAppearance=null;
-    await head.showAvatar({url:next||'/static/avatars/mpfb.glb',body:'F',avatarMood:'neutral',lipsyncLang:'en',avatarIdleEyeContact:.6,avatarSpeakingEyeContact:.85}, e=>{
+    await head.showAvatar({url:next||localCharacter?.url||'/static/avatars/mpfb.glb',body:'F',avatarMood:'neutral',lipsyncLang:'en',avatarIdleEyeContact:.6,avatarSpeakingEyeContact:.85}, e=>{
       if(e.lengthComputable) $('loadLabel').textContent=`Loading character · ${Math.round(100*e.loaded/e.total)}%`;
     });
     avatarURL=next; if(previous)URL.revokeObjectURL(previous);
@@ -160,12 +160,13 @@ async function showAvatar(file=null) {
     motionLibrary.onCue=cue=>{try{wardrobe.setGarment(cue.garment,cue.visible);const garment=wardrobe.garments().find(item=>item.id===cue.garment);$('cueState').textContent=`${garment?.name||cue.garment} ${cue.visible?'visible':'removed'} at ${cue.at}s`;}catch(error){notify(error.message);}};
     try{motionLibrary.autoIds=JSON.parse(localStorage.getItem('moneypenny-autonomous-clips')||'["studio-stretch"]');motionLibrary.aliasOverrides=JSON.parse(localStorage.getItem('moneypenny-motion-aliases')||'{}');motionLibrary.cueOverrides=JSON.parse(localStorage.getItem('moneypenny-garment-cues')||'{}');}catch{}
     tools?.refreshGarments();
-    if(!file)disposeAppearance=prepareSampleMaterials(head.armature);
+    if(!file&&!localCharacter)disposeAppearance=prepareSampleMaterials(head.armature);
     setLook(head,$('lightingLook').value,$('lightBrightness').value);
     studioOutfit=[];
-    if(!file)head.armature.traverse(node=>{if(node.isMesh&&node.name.includes('female_casualsuit')){for(const material of [node.material].flat())studioOutfit.push({material,map:material.map,color:material.color.clone()});}});
-    $('wardrobe').disabled=!!file;$('footwear').disabled=!!file;
-    $('avatarLabel').textContent=file ? `Your character · ${file.name||'imported GLB'}` : 'Studio character · CC0 sample';
+    if(!file&&!localCharacter)head.armature.traverse(node=>{if(node.isMesh&&node.name.includes('female_casualsuit')){for(const material of [node.material].flat())studioOutfit.push({material,map:material.map,color:material.color.clone()});}});
+    const fitted=!!file||!!localCharacter;
+    $('wardrobe').disabled=fitted;$('footwear').disabled=fitted;
+    $('avatarLabel').textContent=file ? `Your character · ${file.name||'imported GLB'}` : localCharacter?.label||'Studio character · CC0 sample';
     avatarReady=true; $('stageLoader').hidden=true; frameCharacter('upper');
     document.querySelectorAll('[data-view]').forEach(x=>x.classList.toggle('selected',x.dataset.view==='upper'));
     head.setMood($('mood').value||'neutral'); head.lookAtCamera(1500);
@@ -191,7 +192,10 @@ async function initializeStage() {
     Object.assign(head.lightDirect.shadow.camera,{left:-2,right:2,top:2,bottom:-2,near:.05,far:10});
     let saved=null; try {saved=await asset('avatar');}catch{}
     if(saved) { try{await showAvatar(saved);}catch{notify('The saved character is incompatible. The studio character has been restored.'); await showAvatar();} }
-    else await showAvatar();
+    else if(statusData.character_candidate_ready) {
+      try{await showAvatar(null,{url:'/api/character/default',label:'Moneypenny · local performance candidate'});}
+      catch{notify('The local performance character could not load. The studio sample has been restored.');await showAvatar();}
+    } else await showAvatar();
     const floor=new THREE.Mesh(new THREE.PlaneGeometry(6,6),new THREE.ShadowMaterial({opacity:.22}));floor.rotation.x=-Math.PI/2;floor.position.y=-.003;floor.receiveShadow=true;head.scene.add(floor);
     await head.audioCtx.audioWorklet.addModule('/static/vendor/headaudio/headworklet.min.mjs');
     lips=new HeadAudio(head.audioCtx,{parameterData:{vadGateActiveDb:-40,vadGateInactiveDb:-55,speakerMeanHz:220}});

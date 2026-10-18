@@ -8,7 +8,7 @@ import re
 import time
 import wave
 
-from flask import Flask, Response, jsonify, render_template, request, send_from_directory, stream_with_context
+from flask import Flask, Response, jsonify, render_template, request, send_file, send_from_directory, stream_with_context
 import requests
 from werkzeug.exceptions import HTTPException
 from speech import Voice, voice_config
@@ -21,11 +21,26 @@ import threading
 
 ROOT = Path(__file__).resolve().parent
 OLLAMA = os.environ.get("MONEYPENNY_OLLAMA_URL", "http://127.0.0.1:11434").rstrip("/")
+LOCAL_CHARACTER = ROOT / ".runtime/character-workshop/Moneypenny-Performance-Candidate-v6.glb"
 app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = 26 * 1024 * 1024
 app.config["TEMPLATES_AUTO_RELOAD"] = True
 voice = Voice()
 listening = Listening()
+
+
+def local_character_ready():
+    """Accept only the fixed local self-contained GLB candidate within the UI limit."""
+    try:
+        size = LOCAL_CHARACTER.stat().st_size
+        if not 24 <= size <= 80 * 1024 * 1024:
+            return False
+        with LOCAL_CHARACTER.open("rb") as source:
+            header = source.read(12)
+        return (header[:4] == b"glTF" and int.from_bytes(header[4:8], "little") == 2
+                and int.from_bytes(header[8:12], "little") == size)
+    except OSError:
+        return False
 
 
 @app.before_request
@@ -190,6 +205,13 @@ def onnx_assets(filename):
     return send_from_directory(ROOT/'node_modules/onnxruntime-web/dist',filename)
 
 
+@app.get('/api/character/default')
+def default_character():
+    if not local_character_ready():
+        return jsonify(error="The local performance character is unavailable."), 404
+    return send_file(LOCAL_CHARACTER, mimetype="model/gltf-binary", conditional=True)
+
+
 @app.get("/api/status")
 def status():
     models, error = [], None
@@ -200,11 +222,14 @@ def status():
     except (requests.RequestException, ValueError, KeyError):
         error = "Ollama is unavailable. Start Ollama to chat."
     config = voice_config()
+    candidate = local_character_ready()
     return jsonify(app="moneypenny-studio", version="2.2.0", models=models, ollama_error=error, voice_ready=voice.available(),
                    voice="Moneypenny · British English · bf_emma", voice_engine="Kokoro ONNX",
                    microphone_ready=listening.available() or bool(config.get("transcribe_python") and Path(config.get("transcribe_model", "__missing__")).is_dir()),
                    listening_engine='Whisper base.en' if listening.available() else 'Vosk',
-                   avatar_ready=(ROOT / "static/avatars/mpfb.glb").is_file())
+                   avatar_ready=candidate or (ROOT / "static/avatars/mpfb.glb").is_file(),
+                   character_candidate_ready=candidate,
+                   character_source="local-performance-candidate" if candidate else "bundled-cc0-sample")
 
 
 @app.post("/api/chat/stream")

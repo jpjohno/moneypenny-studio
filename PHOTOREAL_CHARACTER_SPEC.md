@@ -27,11 +27,11 @@ Requested target: a fictional adult human who remains convincing at photographic
 
 ## Current implementation versus target
 
-A later local dressed performance source now supplies 15 speech visemes, 52 facial-expression shapes, gaze eyes/corneal caps, procedural strand hair, fitted office clothes/shoes, four elbow/knee volume correctives and baked browser PBR maps. The current `Moneypenny-Performance-Candidate-v6.glb` passes geometry/rig/morph checks with Three.js; live character import and audio-to-face acceptance remain unverified. Its 2048px skin colour image and baked procedural normals are **not** a photographic scan. It remains visibly CG, and commercial rights to the legacy anatomical patch remain unresolved. See the latest candidate section in `CHARACTER_WORKSHOP.md`; the table below describes the live studio sample, not a replacement that has already been activated.
+A later local dressed performance source now supplies 15 speech visemes, 52 facial-expression shapes, gaze eyes/corneal caps, procedural strand hair, fitted office clothes/shoes, four elbow/knee volume correctives and baked browser PBR maps. The current `Moneypenny-Performance-Candidate-v6.glb` passes geometry/rig/morph checks with Three.js. On 18 October 2026 it also loaded automatically in a clean local browser session, completed an autonomous library movement, spoke through the British voice/mouth pipeline and returned to its ready state. That verifies startup and one voice preview, not photographic quality, acoustic interruption, every expression or extreme motion. Its 2048px skin colour image and baked procedural normals are **not** a photographic scan. It remains visibly CG, and commercial rights to the legacy anatomical patch remain unresolved. See the latest candidate section in `CHARACTER_WORKSHOP.md`.
 
 | Area | Current studio | Missing production work |
 | --- | --- | --- |
-| Person | Existing CC0 MPFB character | Original photographic-quality face/body/hair/eyes |
+| Person | Local performance candidate loads automatically when present; CC0 MPFB remains the fallback | Original photographic-quality face/body/hair/eyes and full visual acceptance |
 | Underlying anatomy | Separate local continuous adult source study; structural and neutral-view checks passed | Photographic finish, licence clarification, extreme-pose corrections and browser integration |
 | Clothing | Separate procedural skirt, dress-skirt and waistcoat layers over the original coverage outfit | Artist-fitted outfits, true underlayers and collision/corrective work |
 | Footwear | Simple skinned prototype shoe surfaces | Proper shoe lasts, soles, heels, fit and foot-pose corrections |
