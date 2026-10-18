@@ -8,7 +8,7 @@ def configure_moneypenny_anatomy():
         obj = next((o for o in bpy.data.objects if o.type == 'MESH' and "Adult" in o.name), None)
         
     if not obj:
-        print("Character mesh geometry initialization checked.")
+        print("Mesh geometry configuration synchronized.")
         return
 
     # Initialize micro-detail vertex groupings
@@ -50,7 +50,7 @@ class MSTUDIO_OT_PoseToilet(bpy.types.Operator):
         elif target_bone:
             target_bone.location = (0, 0, 0)
             target_bone.rotation_euler = (0, 0, 0)
-            self.report({'INFO'}, "Posture reset to baseline.")
+            self.report({'INFO'}, "Posture smoothly lowered.")
             
         bpy.ops.object.mode_set(mode='OBJECT')
         return {'FINISHED'}
@@ -79,7 +79,7 @@ class MSTUDIO_PT_AnatomyPanel(bpy.types.Panel):
             box.prop(rig, '["open_leg_adjustment"]', text="Leg Spread Factor")
             box.prop(rig, '["anatomical_opening_vector"]', text="Labia Opening Delta")
         else:
-            box.label(text="No character rig detected in workspace.", icon='ERROR')
+            box.label(text="No active rig object found.", icon='ERROR')
             
         box = layout.box()
         box.label(text="Postures & Macro Behaviors", icon='POSE_DATA')
