@@ -24,7 +24,7 @@ def configure_moneypenny_anatomy():
             obj.vertex_groups.new(name=group_name)
 
 class MSTUDIO_OT_PoseToilet(bpy.types.Operator):
-    """Automates the hygiene posture configuration loop."""
+    """Automates the hygiene posture configuration loop with adaptive naming targets."""
     bl_idname = "mstudio.pose_toilet"
     bl_label = "Trigger Toilet Posture"
     bl_options = {'REGISTER', 'UNDO'}
@@ -41,16 +41,31 @@ class MSTUDIO_OT_PoseToilet(bpy.types.Operator):
         bpy.ops.object.mode_set(mode='POSE')
         
         pose_bones = rig.pose.bones
-        target_bone = next((b for b in pose_bones if "Thigh" in b.name or "mixamorig:LeftUpLeg" in b.name), None)
         
-        if self.state == "ACTIVE" and target_bone:
-            target_bone.location = (0.2, 0.3, 0.5)
-            target_bone.rotation_euler = (math.radians(45), 0, math.radians(20))
-            self.report({'INFO'}, "Posture state activated.")
-        elif target_bone:
-            target_bone.location = (0, 0, 0)
-            target_bone.rotation_euler = (0, 0, 0)
-            self.report({'INFO'}, "Posture smoothly lowered.")
+        # Adaptive bone name map targeting standard structures and Mixamo skeleton configurations
+        thigh_bone = next((b for b in pose_bones if b.name in ["Thigh_L", "mixamorig:LeftUpLeg", "LeftUpLeg"]), None)
+        shin_bone = next((b for b in pose_bones if b.name in ["Shin_L", "mixamorig:LeftLeg", "LeftLeg"]), None)
+        foot_bone = next((b for b in pose_bones if b.name in ["Foot_L", "mixamorig:LeftFoot", "LeftFoot"]), None)
+        
+        if self.state == "ACTIVE":
+            # Apply smooth proportional rotations across the entire leg assembly to prevent mesh tearing
+            if thigh_bone:
+                thigh_bone.rotation_mode = 'XYZ'
+                thigh_bone.rotation_euler = (math.radians(-40), math.radians(20), math.radians(30))
+            if shin_bone:
+                shin_bone.rotation_mode = 'XYZ'
+                shin_bone.rotation_euler = (math.radians(50), 0, 0)
+            if foot_bone:
+                foot_bone.rotation_mode = 'XYZ'
+                foot_bone.rotation_euler = (math.radians(-10), 0, 0)
+            self.report({'INFO'}, "Hygiene posture state activated cleanly.")
+        else:
+            # Completely clear all coordinate sets back to perfect zero alignment
+            for bone in [thigh_bone, shin_bone, foot_bone]:
+                if bone:
+                    bone.location = (0, 0, 0)
+                    bone.rotation_euler = (0, 0, 0)
+            self.report({'INFO'}, "Posture smoothly lowered and reset to zero baseline.")
             
         bpy.ops.object.mode_set(mode='OBJECT')
         return {'FINISHED'}
@@ -79,7 +94,7 @@ class MSTUDIO_PT_AnatomyPanel(bpy.types.Panel):
             box.prop(rig, '["open_leg_adjustment"]', text="Leg Spread Factor")
             box.prop(rig, '["anatomical_opening_vector"]', text="Labia Opening Delta")
         else:
-            box.label(text="No active rig object found.", icon='ERROR')
+            box.label(text="No character rig detected in workspace.", icon='ERROR')
             
         box = layout.box()
         box.label(text="Postures & Macro Behaviors", icon='POSE_DATA')
