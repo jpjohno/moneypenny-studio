@@ -1,0 +1,173 @@
+--- a/jjrvis_core.py
++++ b/jjrvis_core.py
+@@ -267,2 +267,5 @@
+         self.read_timeout = 2.0
++        # Home includes the existing five-second authenticated health probe.
++        # Its registry must not be discarded by the shorter filesystem budget.
++        self.home_read_timeout = 6.0
+ 
+@@ -288,3 +291,4 @@
+         try:
+-            value = await asyncio.wait_for(asyncio.shield(entry['task']), self.read_timeout)
++            timeout = self.home_read_timeout if name == 'home' else self.read_timeout
++            value = await asyncio.wait_for(asyncio.shield(entry['task']), timeout)
+             entry.update(task=None, value=value, read_at=now(), stamp=time.monotonic())
+@@ -419,3 +423,4 @@
+             travel_request = bool(re.search(r'\b(?:travel|journey|route|departure)\b|\b(?:drive|leave|depart|head|go back)\s+(?:to|for|from|at)\b', lower))
+-            explicit_web = bool(re.search(r'\b(?:search|look)\b.{0,24}\b(?:online|internet|web)\b|\b(?:weather|forecast|news)\b', lower))
++            explicit_search = bool(re.search(r'\b(?:search|look)\b.{0,24}\b(?:online|internet|web)\b', lower))
++            explicit_web = explicit_search or bool(re.search(r'\b(?:weather|forecast|news)\b', lower))
+             adult_conversation = bool(re.search(
+@@ -694,3 +699,3 @@
+             live_weather=None
+-            if 'weather' in lower or 'forecast' in lower:
++            if not explicit_search and ('weather' in lower or 'forecast' in lower):
+                 # Only treat text as a place when the user explicitly says
+@@ -784,2 +789,7 @@
+                     add('Current web search',{'query':query,'checked_at':now(),'state':'Internet lookup unavailable'},'research')
++            if explicit_search and not web_results:
++                return {'answer': 'The web lookup did not return usable sources, so I cannot provide verified links for that search. Please retry in a moment.',
++                        'sources': [{k:v for k,v in source.items() if k!='text'} for source in sources if source['title']=='Current web search'],
++                        'web_results': [], 'model': 'direct-web-results', 'checked_at': now(),
++                        'mode': 'live_web_unavailable', 'actions_executed': False}
+             # Search is deterministic and metadata-only; don't inflate every answer
+--- a/workspace_data.py
++++ b/workspace_data.py
+@@ -169,2 +169,13 @@
+         self.http = None
++
++    def _reset_connection(self):
++        """A failed cached sign-in must not poison every later inbox refresh."""
++        previous, self.http = self.http, None
++        self.application = None
++        close = getattr(previous, 'close', None)
++        if close:
++            try:
++                close()
++            except Exception:
++                pass
+ 
+@@ -212,4 +223,6 @@
+                 return {"state": "connected", "account": ACCOUNT, "messages": rows, "checked_at": now(), "mode": "live_read_only"}
+-            except Exception:
++            except Exception as error:
++                self._reset_connection()
+                 return {"state": "unavailable", "account": ACCOUNT, "messages": [], "checked_at": now(),
++                        "error_category": type(error).__name__,
+                         "detail": "Junomo mailbox could not be read. The saved sign-in may need renewal or the service may be unavailable. No interactive sign-in was started."}
+--- a/tests/test_core.py
++++ b/tests/test_core.py
+@@ -54,2 +54,20 @@
+     return file_id(path)
++
++
++def test_home_health_gets_its_own_bounded_read_budget(core):
++    import time
++    core.read_timeout = .01
++    core.home_read_timeout = .15
++    def slow_registry():
++        time.sleep(.04)
++        return {'rooms': [{'id': 'fixture-room'}], 'live_api': {'state': 'unavailable'}}
++    async def check():
++        general, general_state = await core.bounded_read('general-fixture', slow_registry)
++        home, home_state = await core.bounded_read('home', slow_registry)
++        assert general is None and general_state['state'] == 'unavailable'
++        assert home['rooms'] == [{'id': 'fixture-room'}]
++        assert home_state['state'] == 'read_now'
++        assert home['live_api']['state'] == 'unavailable', 'Extra time does not fabricate a successful live connection'
++        await core.read_groups['general-fixture']['task']
++    asyncio.run(check())
+ 
+@@ -293,2 +311,56 @@
+ 
++def test_explicit_web_search_for_forecast_documentation_does_not_request_location(core, tmp_path, monkeypatch):
++    monkeypatch.setattr(module, 'HERE', tmp_path)
++    original = httpx.AsyncClient
++    calls = []
++    def handler(request):
++        calls.append(request)
++        assert request.method == 'GET' and request.url.host == 'html.duckduckgo.com'
++        return httpx.Response(200, text='<a class="result__a" href="https://open-meteo.com/en/docs">Open-Meteo API docs</a><a class="result__snippet">Forecast API documentation.</a>')
++    monkeypatch.setattr(module.httpx, 'AsyncClient', lambda **kwargs: original(transport=httpx.MockTransport(handler), **kwargs))
++    result = asyncio.run(core.ask('Search the web for Open-Meteo forecast API. Give source links.', Settings(token=TOKEN)))
++    assert result['mode'] == 'live_web_results'
++    assert result['web_results'][0]['url'] == 'https://open-meteo.com/en/docs'
++    assert 'current location' not in result['answer']
++    assert len(calls) == 1, 'A documentation search must not call a geocoder, weather API or model'
++
++
++def test_blocked_explicit_forecast_search_never_invents_links(core, tmp_path, monkeypatch):
++    monkeypatch.setattr(module, 'HERE', tmp_path)
++    original = httpx.AsyncClient
++    calls = []
++    def handler(request):
++        calls.append(request)
++        assert request.method == 'GET' and request.url.host == 'html.duckduckgo.com'
++        return httpx.Response(403)
++    monkeypatch.setattr(module.httpx, 'AsyncClient', lambda **kwargs: original(transport=httpx.MockTransport(handler), **kwargs))
++    result = asyncio.run(core.ask('Look online for weather forecast API documentation.', Settings(token=TOKEN)))
++    assert result['mode'] == 'live_web_unavailable'
++    assert result['web_results'] == []
++    assert 'cannot provide verified links' in result['answer']
++    assert len(calls) == 1
++
++
++def test_direct_london_forecast_still_uses_weather_provider(core, tmp_path, monkeypatch):
++    monkeypatch.setattr(module, 'HERE', tmp_path)
++    original = httpx.AsyncClient
++    calls = []
++    def handler(request):
++        calls.append(request)
++        assert request.method == 'GET'
++        if request.url.host == 'geocoding-api.open-meteo.com':
++            assert request.url.params['name'] == 'london'
++            return httpx.Response(200, json={'results': [{'name': 'London', 'country_code': 'GB', 'country': 'United Kingdom', 'latitude': 51.5, 'longitude': -.12}]})
++        if request.url.host == 'api.open-meteo.com':
++            return httpx.Response(200, json={'current': {'temperature_2m': 12, 'apparent_temperature': 11, 'weather_code': 3, 'wind_speed_10m': 8},
++                                           'daily': {'temperature_2m_max': [15], 'temperature_2m_min': [8], 'precipitation_probability_max': [20]}})
++        assert request.url.host == 'html.duckduckgo.com'
++        return httpx.Response(200, text='No supporting results')
++    monkeypatch.setattr(module.httpx, 'AsyncClient', lambda **kwargs: original(transport=httpx.MockTransport(handler), **kwargs))
++    result = asyncio.run(core.ask('What is the forecast for London today?', Settings(token=TOKEN)))
++    assert result['mode'] == 'live_weather'
++    assert 'London' in result['answer'] and '12°C' in result['answer']
++    assert {request.url.host for request in calls} == {'geocoding-api.open-meteo.com', 'api.open-meteo.com', 'html.duckduckgo.com'}
++
++
+ def test_latest_email_briefing_keeps_private_evidence(core, monkeypatch):
+--- /dev/null
++++ b/tests/test_mail_recovery.py
+@@ -0,0 +1,33 @@
++"""Cached mailbox errors can recover without new scopes or interactive login."""
++from types import SimpleNamespace
++
++from workspace_data import MailReader
++
++
++def test_failed_inbox_releases_cached_client_before_next_refresh(monkeypatch):
++    reader = MailReader()
++    closed = []
++    old_application = object()
++    reader.application = old_application
++    reader.http = SimpleNamespace(close=lambda: closed.append(True))
++    attempts = []
++    class Response:
++        def raise_for_status(self):
++            pass
++        def json(self):
++            return {'value': []}
++    def headers():
++        attempts.append(True)
++        if len(attempts) == 1:
++            raise ValueError('Synthetic cached sign-in failure')
++        assert reader.application is None and reader.http is None
++        reader.application = object()
++        reader.http = SimpleNamespace(get=lambda *args, **kwargs: Response())
++        return {'Authorization': 'Bearer synthetic-test-token-not-a-credential'}
++    monkeypatch.setattr(reader, '_headers', headers)
++    first = reader.inbox()
++    assert first['state'] == 'unavailable' and first['error_category'] == 'ValueError'
++    assert reader.application is None and reader.http is None and closed == [True]
++    second = reader.inbox()
++    assert second['state'] == 'connected' and second['messages'] == []
++    assert len(attempts) == 2, 'One bounded attempt per user refresh, without automatic request retries'

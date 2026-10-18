@@ -65,6 +65,30 @@ def test_dns_rebinding_host_rejected(client):
     assert client.get('/',headers={'Host':'other.example:8090'}).status_code==403
 
 
+@pytest.mark.parametrize('path', ['/api/personas', '/api/status', '/api/character/default', '/api/motion/library'])
+@pytest.mark.parametrize('headers', [{'Origin':'https://other.example'}, {'Sec-Fetch-Site':'cross-site'}, {'Origin':'http://localhost:8766','Sec-Fetch-Site':'same-site'}])
+def test_other_websites_cannot_probe_private_read_apis(client, monkeypatch, path, headers):
+    get = Mock(side_effect=AssertionError('Untrusted API reads must be rejected before contacting services'))
+    catalogue = Mock(side_effect=AssertionError('Untrusted reads must not run the WebUI catalogue subprocess'))
+    monkeypatch.setattr(studio.requests, 'get', get)
+    monkeypatch.setattr(studio.personas, 'catalogue', catalogue)
+    response = client.get(path, headers=headers)
+    assert response.status_code == 403
+    assert response.headers['Cross-Origin-Resource-Policy'] == 'same-origin'
+    assert response.headers.get('Access-Control-Allow-Origin') is None
+    get.assert_not_called()
+    catalogue.assert_not_called()
+
+
+def test_trusted_parent_can_embed_but_cannot_directly_read_private_studio_apis(client):
+    response = client.get('/?embed=jarvis', headers={'Sec-Fetch-Site':'same-site'})
+    assert response.status_code == 200
+    policy = response.headers['Content-Security-Policy']
+    assert "frame-ancestors 'self' http://127.0.0.1:8766 http://localhost:8766" in policy
+    assert "form-action 'self'" in policy
+    assert client.get('/api/status?quick=1', headers={'Origin':'http://localhost','Sec-Fetch-Site':'same-origin'}).status_code == 200
+
+
 def test_network_failure_is_error_not_character_dialogue(client, monkeypatch):
     monkeypatch.setattr(studio.requests,'post',Mock(side_effect=requests.ConnectionError()))
     response=client.post('/chat',headers=HEADERS,json={'prompt':'hi'})

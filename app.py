@@ -62,10 +62,11 @@ def local_only():
     # Loopback binding alone does not prevent malicious sites posting to localhost.
     if request.host.split(":")[0] not in {"127.0.0.1", "localhost"}:
         return jsonify(error="Open the studio using localhost or 127.0.0.1."), 403
-    if request.method == "POST":
+    if request.method == "POST" or request.path.startswith('/api/'):
         origin = request.headers.get("Origin")
         if (origin and origin != request.host_url.rstrip("/")) or request.headers.get("Sec-Fetch-Site") == "cross-site":
             return jsonify(error="Cross-site requests are not allowed."), 403
+    if request.method == "POST":
         if request.headers.get("X-Studio-Client") != "moneypenny":
             return jsonify(error="Use the studio to make this request."), 403
 
@@ -78,10 +79,11 @@ def private_response(response):
         "default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; "
         "img-src 'self' blob: data:; connect-src 'self' blob:; worker-src 'self' blob:; "
         "media-src 'self' blob:; object-src 'none'; "
-        "frame-ancestors 'self' http://127.0.0.1:8766 http://localhost:8766; base-uri 'self'"
+        "frame-ancestors 'self' http://127.0.0.1:8766 http://localhost:8766; base-uri 'self'; form-action 'self'"
     )
     if request.path.startswith(("/api/", "/chat")):
         response.headers["Cache-Control"] = "no-store"
+        response.headers["Cross-Origin-Resource-Policy"] = "same-origin"
     return response
 
 

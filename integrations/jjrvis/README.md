@@ -2,6 +2,8 @@
 
 Source snapshot for the JJRVIS workspace already running on James's Mac. This directory is an integration handover, not a standalone server: it depends on the existing JJRVIS package and its separately stored configuration.
 
+The 18 October incremental release adds an isolated tester preview, local Jarvis voice, weather and sky, clearer app permissions, and selectable light/dark palettes. It preserves the earlier v27 integration patch rather than replacing the owner's full broker source.
+
 The running package is `outputs/communication_broker` in the JARVIS project. Its owner workspace is http://127.0.0.1:8766/workspace ; Moneypenny runs at http://127.0.0.1:8090/ . Synced `sources/` files are read-only.
 
 ## Included changes
@@ -16,6 +18,32 @@ The running package is `outputs/communication_broker` in the JARVIS project. Its
 
 Preserve the current broker package, check and apply `jjrvis-integration.patch` against its v26 workspace files, then copy `connection_status.py` and the tests into their matching locations. Restart that package with its existing launcher. The patch records only this integration; unrelated personal workspace source, configuration and runtime are excluded. This is not a migration or replacement for the rest of the broker.
 
+## Incremental release installation
+
+1. Preserve the existing broker and its private configuration. Apply `jjrvis-integration.patch` first only if the receiving broker is still at the earlier v26 integration basis. Do not reapply it to an already integrated v27 workspace.
+2. Compare the receiving `jarvis_comm_broker.py`, `workspace.js`, `workspace.html` and `workspace.css` hashes with `RELEASE_BASES.json`. From that broker directory, run `git apply --check /path/to/integrations/jjrvis/jjrvis-release.patch`, review its small source differences, then apply the patch. The release patch uses one line of context and expects the recorded v27 basis; it does not contain or replace the full private owner application. Then compare the core, mail-reader and core-test hashes with `CORE_RELEASE_BASES.json`, check and apply `jjrvis-core-recovery.patch` in the same way. This second patch contains only the bounded home-read, explicit web-search and cached-mail recovery changes plus their tests; its basis is reconstructed from the exact final edits rather than an independent historical capture.
+3. Copy the included `tester_preview.py`, `sky_weather.py`, `lifestyle.js`, `lifestyle.css`, `settings-panel.js`, `settings-panel.css`, `voice_profiles.py`, `local_voice.py`, `local_voice_worker.py`, `cloud_ai.py` and `connection_status.py` into the broker directory, and the included test files into its `tests/` directory. `release-styles.css` is a reference overlay only: the same CSS changes are already in `jjrvis-release.patch`, so no extra stylesheet route or link is needed.
+4. Use the broker's existing Python 3.11+ environment and dependencies. Local Kokoro voice/model files and the selected installed Ollama model remain separate prerequisites. No voice weights, audio, personal configuration, model weights or runtime databases are included here.
+5. Run the preview, release-boundary, weather, local-voice and voice-profile tests in that broker environment. Run the display-preference JavaScript tests with the receiving workspace CSS. Their optional browser checks require the existing Playwright/Chrome installation and otherwise skip. Restart using the broker's existing launcher after checks pass; this package creates no new tunnel, public host or provider account.
+
+`SOURCE_MANIFEST.json` records the SHA-256 of each handover file. `RELEASE_BASES.json` records the required before-file hashes and explains the reconstructed CSS basis. `CORE_RELEASE_BASES.json` records the separate core/mail patch basis and successful byte-for-byte application check. Source copies are code only; test addresses, coordinates, prompts and tokens are synthetic fixtures rather than owner records.
+
+## Restricted tester preview
+
+The owner Projects & connections screen, under Private testing, can create a preview link for manual sharing. Creation returns a link but does not send it. The link uses `/preview#invite=...`; the browser removes the fragment immediately and requires an explicit Accept action before redeeming it.
+
+Preview invitations expire after ten minutes and can be used once. A preview session uses a separate HttpOnly cookie and hashed-token database, lasts at most seven days without renewal, and can be revoked or disconnected. It permits bounded text conversation with a fixed local Ollama model and Moneypenny/Jarvis presentation choices. It has no owner context, mail, contacts, files, household tools, vehicle access, trading, live internet, cloud fallback or event stream. It cannot manage invitations or create owner sessions. Request, history, response, rate, concurrency and duration limits are enforced on the server.
+
+**Owner pairing links still grant owner access.** Share only the restricted `/preview#invite=...` link with testers. Ordinary phone pairing is for the owner's own devices. Full customer accounts, separate household service credentials and cross-household connected-device support are not implemented by this limited preview.
+
+## Weather, app links and voice
+
+Weather remains off until a town is selected. The interface states that searches and rounded coordinates go to Open-Meteo and labels the sky artwork as decorative. Forecast validity and retrieval times are preserved. Turning weather off stops automatic forecast requests. The current free Open-Meteo endpoint is for evaluation and non-commercial prototyping; a sold service needs an appropriate commercial licence or separately reviewed self-hosting arrangement. No subscription was purchased. See [Open-Meteo terms and plans](https://open-meteo.com/en/pricing).
+
+App shortcuts distinguish connected services, Mac-synced copies, setup requirements and website handoffs. Opening ChatGPT, a social network, a provider security page or Vonage does not attach that account or prove device control. General desktop control is not included.
+
+Jarvis now has a local Kokoro voice alongside Moneypenny. Explicit cloud voice profiles remain separately labelled. The embedded character's mouth animation and photographic appearance still need human acceptance; successful WAV generation is not proof of perfect lip timing.
+
 ## Present limits
 
 The current character is CG and has not passed photographic realism acceptance. The browser character is clothed. Camera permission, live house control, native phone integration, other vehicle brands and multiple household/customer records remain separate, uncompleted integration work. A phone browser cannot use another computer's localhost 3D service: the UI labels 3D as available on the Mac until a supported authenticated remote rendering route exists.
@@ -25,3 +53,7 @@ The current character is CG and has not passed photographic realism acceptance. 
 ## Verified local conversation
 
 The selected Sadiq uncensored 3B model returned a warmed direct response in 0.71 seconds and the full authenticated JJRVIS chat returned an arithmetic answer in 3.25 seconds. See `LOCAL_AI_VERIFICATION.json` for the bounded synthetic tests, including cold-load timeout. No paid request or device action was made. This does not guarantee cold-start latency or tool accuracy for arbitrary tasks.
+
+`LIVE_PREVIEW_VOICE_VERIFICATION.json` records a later local loopback check: Jarvis WAV generation, unchanged selected preferences, owner and isolated-preview arithmetic answers, rejection of owner APIs from the preview cookie, one-use links, disconnect and active revocation. Both temporary test invitations were revoked. It contains no invitation link, token, account address, device identifier, personal coordinates, internal filesystem path or raw audio. External HTTPS delivery and human voice/photographic acceptance were not tested by those checks.
+
+`PUBLIC_ROUTE_VERIFICATION.json` separately records unauthenticated HTTPS route checks: the preview shell was reachable, owner workspace data required authentication, and remote owner bootstrap was denied. This checks public route boundaries, not a complete authenticated remote session. `RELEASE_READINESS.json` records the completed automated suites and the remaining human acceptance and customer-isolation gaps.

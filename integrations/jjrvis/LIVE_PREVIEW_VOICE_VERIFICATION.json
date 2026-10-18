@@ -1,0 +1,72 @@
+{
+  "checked_at": "2026-10-18T21:13:34.894985+00:00",
+  "transport": "local_loopback",
+  "paid_api_requests": 0,
+  "invitations_sent": false,
+  "checks": {
+    "jarvis_preview_route": {
+      "provider": "local-kokoro",
+      "identity": "Jarvis",
+      "sample_rate": 24000,
+      "channels": 1,
+      "duration_seconds": 5.055,
+      "bytes": 242698,
+      "request_seconds": 1.979
+    },
+    "selected_preferences_unchanged": {
+      "verified": true,
+      "before": {
+        "profile": "moneypenny",
+        "speed": 1.3,
+        "model": "ollama:sadiq-bd/llama3.2-3b-uncensored:latest"
+      },
+      "after": {
+        "profile": "moneypenny",
+        "speed": 1.3,
+        "model": "ollama:sadiq-bd/llama3.2-3b-uncensored:latest"
+      }
+    },
+    "owner_local_chat": {
+      "elapsed_seconds": 1.136,
+      "answer": "12",
+      "model": "sadiq-bd/llama3.2-3b-uncensored:latest",
+      "mode": "local_conversation",
+      "actions_executed": false
+    },
+    "restricted_preview": {
+      "scope": "chat_only",
+      "owner_routes_status": {
+        "/v1/workspace": 401,
+        "/v1/workspace/files": 401,
+        "/v1/workspace/mail": 401,
+        "/v1/workspace/home": 401,
+        "/v1/workspace/devices": 401,
+        "/v1/workspace/trading": 401,
+        "/v1/workspace/voice/preferences": 401
+      },
+      "owner_chat_status": 401,
+      "answer": "The answer is twelve.",
+      "model": "uncensored-3b:latest",
+      "external_context_used": false,
+      "actions_executed": false,
+      "request_seconds": 1.402,
+      "cookie_httponly": true,
+      "cookie_same_site_strict": true,
+      "session_lifetime_seconds": 86399,
+      "single_use_replay_status": 401
+    },
+    "preview_disconnect": {
+      "session_status": 401,
+      "chat_status": 401
+    },
+    "active_preview_revocation": {
+      "session_status": 401,
+      "chat_status": 401
+    }
+  },
+  "outcome": "completed",
+  "cleanup": {
+    "invitations_created": 2,
+    "all_created_invites_revoked": true
+  }
+}

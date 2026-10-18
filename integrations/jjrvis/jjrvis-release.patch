@@ -1,0 +1,134 @@
+--- a/jarvis_comm_broker.py
++++ b/jarvis_comm_broker.py
+@@ -516,2 +516,6 @@
+             return JSONResponse({"detail": "Origin not allowed"}, status_code=403)
++        if request.method == "POST" and request.url.path == "/workspace/phone-connect":
++            length = request.headers.get("content-length", "")
++            if not length.isdigit() or int(length) > 2048:
++                return JSONResponse({"detail": "Pairing form too large or Content-Length missing"}, status_code=413)
+         if request.method == "POST" and request.url.path != "/workspace/phone-connect":
+@@ -533,2 +537,6 @@
+         response.headers["X-Content-Type-Options"] = "nosniff"
++        response.headers["X-Frame-Options"] = "DENY"
++        response.headers["Permissions-Policy"] = 'camera=(), microphone=(self), geolocation=(self), payment=(), usb=()'
++        if request.url.scheme == "https":
++            response.headers["Strict-Transport-Security"] = "max-age=31536000"
+         # Origin-only referrers preserve the browser's same-origin form Origin.
+@@ -537,3 +545,3 @@
+         response.headers["Referrer-Policy"] = "strict-origin" if request.url.path == "/workspace/phone-connect" else "no-referrer"
+-        response.headers["Content-Security-Policy"] = "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: https://ichef.bbci.co.uk https://e3.365dm.com https://i.guim.co.uk https://s.france24.com https://a57.foxnews.com https://static.foxnews.com; frame-src http://127.0.0.1:8090 http://localhost:8090 https://schwabnetwork.com https://www.tradingview-widget.com https://www.youtube-nocookie.com; connect-src 'self'; media-src 'self' blob:; frame-ancestors 'none'"
++        response.headers["Content-Security-Policy"] = "default-src 'self'; base-uri 'none'; object-src 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: https://ichef.bbci.co.uk https://e3.365dm.com https://i.guim.co.uk https://s.france24.com https://a57.foxnews.com https://static.foxnews.com; frame-src http://127.0.0.1:8090 http://localhost:8090 https://schwabnetwork.com https://www.tradingview-widget.com https://www.youtube-nocookie.com; connect-src 'self'; media-src 'self' blob:; frame-ancestors 'none'"
+         return response
+@@ -556,2 +564,7 @@
+     secure = [Depends(auth)]
++    import sky_weather
++    sky_weather.register_routes(app, secure)
++    import tester_preview
++    app.state.tester_preview = tester_preview.register_routes(
++        app, secure, settings, database_path=HERE / '.runtime/tester-preview.sqlite3')
+     import cloud_mail_accounts
+@@ -645,2 +658,10 @@
+ 
++    @app.get("/lifestyle.js", include_in_schema=False)
++    async def lifestyle_js():
++        return FileResponse(HERE / "lifestyle.js", media_type="text/javascript")
++
++    @app.get("/lifestyle.css", include_in_schema=False)
++    async def lifestyle_css():
++        return FileResponse(HERE / "lifestyle.css", media_type="text/css")
++
+     @app.get("/communications-view.js", include_in_schema=False)
+@@ -773,3 +794,6 @@
+         # The Cloudflare origin keeps its public Host value, so it cannot use this route.
+-        if request.url.hostname not in {"127.0.0.1", "localhost"}:
++        if (request.url.hostname not in {"127.0.0.1", "localhost"}
++                or not request.client or request.client.host not in {"127.0.0.1", "::1"}
++                or request.headers.get("sec-fetch-site") == "cross-site"
++                or any(request.headers.get(name) for name in ("cf-connecting-ip", "forwarded", "x-forwarded-host"))):
+             raise HTTPException(403, "Local Mac connection required")
+--- a/workspace.js
++++ b/workspace.js
+@@ -20,3 +20,3 @@
+  <defs><clipPath id="brand-blue-inlay"><path d="M 380 226 H 950 V 244 H 380 Z"/></clipPath><linearGradient id="brand-bevel" gradientUnits="userSpaceOnUse" x1="400" y1="140" x2="430" y2="240"><stop stop-color="#ffffff"/><stop offset=".45" stop-color="#8aa6b6"/><stop offset=".55" stop-color="#243e51"/><stop offset="1" stop-color="#b3d7e8"/></linearGradient><linearGradient id="precision-metal" gradientUnits="userSpaceOnUse" x1="0" y1="140" x2="0" y2="240"><stop offset="0" stop-color="#fcfeff"/><stop offset=".3" stop-color="#e3edf2"/><stop offset=".48" stop-color="#bed0da"/><stop offset=".51" stop-color="#8ca8b8"/><stop offset=".8" stop-color="#c3d9e4"/><stop offset="1" stop-color="#749ab2"/></linearGradient><linearGradient id="precision-blue" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#b9efff"/><stop offset=".5" stop-color="#4599c0"/><stop offset="1" stop-color="#133e66"/></linearGradient></defs>
+- ${glyphs.map((d,i)=>`<g class="precision-letter precision-letter-${i}" style="animation-delay:${i<2?.25:1.35+(i-2)*.38}s"><g>${[7,6,5,4,3,2,1].map(z=>`<path d="${d}" class="precision-extrusion" transform="translate(${z*.65} ${z})"/>`).join('')}<path d="${d}" class="precision-depth" transform="translate(0 1)"/><path d="${d}" class="precision-bevel"/><path d="${d}" class="precision-face"/><path d="${d}" class="precision-inlay" clip-path="url(#brand-blue-inlay)"/><path d="${d}" class="precision-edge"/></g></g>`).join('')}
++ ${glyphs.map((d,i)=>`<g class="precision-letter precision-letter-${i}"><g>${[7,6,5,4,3,2,1].map(z=>`<path d="${d}" class="precision-extrusion" transform="translate(${z*.65} ${z})"/>`).join('')}<path d="${d}" class="precision-depth" transform="translate(0 1)"/><path d="${d}" class="precision-bevel"/><path d="${d}" class="precision-face"/><path d="${d}" class="precision-inlay" clip-path="url(#brand-blue-inlay)"/><path d="${d}" class="precision-edge"/></g></g>`).join('')}
+  <g class="precision-eyes"><ellipse cx="163" cy="142" rx="15" ry="34"/><ellipse cx="270" cy="134" rx="15" ry="34"/></g>
+@@ -156,3 +156,3 @@
+  const layout=stage.querySelector('[data-layout]');const layoutLabel=()=>layout.textContent=stage.classList.contains('arranged')?'Free layout':'Arrange panels';layoutLabel();layout.onclick=()=>{stage.classList.toggle('arranged');localStorage.setItem('jjrvis-layout',stage.classList.contains('arranged')?'arranged':'free');layoutLabel();};
+- const motion=stage.querySelector('[data-motion]');stage.classList.toggle('paused',localStorage.getItem('jjrvis-motion')==='paused');const motionLabel=()=>motion.textContent=stage.classList.contains('paused')?'Resume motion':'Pause motion';motionLabel();motion.onclick=()=>{stage.classList.toggle('paused');localStorage.setItem('jjrvis-motion',stage.classList.contains('paused')?'paused':'running');motionLabel();};
++ const motion=stage.querySelector('[data-motion]');stage.classList.toggle('paused',localStorage.getItem('jjrvis-motion')==='paused'||!window.JJSettings?.preferences().effectiveMotion);const motionLabel=()=>motion.textContent=stage.classList.contains('paused')?'Resume motion':'Pause motion';motionLabel();motion.onclick=()=>{stage.classList.toggle('paused');localStorage.setItem('jjrvis-motion',stage.classList.contains('paused')?'paused':'running');motionLabel();};
+  const onSearch=e=>{if(!stage.isConnected)return;pin('search');const target=host.querySelector('[data-key="search"] .desk-search-results');if(target){target.innerHTML='<p>'+esc(e.detail.answer)+'</p>'+e.detail.results.map(r=>'<div class="hud-row">'+safeLink(r.url,r.title)+'<small>'+esc(r.snippet||'')+'</small></div>').join('');host.querySelector('[data-key="search"]').scrollIntoView({behavior:'smooth',block:'center'});}};window.addEventListener('jjrvis-search-results',onSearch);
+@@ -161,2 +161,19 @@
+ 
++async function chooseAssistant(profile){
++ try{await stopVoice();const prefs=await api('/v1/workspace/voice/preferences');await refreshAssistantIdentity(await api('/v1/workspace/voice/preferences',{profile,speed:prefs.speed,model:prefs.model}));if(showAssistant())$('#assistant-input').focus();}catch(error){notify(error.message);}
++}
++function applyPresenceChoice(){
++ const hub=document.querySelector('.presence-hub');if(!hub)return;
++ const mode=window.JJSettings?.preferences().presence||'together';hub.dataset.displayMode=mode;
++ const orb=hub.querySelector('.jarvis-presence');if(orb)orb.hidden=mode==='moneypenny';
++ const talk=hub.querySelector('[data-presence-talk]');if(talk)talk.textContent=mode==='jarvis'?'Talk to Jarvis ↗':'Talk to Moneypenny ↗';
++ const picker=hub.querySelector('[data-presence-choice]');if(picker)picker.value=mode;
++}
++function mountPresenceChoices(){
++ const hub=document.querySelector('.presence-hub');if(!hub)return;
++ const controls=document.createElement('div');controls.className='presence-controls';controls.innerHTML='<button type="button" data-talk-character="moneypenny">Talk to Moneypenny</button><button type="button" data-talk-character="english">Talk to Jarvis</button><button type="button" data-colour-choice>Colour & appearance</button><label>Presence<select data-presence-choice aria-label="Presence"><option value="together">Both together</option><option value="moneypenny">Moneypenny</option><option value="jarvis">Jarvis</option></select></label>';
++ hub.querySelector('.presence-heading').after(controls);controls.querySelectorAll('[data-talk-character]').forEach(button=>button.onclick=()=>chooseAssistant(button.dataset.talkCharacter));controls.querySelector('[data-colour-choice]').onclick=()=>openSettings('appearance');controls.querySelector('select').onchange=event=>window.JJSettings?.setPresence(event.target.value);
++ const orb=document.createElement('section');orb.className='jarvis-presence';orb.setAttribute('aria-label','Jarvis assistant presence');orb.innerHTML='<div class="jarvis-core" aria-hidden="true"><strong>JARVIS</strong></div><div class="jarvis-caption"><p>QUIETLY CAPABLE.<small>Your English voice. Your connected world.</small></p></div>';hub.querySelector('.presence-scene').prepend(orb);applyPresenceChoice();
++}
++window.addEventListener('jjrvis-display-changed',applyPresenceChoice);
+ function overview(){
+@@ -168,3 +185,3 @@
+  <div class="presence-scene"><section class="moneypenny-presence" aria-label="Moneypenny live 3D assistant"><div class="presence-top"><span>MONEYPENNY</span><b data-presence-state>PREPARING 3D</b></div><iframe id="moneypenny-presence" title="Live 3D Moneypenny" src="${['localhost','127.0.0.1'].includes(location.hostname)?'http://127.0.0.1:8090/?embed=jarvis':'about:blank'}" allow="autoplay" loading="eager"></iframe><div class="presence-footer"><span>YOUR FRONT OF HOUSE</span><div><button type="button" data-presence-wave>Wave</button><a href="http://127.0.0.1:8090/" target="_blank" rel="noopener">Customise Moneypenny ↗</a></div></div></section>
+- <div id="presence-atlas" class="presence-atlas" aria-label="Your interactive world"></div><div class="presence-scene-caption"><span>ONE CONVERSATION. YOUR CONNECTED WORLD.</span><p>Home, work and the day ahead.</p><button type="button" data-presence-talk>Talk to Moneypenny <span aria-hidden="true">↗</span></button><button type="button" class="quiet" data-go="home">Devices & connections</button></div></div>
++ <div id="presence-atlas" class="presence-atlas" aria-label="Your interactive world"></div><div class="presence-scene-caption"><span>ONE CONVERSATION. YOUR CONNECTED WORLD.</span><p>Home, work and the day ahead.</p><button type="button" data-presence-talk>Talk to Moneypenny <span aria-hidden="true">↗</span></button><button type="button" class="quiet" data-go="connections">Apps & permissions</button></div></div>
+  <div class="presence-status" role="status"><div><i></i><span data-ai-summary>Checking local intelligence…</span></div><span>JARVIS CORE <span aria-hidden="true">/</span> MONEYPENNY PRESENCE</span></div></section>
+@@ -180,2 +197,4 @@
+  const assistant=document.querySelector('.assistant-dock');if(assistant&&assistant.parentElement!==document.body)document.body.append(assistant);
++ mountPresenceChoices();
++ const sky=document.createElement('section');document.querySelector('.connection-strip').after(sky);window.JJLifestyle?.mountSky(sky,{api});
+  const presence=$('#moneypenny-presence');if(presence){
+@@ -183,3 +202,3 @@
+   document.querySelector('[data-presence-wave]').onclick=()=>presence.contentWindow?.postMessage({type:'jjrvis-wave'},'http://127.0.0.1:8090');
+-  document.querySelector('[data-presence-talk]').onclick=async()=>{try{if(selectedAssistantIdentity().name!=='Moneypenny'){const prefs=await api('/v1/workspace/voice/preferences');refreshAssistantIdentity(await api('/v1/workspace/voice/preferences',{profile:'moneypenny',speed:prefs.speed,model:prefs.model}));}if(showAssistant())$('#assistant-input').focus();}catch(error){notify(error.message);}};
++  document.querySelector('[data-presence-talk]').onclick=()=>chooseAssistant(document.documentElement.dataset.presenceMode==='jarvis'?'english':'moneypenny');
+   if(!['localhost','127.0.0.1'].includes(location.hostname)){presence.removeAttribute('src');presence.hidden=true;presence.parentElement.querySelector('.presence-footer')?.remove();document.querySelector('[data-presence-state]').textContent='3D AVAILABLE ON YOUR MAC';const note=document.createElement('p');note.className='presence-remote-note';note.textContent='Moneypenny’s live 3D presence is available on your Mac. Conversation and device pairing stay available here.';presence.parentElement.append(note);}
+@@ -482,3 +501,3 @@
+  const presence=document.querySelector('#moneypenny-presence');
+- if(presence?.contentWindow&&presence.src&&document.querySelector('[data-presence-state]')?.dataset.state==='ready'&&selectedAssistantIdentity().name==='Moneypenny'){
++ if(presence?.contentWindow&&presence.src&&document.querySelector('[data-presence-state]')?.dataset.state==='ready'&&selectedAssistantIdentity().name==='Moneypenny'&&document.documentElement.dataset.presenceMode!=='jarvis'){
+   stopVoice();const requestId=String(++presenceSpeechSequence);presenceSpeech={requestId,onStarted};activeUtterance=presenceSpeech;
+@@ -623,3 +642,3 @@
+  $('#file-results').innerHTML=`<div class="table-wrap"><table><thead><tr><th>File</th><th>Project</th><th>Updated</th></tr></thead><tbody>${d.files.map(f=>`<tr><td><strong>${esc(f.name)}</strong>${f.readable?` <button class="secondary" data-file="${f.file_id}">Read file</button>`:''}<small class="path">${esc(f.path)}</small></td><td>${badge(f.group)}${f.historical_copy?'<small>Historical copy</small>':''}</td><td>${date(f.modified_utc)}<small>${Number(f.bytes).toLocaleString()} bytes</small></td></tr>`).join('')}</tbody></table></div>${pager(d,60)}`;wirePaging(60);wireReports();wireFiles();}
+-function connections(){const p=snapshot.projects;content.innerHTML=`<div class="grid two"><div class="panel"><h2>Current connections</h2>${servicesHTML()}${(p.connections||[]).map(c=>`<div class="row"><div><h3>${esc(c.name)}</h3><p>${esc(c.detail)}</p></div>${badge(c.state,c.state==='needs sign-in'?'warn':'off')}</div>`).join('')}<p class="muted">Connection notes below the live checks are audit findings from ${date(p.checked_at)}. Junomo mail is checked when you load the inbox.</p></div><div class="panel"><h2>Your existing tasks</h2>${(p.threads||[]).map(t=>`<div class="row"><div><h3>${safeLink(t.url,t.title)}</h3><p>${esc(t.detail)}</p></div></div>`).join('')}</div></div><div class="grid two space"><div class="panel"><h2>Repository register</h2>${(p.repositories||[]).map(r=>`<div class="row"><div><h3>${safeLink(r.url,r.name)}</h3><p>${esc(r.detail)}</p></div></div>`).join('')}</div><div class="panel"><h2>Google Drive project register</h2><p class="muted">${esc(snapshot.cloud.coverage)} Checked ${date(snapshot.cloud.checked_at)}.</p><div class="stack">${(snapshot.cloud.entries||[]).map(f=>`<div>${safeLink(f.url,f.name)} <span class="muted">${esc(f.kind)}</span></div>`).join('')}</div></div></div>`;mountStorageReview();mountDeviceTools();}
++function connections(){const p=snapshot.projects;content.innerHTML=`<div class="grid two"><div class="panel"><h2>Current connections</h2>${servicesHTML()}${(p.connections||[]).map(c=>`<div class="row"><div><h3>${esc(c.name)}</h3><p>${esc(c.detail)}</p></div>${badge(c.state,c.state==='needs sign-in'?'warn':'off')}</div>`).join('')}<p class="muted">Connection notes below the live checks are audit findings from ${date(p.checked_at)}. Junomo mail is checked when you load the inbox.</p></div><div class="panel"><h2>Your existing tasks</h2>${(p.threads||[]).map(t=>`<div class="row"><div><h3>${safeLink(t.url,t.title)}</h3><p>${esc(t.detail)}</p></div></div>`).join('')}</div></div><div class="grid two space"><div class="panel"><h2>Repository register</h2>${(p.repositories||[]).map(r=>`<div class="row"><div><h3>${safeLink(r.url,r.name)}</h3><p>${esc(r.detail)}</p></div></div>`).join('')}</div><div class="panel"><h2>Google Drive project register</h2><p class="muted">${esc(snapshot.cloud.coverage)} Checked ${date(snapshot.cloud.checked_at)}.</p><div class="stack">${(snapshot.cloud.entries||[]).map(f=>`<div>${safeLink(f.url,f.name)} <span class="muted">${esc(f.kind)}</span></div>`).join('')}</div></div></div>`;const lounge=document.createElement('section');content.prepend(lounge);window.JJLifestyle?.mountConnections(lounge,{api,navigate});mountStorageReview();mountDeviceTools();}
+ function wireFiles(){document.querySelectorAll('[data-file]').forEach(b=>b.onclick=async()=>{try{const r=await api('/v1/workspace/file/'+b.dataset.file);readerFile=b.dataset.file;$('#reader-ask').hidden=false;$('#reader-title').textContent=r.name;$('#reader-path').textContent=r.path;$('#reader-text').textContent=r.text+(r.truncated?'\n[File truncated]':'');$('#reader').showModal();}catch(e){notify(e.message);}});}
+@@ -653,3 +672,3 @@
+ setTimeout(checkWorkspaceReadiness,900);
+-window.addEventListener('jjrvis-display-changed',event=>{if(cloudAudio)cloudAudio.volume=event.detail.volume;const desk=document.querySelector('.hud-desk');if(desk){desk.classList.toggle('paused',!event.detail.motion);const button=desk.querySelector('[data-motion]');if(button)button.textContent=event.detail.motion?'Pause motion':'Resume motion';}});
++window.addEventListener('jjrvis-display-changed',event=>{if(cloudAudio)cloudAudio.volume=event.detail.volume;const desk=document.querySelector('.hud-desk');if(desk){const motion=event.detail.effectiveMotion??event.detail.motion;desk.classList.toggle('paused',!motion);const button=desk.querySelector('[data-motion]');if(button)button.textContent=motion?'Pause motion':'Resume motion';}});
+ $('#refresh').onclick=async()=>{notify();await load();};
+@@ -960,3 +979,3 @@
+  let plan;$('#room-form').onsubmit=e=>{e.preventDefault();const f=e.currentTarget;plan={version:1,source:'manual',name:f.elements.room.value,width:Number(f.elements.width.value),length:Number(f.elements.length.value),notes:f.elements.notes.value};const w=plan.width,l=plan.length;
+- $('#room-drawing').innerHTML=`<h3>${esc(plan.name)} · ${(w*l).toFixed(2)} m²</h3><svg role="img" aria-label="Rectangular room sketch" viewBox="0 0 600 400" style="width:100%;max-height:400px"><rect x="60" y="40" width="${w*Math.min(480/w,300/l)}" height="${l*Math.min(480/w,300/l)}" fill="#173b50" stroke="#90eaff" stroke-width="3"/><text x="65" y="380" fill="#e4f7ff">${w} m × ${l} m · manual dimensions</text></svg><p>${esc(plan.notes)}</p>`;$('#room-export').hidden=false;};
++ $('#room-drawing').innerHTML=`<h3>${esc(plan.name)} · ${(w*l).toFixed(2)} m²</h3><svg role="img" aria-label="Rectangular room sketch" viewBox="0 0 600 400" class="room-plan-svg"><rect x="60" y="40" width="${w*Math.min(480/w,300/l)}" height="${l*Math.min(480/w,300/l)}" fill="#173b50" stroke="#90eaff" stroke-width="3"/><text x="65" y="380" fill="#e4f7ff">${w} m × ${l} m · manual dimensions</text></svg><p>${esc(plan.notes)}</p>`;$('#room-export').hidden=false;};
+  $('#room-export').onclick=()=>{const url=URL.createObjectURL(new Blob([JSON.stringify(plan,null,2)],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download='jjrvis-room-plan.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);};
+--- a/workspace.html
++++ b/workspace.html
+@@ -1,3 +1,3 @@
+ <!doctype html>
+-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="color-scheme" content="dark"><meta name="theme-color" content="#08111f"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="JJRVIS"><meta name="application-name" content="JJRVIS"><meta name="format-detection" content="telephone=no"><title>JJRVIS · James’s command centre</title><link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" sizes="180x180" href="/assets/app-icon-180.png"><link rel="icon" type="image/png" sizes="192x192" href="/assets/app-icon-192.png"><link rel="stylesheet" href="/workspace.css"><link rel="stylesheet" href="/chart-station.css"><link rel="stylesheet" href="/communications-view.css"><link rel="stylesheet" href="/workspace/mail-accounts.css"><link rel="stylesheet" href="/settings-panel.css"><link rel="stylesheet" href="/music-controller.css"><script src="/market-media.js" defer></script><script src="/chart-tools.js" defer></script><script src="/calling-panel.js" defer></script><script src="/communications-view.js" defer></script><script src="/workspace/mail-accounts.js" defer></script><script src="/inbox-panel.js" defer></script><script src="/concierge.js" defer></script><script src="/settings-panel.js" defer></script><script src="/music-controller.js" defer></script><script src="./workspace.js" defer></script></head>
++<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="color-scheme" content="dark"><meta name="theme-color" content="#08111f"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="JJRVIS"><meta name="application-name" content="JJRVIS"><meta name="format-detection" content="telephone=no"><title>JJRVIS · James’s command centre</title><link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" sizes="180x180" href="/assets/app-icon-180.png"><link rel="icon" type="image/png" sizes="192x192" href="/assets/app-icon-192.png"><link rel="stylesheet" href="/workspace.css"><link rel="stylesheet" href="/chart-station.css"><link rel="stylesheet" href="/communications-view.css"><link rel="stylesheet" href="/workspace/mail-accounts.css"><link rel="stylesheet" href="/settings-panel.css"><link rel="stylesheet" href="/music-controller.css"><script src="/market-media.js" defer></script><script src="/chart-tools.js" defer></script><script src="/calling-panel.js" defer></script><script src="/communications-view.js" defer></script><script src="/workspace/mail-accounts.js" defer></script><script src="/inbox-panel.js" defer></script><script src="/concierge.js" defer></script><script src="/settings-panel.js" defer></script><script src="/music-controller.js" defer></script><link rel="stylesheet" href="/lifestyle.css"><script src="/lifestyle.js" defer></script><script src="./workspace.js" defer></script></head>
+ <body>
+--- a/workspace.css
++++ b/workspace.css
+@@ -162,3 +162,3 @@
+  body[data-hud-theme="stark"] aside{position:fixed;inset:0 0 auto 0;width:100%;height:104px;padding:0 28px;display:grid;grid-template-columns:255px minmax(0,1fr);align-items:center;border:0;border-bottom:1px solid #176878;box-shadow:0 18px 70px #000b;background:linear-gradient(180deg,#020a10f8,#031019f0)!important;overflow:hidden}
+- body[data-hud-theme="stark"] aside:after{content:"SYSTEM ONLINE  /  PRIVATE OPERATIONS";position:absolute;right:30px;top:13px;color:#56dcec;font:700 7px/1 ui-monospace,SFMono-Regular,monospace;letter-spacing:2px}
++ body[data-hud-theme="stark"] aside:after{content:"PRIVATE OWNER WORKSPACE";position:absolute;right:30px;top:13px;color:#56dcec;font:700 7px/1 ui-monospace,SFMono-Regular,monospace;letter-spacing:2px}
+  body[data-hud-theme="stark"] .brand{height:104px;flex-direction:row;gap:16px;align-items:center;padding:0;margin:0;border:0}
+@@ -582 +582,4 @@
+ .presence-remote-note{position:absolute;inset:25% 10% auto;font:14px/1.7 system-ui;color:#a4c3cf;text-align:center}.presence-hub #moneypenny-presence[hidden]{display:none}
++
++/* Delays are stylesheet rules so the strict no-inline-style CSP is preserved. */
++.precision-letter-0,.precision-letter-1{animation-delay:.25s}.precision-letter-2{animation-delay:1.35s}.precision-letter-3{animation-delay:1.73s}.precision-letter-4{animation-delay:2.11s}.precision-letter-5{animation-delay:2.49s}.room-plan-svg{width:100%;max-height:400px}

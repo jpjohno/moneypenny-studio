@@ -9,7 +9,7 @@ const bridgeStart=source.indexOf("window.addEventListener('message',event=>{"),b
 assert.ok(voiceStart>0&&voiceEnd>voiceStart&&bridgeStart>0&&bridgeEnd>bridgeStart,'Locate production voice and presence bridge');
 const tick=()=>new Promise(setImmediate);
 
-function harness({ready=true,framePresent=true,name='Moneypenny'}={}){
+function harness({ready=true,framePresent=true,name='Moneypenny',presenceMode='together'}={}){
  const events=new Map(),messages=[],audioRequests=[],stops=[],nodes=new Map();
  const frameWindow={postMessage(message,origin){messages.push({message,origin});}};
  const frame={src:'http://127.0.0.1:8090/?embed=jarvis',contentWindow:frameWindow};
@@ -18,7 +18,7 @@ function harness({ready=true,framePresent=true,name='Moneypenny'}={}){
  const $=selector=>{if(!nodes.has(selector))nodes.set(selector,element());return nodes.get(selector);};
  const ctx={
   window:{speechSynthesis:{cancel(){}},addEventListener(type,listener){events.set(type,listener);}},
-  document:{hidden:false,querySelector(selector){return selector==='#moneypenny-presence'?(framePresent?frame:null):selector==='[data-presence-state]'?presenceState:null;}},
+  document:{documentElement:{dataset:{presenceMode}},hidden:false,querySelector(selector){return selector==='#moneypenny-presence'?(framePresent?frame:null):selector==='[data-presence-state]'?presenceState:null;}},
   $,AbortController,AbortSignal,clearTimeout(){},setTimeout(){return 1;},notify(){},
   localStorage:{setItem(){}},selectedAssistantIdentity(){return {name,profile:name==='Moneypenny'?'moneypenny':'english'};},
   URL:{createObjectURL(){return 'blob:isolated-presence-test';},revokeObjectURL(){}},
@@ -95,7 +95,7 @@ test('readiness messages require both the trusted origin and actual iframe windo
 });
 
 test('unavailable or loading avatar falls back to the selected voice endpoint',async()=>{
- for(const options of [{ready:false},{framePresent:false},{name:'Jarvis'}]){
+ for(const options of [{ready:false},{framePresent:false},{name:'Jarvis'},{presenceMode:'jarvis'}]){
   const h=harness(options);h.ctx.speak('Use the selected assistant voice.');await tick();
   assert.equal(h.speakMessages().length,0);
   assert.equal(h.audioRequests.length,1);

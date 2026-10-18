@@ -140,7 +140,7 @@ See `CHARACTER_WORKSHOP.md` for the implementation, sources and production limit
 
 ## Runtime and continuation
 
-Open `Start-Moneypenny.command`. It detects an existing studio and never kills another app occupying its port. Keep the app's terminal open. Nothing was installed as a LaunchAgent.
+Open `Start-Moneypenny.command`. It detects an existing studio and never kills another app occupying its port. On macOS, the default 8090 launcher installs `com.jamesjohnston.moneypenny-studio` as the current user's private login service. It runs Waitress on 127.0.0.1 only, survives Terminal closure, and restarts after login or process failure. `Manage-Moneypenny-Service.command` supports status/start/restart/stop/remove. Private service logs are in `~/Library/Logs/Moneypenny-Studio/`; retained configuration backups stay in `.runtime/service/`. The LaunchAgent file is mode 0600 and the log directory is 0700. Logs are outside Documents so macOS can open them during automatic startup without weakening folder permissions. Alternate ports retain the temporary foreground workflow.
 
 Whisper uses the official pinned English base model in `.runtime/whisper-models/ggml-base.en.bin`, SHA-256 `a03779c86df3323075f5e796cb2ce5029f00ec8869eee3fdfb897afe36c6d002`. `scripts/setup.py --whisper` installs that model when whisper-server is already available. Machine paths are in ignored `.runtime/machine.json`.
 

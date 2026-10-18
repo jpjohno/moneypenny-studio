@@ -16,7 +16,7 @@ URL = f'http://127.0.0.1:{PORT}'
 
 def ready():
     try:
-        with urllib.request.urlopen(URL + '/api/status', timeout=4) as response:
+        with urllib.request.urlopen(URL + '/api/status?quick=1', timeout=2) as response:
             return json.load(response).get('app') == 'moneypenny-studio'
     except Exception:
         return False
@@ -38,6 +38,11 @@ def main():
     with socket.socket() as check:
         if check.connect_ex(('127.0.0.1', PORT)) == 0:
             raise SystemExit(f'Port {PORT} is occupied by another program. Nothing was stopped. Set MONEYPENNY_PORT to another free port.')
+    if sys.platform == 'darwin' and PORT == 8090 and os.environ.get('MONEYPENNY_FOREGROUND') != '1':
+        subprocess.run([sys.executable, str(ROOT / 'scripts/service.py'), 'start'], cwd=ROOT, check=True)
+        open_browser()
+        print(f'Moneypenny Studio is running as your private login service: {URL}')
+        return
     process = subprocess.Popen([sys.executable, str(ROOT / 'app.py')], cwd=ROOT)
 
     def open_when_ready():

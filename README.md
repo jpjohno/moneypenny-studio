@@ -30,7 +30,7 @@ Double-click **Start-Moneypenny.command**, or run:
 /Users/jamesjohnston/Documents/Moneypenny-Studio/Start-Moneypenny.command
 ```
 
-The studio opens at **http://127.0.0.1:8090**. Keep its Terminal window open. The launcher checks for an existing studio and never stops another application occupying the port. To choose a different port:
+The studio opens at **http://127.0.0.1:8090**. On macOS, its default launcher installs a private login service that starts after login and survives closing Terminal. It binds only to this Mac and uses Waitress. The launcher checks for an existing studio and never stops another application occupying the port. Private logs are in `~/Library/Logs/Moneypenny-Studio/`; configuration recovery copies stay in `.runtime/service/`. To inspect or stop this service, run `./Manage-Moneypenny-Service.command status` or `./Manage-Moneypenny-Service.command stop`; `start` enables it again and `remove` removes its login entry while retaining a recovery copy. To run a temporary foreground instance on a different port:
 
 ```sh
 MONEYPENNY_PORT=8091 ./Start-Moneypenny.command
