@@ -16,7 +16,7 @@ Machine-specific paths are in the ignored `.runtime/machine.json` and the local 
 
 ## Free stack chosen and implemented
 
-**Three.js + TalkingHead + HeadAudio + Ollama + Kokoro + Vosk.** This runs the 3D stage and mouth analysis in the browser, with inference and speech on the Mac. The continuous generated recording drives the mouth shapes directly. This avoids trying to extract waveform/timing from browser `speechSynthesis`, which does not expose them in a reliable cross-browser way.
+**Three.js + TalkingHead + HeadAudio + Ollama + Kokoro + Silero VAD + whisper.cpp (Vosk fallback).** This runs the 3D stage and mouth analysis in the browser, with inference and speech on the Mac. Each generated audio phrase drives mouth shapes directly, while the next phrase is prepared. This avoids trying to extract waveform/timing from browser `speechSynthesis`, which does not expose them in a reliable cross-browser way.
 
 [TalkingHead](https://github.com/met4citizen/TalkingHead) supplies rigged body motion, eye contact, expressions and gesture templates. [HeadAudio](https://github.com/met4citizen/HeadAudio) supplies audio-driven visemes locally. Its authors explicitly describe the accuracy trade-off: the real-time audio classifier is approximate and can be less accurate than good timed phoneme data. It is useful here because the existing Kokoro ONNX path returns a WAV without phoneme timestamps.
 
@@ -24,7 +24,7 @@ No model-provider billing is used. Downloads, local storage, CPU/GPU use and nor
 
 ## Character production
 
-The current studio uses the upstream MPFB character because its stated licence is CC0. It has a proper skeleton and mouth shapes. The original sports-shirt material can be kept, or replaced by the studio's stone/ink material controls; this is material styling, not a new clothing mesh.
+The current studio uses the upstream MPFB character because its stated licence is CC0. It has a proper skeleton and mouth shapes. The original outfit is retained as coverage, with separate prototype skinned skirts, waistcoat and footwear added. These simple meshes do not meet the requested professional clothing or photographic asset standard.
 
 For a bespoke professional person, use [Blender](https://www.blender.org/) and [MPFB](https://static.makehumancommunity.org/mpfb.html). They provide a free authoring route. The [TalkingHead MPFB guide](https://github.com/met4citizen/TalkingHead/blob/main/blender/MPFB/MPFB.md) covers the compatible rig, facial shape keys, poses and GLB export. A recognisable likeness still requires modelling, suitable references, hair/clothing work and visual review. A single photograph does not establish the back/side geometry or supply an animation rig.
 
@@ -43,7 +43,11 @@ Keep identity, voice, rig, clothes, personality and motion as separate assets/se
 
 1. Author and approve an original Moneypenny character with polished hair, skin, clothing and facial shapes. Import and review it from multiple angles and during speech.
 2. Benchmark the fixed British voice with phoneme timestamps (for example HeadTTS), then compare to current audio-derived lips without changing identity silently.
-3. Add sentence buffering or streaming TTS only if measured latency warrants it; preserve continuous playback, interruption and stale-turn rejection.
+3. Phrase buffering, synthesis prefetch and persistent live listening are now implemented. Finish actual human acoustic interruption testing and compare measured cold/warm latency.
 4. Add individually scoped assistant adapters. Keep file access, mail drafts and other consequential actions behind their own explicit review controls. This studio currently generates conversation only.
 
 The implemented application is a working local foundation. A photoreal bespoke person, fully expressive vocal acting, background actions and public multi-user hosting remain separate work, not completed features.
+
+## Live conversation upgrade
+
+The existing Jarvis streaming/cancellation patterns informed the separate studio implementation. [vad-web](https://github.com/ricky0123/vad) runs [Silero VAD](https://github.com/snakers4/silero-vad) locally; [whisper.cpp](https://github.com/ggml-org/whisper.cpp) owns a private warm loopback transcription worker. Speech chunks begin during answer generation. The body director and prototype wardrobe stay separate from that voice path. See `SESSION_HANDOFF.md` for measured verification and remaining limitations.

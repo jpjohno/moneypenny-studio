@@ -1,6 +1,6 @@
 # Moneypenny Studio
 
-A local 3D conversation studio: a rigged human character with idle movement, blinking, eye contact, expressions, hand gestures and mouth shapes driven by the actual British voice recording. Ollama answers, Kokoro speaks and Vosk transcribes on your computer. No paid API or cloud account is required for the implemented path.
+A local 3D conversation studio: a rigged human character with idle movement, blinking, eye contact, expressions, hand gestures and mouth shapes driven by the actual British voice recording. Ollama answers, Kokoro speaks and Whisper transcribes on your computer (with a Vosk fallback). No paid API or cloud account is required for the implemented path.
 
 ## Open on this Mac
 
@@ -42,14 +42,31 @@ If JJRVIS's existing British voice runtime is present, `scripts/setup.py` reuses
 ## Use the studio
 
 - Choose Moneypenny, Professional, Companion or Playful, or edit the personality directly. Give the character another name if desired.
-- Adjust body language, expression, studio outfit and portrait/upper-body/full-body framing. Drag the character to change the viewing angle; use the wheel or trackpad to zoom.
-- Click **Preview voice & movement**. Replies use one continuous WAV performance. HeadAudio analyses that same recording to drive mouth shapes, with an 80 ms playback delay to offset processing latency.
-- Type a message, or press **Speak**, then **Finish recording**. Recording ends automatically after about 29 seconds. Vosk transcribes locally, and places the words in the composer for review. It never automatically sends the recording's text.
+- Adjust body language, expression, studio outfit and portrait/upper-body/full-body framing. Drag the character to change the viewing angle; the framing buttons control the camera.
+- Click **Preview voice & movement**. Replies begin from a ready phrase while the rest of the answer is still being generated. The next audio is prepared during playback; HeadAudio analyses the exact audio to drive mouth shapes, with an 80 ms output delay to offset processing latency.
+- Press **Start live conversation** once to open the microphone after permission. It stays open between turns, detects speech locally, interrupts old playback on speech onset and automatically submits each transcribed turn after a pause. **Stop live conversation** closes it. **Record note** remains a separate review-before-send option.
 - **Stop** cancels the active browser turn, stops sound, resets mouth movement, and terminates that turn's own voice render. Late speech requests carry a cancelled turn ID and are rejected. Another tab's voice render is not cancelled.
 - Change the answer model independently from the voice. The British `bf_emma` identity stays fixed; speed is adjustable from 0.8× to 1.5×.
 - Export/import persona JSON to save personality, movement, wardrobe and voice settings. Imported GLBs are retained in this browser's IndexedDB. Conversations are kept in page memory and disappear on reload/new conversation. The studio sends up to the most recent 20 messages back to Ollama.
 
-Speech starts after a complete reply has been generated and a WAV rendered. This avoids gaps between sentence clips, but introduces a pause before speaking. It is not full-duplex speech-to-speech streaming. Long replies over 2,400 spoken characters remain readable but require a shorter reply setting for speech. Local model answers may be unreliable; this version has no file, messaging, trading or other action tools.
+Speech is generated in phrase chunks, rather than waiting for the entire reply. There is still model/synthesis latency, especially on the first cold request. It is a local turn-based conversation with speech-onset interruption, not an end-to-end speech-to-speech model. Acoustic echo and interruption quality need actual speaker/microphone acceptance testing. Local model answers may be unreliable; this version has no file, messaging, trading or other action tools.
+
+## Live follow-ups and movement
+
+Say “be quiet”, “be quiet for ten minutes”, “resume”, or “ask me in ten minutes”. Follow-ups are stored in `.runtime/reminders.sqlite3`; a visible open studio tab claims a due follow-up when the character is free to respond. A closed tab or sleeping Mac cannot deliver it until the studio is available again.
+
+Independent movement has its own persona, activity level and toggle. Local procedural choices run by default; model-generated original choreography is an optional toggle because it shares the conversation model and can delay replies. It can choose movement without a chat command, compose body skills, request a local-model plan or run validated custom joint keyframes. Direct instructions include reach targets, a jig/dance, walking, turning, sitting, kneeling, lying on the back, stretching, bowing and splits. These are procedural prototype motions with IK for reach targets; production clips, collision constraints and realistic transitions are still needed.
+
+The wardrobe now adds separate skinned waistcoat/skirt/dress-skirt meshes and prototype footwear. The original outfit remains as a coverage layer. This is not a completed anatomical body, cloth simulation or realistic undressing system. See [PHOTOREAL_CHARACTER_SPEC.md](PHOTOREAL_CHARACTER_SPEC.md) and the proposed [BUSINESS_PLAN.md](BUSINESS_PLAN.md).
+
+For higher-quality local transcription on a Mac with whisper.cpp:
+
+```sh
+brew install whisper-cpp
+.venv/bin/python scripts/setup.py --whisper
+```
+
+The pinned `base.en` model is about 148 MB. The studio starts its own loopback Whisper server and keeps it warm. On this Mac the existing whisper.cpp install was reused.
 
 ## Bring in your own person
 
@@ -63,6 +80,7 @@ Use **Import 3D character** with a self-contained GLB 2.0 file under 80 MB. The 
 .venv/bin/python -m pip install -r requirements-dev.txt
 .venv/bin/python -m pytest -q
 npm run check
+npm test
 ```
 
 See [SESSION_HANDOFF.md](SESSION_HANDOFF.md) for measured live checks, browser acceptance, limitations and the exact source map. Test recordings and browser screenshots are local-only in ignored files; no personal media is shipped to the public repository.
@@ -74,6 +92,8 @@ See [SESSION_HANDOFF.md](SESSION_HANDOFF.md) for measured live checks, browser a
 - [HeadAudio](https://github.com/met4citizen/HeadAudio), MIT; pinned upstream commit, included model and licence. Audio-derived mouth shapes are approximate, not perfect phoneme alignment.
 - Studio character: upstream `TalkingHead/avatars/mpfb.glb`, [CC0 per upstream attribution](https://github.com/met4citizen/TalkingHead#license). Downloaded by setup, SHA-256 verified, excluded from source Git history.
 - [Kokoro ONNX](https://github.com/thewh1teagle/kokoro-onnx), MIT implementation; [Kokoro-82M](https://huggingface.co/hexgrad/Kokoro-82M), Apache-2.0 model. Voice model files are checksum-verified before use.
+- [Silero VAD](https://github.com/snakers4/silero-vad) through [vad-web](https://github.com/ricky0123/vad): local speech detection; dependencies pinned in the lockfile.
+- [whisper.cpp](https://github.com/ggml-org/whisper.cpp): local warm transcription with the pinned English base model.
 - [Vosk](https://alphacephei.com/vosk/), Apache-2.0 implementation; the selected `vosk-model-small-en-us-0.15` is listed as Apache-2.0 on its [model page](https://alphacephei.com/vosk/models).
 
 Keep licence terms for any character, clothing, textures or voice you add. The shipped path deliberately uses the CC0 MPFB character rather than upstream's non-commercial sample characters.

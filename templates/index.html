@@ -23,9 +23,20 @@
       <div class="label-line"><label for="movement">Body language</label><output id="movementValue">Natural</output></div><input id="movement" type="range" min="0" max="1" step=".05" value=".65">
       <div class="range-ends"><span>Subtle</span><span>Expressive</span></div>
       <label for="mood">Expression preview</label><div class="control-pair"><select id="mood"><option value="neutral">Composed</option><option value="happy">Warm smile</option><option value="love">Affectionate</option><option value="sad">Thoughtful</option><option value="angry">Serious</option></select><button class="square" id="previewMood" title="Preview expression">↗</button></div>
+      <details open><summary>Independent movement <span>＋</span></summary>
+        <label class="toggle-label autonomy-toggle"><input id="autonomy" type="checkbox" checked> Let her choose how to move</label>
+        <label class="toggle-label autonomy-toggle"><input id="aiMotion" type="checkbox"> Generate original choreography with the model</label><p class="hint">Independent movement runs locally. Model choreography shares the answer engine and can slow replies while composing a new sequence.</p>
+        <label for="activity">Activity level</label><input id="activity" type="range" min="0" max="1" step=".05" value=".45">
+        <label for="behaviourPrompt">Movement personality</label><textarea id="behaviourPrompt" rows="3" maxlength="3000">Move naturally and attentively. Stay composed during work; be more expressive when relaxed. Choose occasional stretches, turns and small movements without waiting for a command.</textarea>
+        <label for="motionPrompt">Direct or choreograph movement</label><input id="motionPrompt" maxlength="2000" placeholder="Dance a jig, then bow">
+        <button id="planMotion" class="file-button">Perform movement ↗</button><button id="stopMotion" class="text-button">Stop movement</button>
+        <p class="hint" id="motionState" role="status">Independent body controller preparing…</p>
+      </details>
       <details class="character-details" open><summary>Character & appearance <span>＋</span></summary>
         <p class="hint" id="avatarLabel">Studio character · CC0 sample</p>
-        <label for="wardrobe">Studio wardrobe</label><select id="wardrobe"><option value="stone">Soft stone</option><option value="ink">Midnight ink</option><option value="original">Original sample outfit</option></select>
+        <label for="wardrobe">Outfit</label><select id="wardrobe"><option value="office">Office · waistcoat & skirt</option><option value="casual" selected>Casual · top & trousers</option><option value="dress">Evening · dress</option><option value="base">Remove outer layers</option><option value="original">Original sample outfit</option></select>
+        <label for="footwear">Footwear</label><select id="footwear"><option value="flats">Black flats</option><option value="heels">Dark shoes · raised heel</option><option value="trainers">Cream trainers</option><option value="original">Original footwear</option></select>
+        <p class="hint">Outer garments are separate prototype meshes. The sample's coverage layer stays underneath. Bespoke anatomy and photographic character detail need a production body asset.</p>
         <label class="file-button" for="avatarUpload">＋ Import 3D character <small>.GLB</small></label><input class="visually-hidden" id="avatarUpload" type="file" accept=".glb">
         <p class="hint">Use a TalkingHead-compatible character with a body rig and mouth shapes. Drag the stage to turn her.</p>
         <button id="resetAvatar" class="text-button">Use studio character</button>
@@ -60,11 +71,13 @@
 
     <section class="conversation" aria-label="Conversation">
       <div class="chat-header"><div><span class="eyebrow">03 / CONNECT</span><h2>Conversation</h2></div><button id="newChat" class="square" title="New conversation" aria-label="New conversation">＋</button></div>
+      <div class="live-panel"><button id="liveToggle" class="live-toggle">◉ Start live conversation</button><div class="live-status"><span id="liveState" role="status">Microphone off</span><meter id="micLevel" min="0" max="1" value="0" aria-label="Microphone speech level"></meter></div><div class="live-options"><button id="quietButton" class="text-button">Quiet for a bit</button><button id="resumeButton" class="text-button" hidden>Resume voice</button><span id="followupState"></span></div></div>
       <div class="chat-scroll" id="chatScroll"><div class="welcome" id="welcome"><div class="welcome-symbol">✳</div><h3>Start with a hello.</h3><p>Talk things through, explore an idea,<br>or simply get to know her.</p><div class="suggestions"><button data-prompt="Hello! Tell me a little about yourself.">Introduce yourself ↗</button><button data-prompt="Help me organise my day. Ask me what I need to do.">Let's plan my day ↗</button><button data-prompt="Tell me something fascinating, in two sentences.">Surprise me ↗</button></div></div><div id="messages" aria-live="polite" aria-relevant="additions text"></div></div>
       <div class="notice" id="notice" role="status" hidden></div>
-      <div class="composer-wrap"><form id="chatForm"><label class="visually-hidden" for="userInput">Message your character</label><textarea id="userInput" placeholder="Say something…" maxlength="4000" rows="2"></textarea><div class="composer-actions"><button type="button" class="mic-button" id="record" title="Record a message on this Mac" aria-label="Record a message">◉ <span id="recordLabel">Speak</span></button><button type="button" id="stop" class="stop-button" hidden>■ Stop</button><button id="send" type="submit" class="send-button" aria-label="Send message">↑</button></div></form><div class="composer-footer"><label class="toggle-label"><input type="checkbox" id="autoSpeak" checked> Speak replies</label><span id="chatMetrics">Local conversation</span></div><p class="privacy-note">Microphone recordings are transcribed on this Mac. Review the words before sending.</p></div>
+      <div class="composer-wrap"><form id="chatForm"><label class="visually-hidden" for="userInput">Message your character</label><textarea id="userInput" placeholder="Say something…" maxlength="4000" rows="2"></textarea><div class="composer-actions"><button type="button" class="mic-button" id="record" title="Record a note for review" aria-label="Record a message">◉ <span id="recordLabel">Record note</span></button><button type="button" id="stop" class="stop-button" hidden>■ Stop</button><button id="send" type="submit" class="send-button" aria-label="Send message">↑</button></div></form><div class="composer-footer"><label class="toggle-label"><input type="checkbox" id="autoSpeak" checked> Speak replies</label><span id="chatMetrics">Local conversation</span></div><p class="privacy-note">Live mode keeps the microphone open and sends each spoken turn automatically on this Mac. Speak to interrupt. Stop live mode to close the microphone.</p></div>
     </section>
   </main>
+  <script src="/vendor/vad/bundle.min.js"></script>
   <script type="module" src="/static/studio.js"></script>
 </body>
 </html>

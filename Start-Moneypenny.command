@@ -5,7 +5,7 @@ if [[ ! -x .venv/bin/python ]]; then
   python3 -m venv .venv
   .venv/bin/python -m pip install -r requirements.txt
 fi
-if [[ ! -f node_modules/three/build/three.module.js ]]; then
+if [[ ! -f node_modules/three/build/three.module.js || ! -f node_modules/@ricky0123/vad-web/dist/bundle.min.js ]]; then
   npm ci --ignore-scripts --cache .runtime/npm-cache
 fi
 .venv/bin/python scripts/setup.py

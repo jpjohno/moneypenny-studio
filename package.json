@@ -2,8 +2,14 @@
   "name": "moneypenny-studio",
   "private": true,
   "type": "module",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "Local conversational 3D persona studio",
-  "dependencies": { "three": "0.180.0" },
-  "scripts": { "check": "node --check static/studio.js && node --check static/recorder.js" }
+  "dependencies": {
+    "@ricky0123/vad-web": "0.0.31",
+    "three": "0.180.0"
+  },
+  "scripts": {
+    "check": "node --check static/studio.js && node --check static/recorder.js && node --check static/live.js && node --check static/motion.js && node --check static/wardrobe.js",
+    "test": "node --test tests/*.test.mjs"
+  }
 }

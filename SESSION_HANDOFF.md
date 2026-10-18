@@ -1,71 +1,59 @@
 # Moneypenny Studio handover
 
-Updated: 18 October 2026. Local checkout: `/Users/jamesjohnston/Documents/Moneypenny-Studio`. Source: `jpjohno/moneypenny-studio`, branch `codex/live-3d-persona`, based on `810174485124cfe67f01c4804790eabdc355bba5`.
+Updated: 18 October 2026. Checkout: `/Users/jamesjohnston/Documents/Moneypenny-Studio`. Repository: `jpjohno/moneypenny-studio`, branch `codex/live-3d-persona`, draft PR [#1](https://github.com/jpjohno/moneypenny-studio/pull/1). Local URL: http://127.0.0.1:8090.
 
-## Implemented
+## Current implemented behaviour
 
-- Flask app split into template, responsive CSS, browser controller and local speech workers.
-- Actual TalkingHead rigged 3D human with blinking, idle motion, gaze, facial mood, gestures, camera controls and sample wardrobe styling.
-- Imported GLB container/embedded-asset/basic-rig validation, renderer compatibility checks, browser IndexedDB retention. Portraits are explicitly references only.
-- Installed Ollama model discovery, `/api/chat/stream` NDJSON, real conversation context, token limit handling, bounded input, timeout/errors; legacy `/chat` retained.
-- Independent fixed British `bf_emma` voice through a private resident Kokoro subprocess. Full reply is rendered once, then played continuously. Existing JJRVIS environment and model files are reused read-only.
-- HeadAudio browser worklet/classifier drives 15 Oculus mouth shapes from that exact audio, with 80 ms output delay.
-- Expression/action response: smiles/mood, nod, lean, tilt, wink and selected hand gestures. Movement intensity can be adjusted. Performance begins with speech playback.
-- Explicit microphone recording, local Vosk transcription, composer review before sending, 29-second recording limit, stop/cancel handling. No audio recording retained by the application.
-- Per-turn cancellation IDs, late voice request rejection, browser abort/source teardown, independent ownership across tabs.
-- Persona settings export/import, local browser persistence, one-click Mac launcher, pinned assets/Three.js and included vendor licences.
-- Loopback-only server, Host/Origin/custom-header protection, local asset CSP, bounded requests and no-store audio/chat responses.
+- TalkingHead/Three.js rigged character, gaze, expression, mouth shapes driven from the actual Kokoro audio through HeadAudio. British `bf_emma` voice identity remains fixed.
+- Ollama NDJSON answer streaming with conversation history. Speech starts from ready phrases before the complete answer arrives, prefetching synthesis while the current phrase plays. Context is 4096 tokens, matching the existing Jarvis route and avoiding context-size runner reloads.
+- One-click live microphone activation, local Silero V5 speech detection and Whisper transcription, automatic turn submission, speech-onset mute/cancellation and rejection of stale turns. Record note remains a separate review-before-send option. Stop live mode closes the stream.
+- Quiet/resume commands and saved timed follow-ups in ignored `.runtime/reminders.sqlite3`. A visible open tab claims each due item once; closed tabs/sleeping Macs cannot deliver until available again.
+- Separate body motion director: shoulder/body reach IK, jig/dance, walk, turn, stretch, bow, sit, kneel, lie on back, splits, and bounded custom joint timelines. Persona-driven procedural movement runs independently of chat. Model-generated choreography is optional and OFF by default because it competes with conversation for the same local model.
+- Actual additional skinned prototype skirt, waistcoat, dress-skirt and shoe meshes. Original sample outfit remains underneath for coverage. Selecting outer layers is a mesh swap, not physical dressing simulation.
+- Custom persona/settings import/export, browser persistence and imported compatible GLB retention. Photography is a reference only, not a rig.
+- Loopback-only Flask service, Host/Origin/custom-header protection, local-only asset CSP and bounded input. Separate owned voice/listening subprocesses reuse existing model files read-only. SIGINT/SIGTERM close owned workers; Jarvis/Ollama services are not taken over.
 
-## Files
+## Files added in this upgrade
 
-| Path | Purpose |
+| File | Purpose |
 | --- | --- |
-| `app.py` | Local HTTP routes, input checks, Ollama streaming and parsing |
-| `speech.py` | Voice process ownership, framing, cancellation and transcription invocation |
-| `speech_worker.py` | Kokoro synthesis, voice model checksum checks, fixed `bf_emma` |
-| `transcribe_worker.py` | Bounded Vosk transcription subprocess |
-| `templates/index.html` | Studio UI |
-| `static/studio.js` | Character, audio, turn lifecycle, chat and persona controls |
-| `static/recorder.js`, `static/record-worklet.js` | Explicit microphone capture and WAV conversion |
-| `scripts/setup.py` | Pinned asset download and voice reuse/optional independent setup |
-| `scripts/launch.py`, `Start-Moneypenny.command` | Existing-instance check and local launch |
-| `tests/test_studio.py` | Request/history/error/stream/cancel/input protection tests |
-| `assets-manifest.json` | Upstream URLs and SHA-256 for vendor files and sample GLB |
+| `listening.py` | Private warm whisper.cpp process with Vosk fallback |
+| `static/live.js` | VAD, audio capture, phrase segmentation, synthesis/playback pipeline and quiet/timer parsing |
+| `motion.py`, `static/motion.js` | Validated motion plans, local full-body controller and reach IK |
+| `static/wardrobe.js` | Separate skinned prototype garments and footwear |
+| `reminders.py` | Persistent follow-ups and atomic delivery claim |
+| `tests/test_live_features.py`, `tests/live.test.mjs`, `tests/motion.test.mjs` | Behaviour, cancellation/prefetch, reminder concurrency and actual sample-rig checks |
+| `PHOTOREAL_CHARACTER_SPEC.md` | Concrete production asset/rig/wardrobe brief and current gaps |
+| `BUSINESS_PLAN.md` | Standalone product proposal and optional future Jarvis integration |
 
-## Verified live on this Mac
+`app.py`, `static/studio.js`, the template, styles, setup and launcher connect these systems. Vendor revisions/checksums remain in `assets-manifest.json`; npm dependencies are pinned in the lockfile.
 
-- `/api/status`: real installed Ollama catalogue, existing voice files, existing Vosk model and sample avatar detected.
-- Ollama `/chat`: actual `MoneyPenny:latest` reply completed in 6.96 seconds for a brief introduction (includes local model loading; not a latency guarantee).
-- Kokoro: actual 24 kHz mono PCM WAV generated in 3.07 seconds; 156,524 bytes and 3.26 seconds of spoken audio for the short test phrase.
-- Generated voice resampled and sent to the actual local Vosk route: HTTP 200 in 1.25 seconds, recognising “hello james shall we make something rather good together”. This verifies the audio/transcription pipeline, not physical microphone permission or ambient recording quality.
-- Backend tests: 21 passed. JavaScript syntax checks passed. Asset setup ran successfully using existing JJRVIS files.
-- Browser: actual 3D geometry rendered; live preview reached Speaking; lighting/framing inspected. See the final acceptance note below for further completed interactions.
+## Verification on this Mac
 
-## Final acceptance note
+- 30 Python tests and 10 Node tests passed; JavaScript syntax checks passed. npm audit reported zero vulnerabilities after the VAD installation.
+- Actual warm Whisper process started in 0.34 seconds. A generated British voice phrase was transcribed in 0.66 seconds as “Hello James, shall we make something rather good together?” These are local single-run measurements, not microphone acoustic-quality tests.
+- Browser Start live conversation reached “Listening · speak naturally”, with a changing microphone speech-probability meter and no fresh console errors. Stop live conversation returned to “Microphone off”, meter zero. No microphone remains open after testing.
+- Actual streamed conversation: first voice at 3.80 seconds, complete model reply at 7.47 seconds in one warm run. This confirms playback before completion, not zero latency. Cold voice preparation took 3.12 seconds for “Ready.”
+- A background model choreography request caused roughly 26 seconds of queuing in an earlier test. It was removed from the default loop; independent procedural movement continues without model inference. Optional model choreography may still compete for the same model when explicitly enabled.
+- Quiet button exposed Resume voice; resuming and submitting “Ask me in three seconds” saved a real follow-up, then displayed its check-back message and cleared the pending database item.
+- Original browser tests also verified conversation memory, preview playback, Stop/cancellation and responsive layout. Tests now cover prefetch during playback, cancellation, bounded custom joint data and single-claim follow-ups across concurrent tabs.
 
-- Browser conversation: told the assistant the test favourite colour was green; the next turn asked for it and the actual model answered “Green”. This exercised the real UI, streamed reply and history path.
-- Browser: voice preview entered Preparing her voice, then Speaking; Stop returned to Here with you and re-enabled conversation. Wardrobe and professional personality controls changed successfully. Default narrow/mobile and desktop layouts were inspected.
-- Browser after a fresh load: stopping an in-progress model reply immediately displayed “Reply stopped.” and restored the controls. An overflow caused by visually hidden file-input widths was found and corrected.
-- Live server: active speech cancellation returned 204 and the cancelled render returned 400; a deliberately late cancelled turn returned 400; a fresh turn then returned a valid 57,612-byte WAV. These were real local worker requests.
-- Character upload acceptance was blocked by the browser approval system because file-upload permission was declined. No alternative upload route was attempted. The import implementation and static compatibility checks exist, but successful UI import/persistence remain unverified.
-- Local screenshots are saved at `verification/studio-desktop.jpg`, `verification/studio-conversation.jpg` and `verification/studio-playback.jpg`. The playback capture shows the actual Speaking state, raised hand and open mouth during the continuous WAV. They are ignored by Git. Earlier browser console errors from a now-corrected WASM CSP and a template-refresh mismatch are retained in the browser's historical logs; they should not be confused with fresh-load errors.
+## Unfinished requirements and acceptance limits
 
-## Limits and continuation
+- **Photographic realism is not achieved.** Current person remains a generic CC0 MPFB sample. Skin, face, hair, eyes, full adult anatomical source body, fitted underwear, professional clothing/shoes and corrective shapes need actual asset production/import and inspection. Do not mark them complete or imply that light/material changes supplied them.
+- Wardrobe and body movements are procedural prototypes. No cloth simulation, true removal/putting-on animation, production contact/collision system, natural locomotion library or guarantee of arbitrary human movement. Extreme poses can show deformation/fit limitations.
+- HeadAudio mouth timing is approximate. Fluid phrase buffering exists; human listening acceptance and actual acoustic barge-in/echo testing on speakers/headphones remain unverified. The browser microphone-start check does not prove those.
+- Character file upload acceptance was explicitly declined by the browser approval system in the first turn. No alternative upload path was attempted. Coding/static compatibility checks exist; successful UI import/persistence remain unverified.
+- No MetaHuman account, licence acceptance, installation or production character was obtained. No user portrait, private media or non-commercial sample was substituted or published.
+- No Jarvis action adapter, communication sends, trading connection, accounts, cloud sync or public production deployment. Jarvis is a future optional provider, not a required runtime.
+- Fresh independent voice installation on another machine remains unverified. The verified machine reuses existing local model/runtime files read-only.
 
-- Current asset is a CC0 sample; no bespoke Moneypenny likeness was created. Existing portrait/media files were not published or used to claim a new rig.
-- Mouth shapes use approximate audio classification. Perfect film-level phoneme alignment is not claimed.
-- Speech starts after generation and synthesis. One continuous utterance avoids sentence-join gaps but adds a pause. No full-duplex or streaming speech synthesis yet.
-- Mic permissions/physical device capture and human audible quality acceptance must be tested by the user. The local transcription route has been exercised with generated audio.
-- Own-voice setup download URLs were checked, but a fresh independent environment on a second machine has not been verified.
-- GLB import is for TalkingHead-compatible rigs. No VRM runtime, automatic photo-to-rig process, outfit geometry generator or character-training pipeline.
-- No app actions, broker-send integration, trading integration, cloud synchronisation or public production hosting.
-- The local Flask process runs only while launched. The command launcher is the durable way to reopen it; no new LaunchAgent was installed.
-- Personal media, conversation data, machine paths, environments, downloaded avatar and test artifacts are excluded from public source commits.
+## Runtime and continuation
 
-## Existing local references (read-only)
+Open `Start-Moneypenny.command`. It detects an existing studio and never kills another app occupying its port. Keep the app's terminal open. Nothing was installed as a LaunchAgent.
 
-- JJRVIS broker folder: `/Users/jamesjohnston/.codex/.chatgpt-projects/g-p-695eea173370819196be0c9be135bb6e/outputs/communication_broker`.
-- Enki Sticker Studio source: `/Users/jamesjohnston/Documents/Codex/2026-10-10/referenced-chatgpt-conversation-this-is-an-2/outputs/Enki-Sticker-Studio-GitHub`.
-- Earlier Enkidu video compositor: `/Users/jamesjohnston/Downloads/prepared_project_enkidu/render_enkidu.py`.
+Whisper uses the official pinned English base model in `.runtime/whisper-models/ggml-base.en.bin`, SHA-256 `a03779c86df3323075f5e796cb2ce5029f00ec8869eee3fdfb897afe36c6d002`. `scripts/setup.py --whisper` installs that model when whisper-server is already available. Machine paths are in ignored `.runtime/machine.json`.
 
-These are references, not copied personal assets or published services. The local `.runtime/machine.json` contains the actual environment/model paths and is ignored by Git.
+Read-only reuse references: the existing JJRVIS communication broker workspace, Enki Sticker Studio source and earlier Enkidu video compositor. No synced `sources/` files were modified. Personal media, audio, models, environments, machine configuration, reminders and screenshots are excluded from public Git history. `app 2.py` is a preserved ignored original backup.
+
+Next significant work is the production character package described in `PHOTOREAL_CHARACTER_SPEC.md`, followed by visual/motion and acoustic acceptance with the actual user hardware. The current local code upgrade must not be represented as the completed photo-real product.

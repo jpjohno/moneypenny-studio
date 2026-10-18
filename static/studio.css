@@ -1031,3 +1031,12 @@ h2 {
     transition:none!important
   }
 }
+.live-panel { padding: 15px 20px; border-bottom: 1px solid var(--line); }
+.live-toggle { width: 100%; border: 0; border-radius: 7px; padding: 12px; background: var(--green); color: #eef1e6; font-size: 11px; }
+.live-toggle.active { background: #d7e5c3; color: #355038; }
+.live-status { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 9px; font-size: 9px; color: #87957b; }
+.live-status meter { width: 45px; height: 8px; accent-color: #72965e; }
+.live-options { display: flex; gap: 10px; justify-content: space-between; align-items: center; margin-top: 9px; }
+.live-options span { font-size: 8px; color: #929c86; }
+.autonomy-toggle { margin: 15px 0 10px; }
+#planMotion { width: 100%; margin: 10px 0; }

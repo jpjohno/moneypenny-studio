@@ -7,6 +7,7 @@ import subprocess
 import sys
 import urllib.request
 import zipfile
+import shutil
 
 ROOT = Path(__file__).resolve().parent.parent
 RUNTIME = ROOT / '.runtime'
@@ -29,6 +30,7 @@ def download(url, target, digest=None):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--voice', action='store_true', help='Install free Kokoro and Vosk in this checkout (several hundred MB).')
+    parser.add_argument('--whisper', action='store_true', help='Install the pinned base.en model for an existing whisper-server executable.')
     parser.add_argument('--link-jjrvis', type=Path, help='Reuse an existing JJRVIS communication_broker runtime, read-only.')
     args = parser.parse_args()
     RUNTIME.mkdir(exist_ok=True)
@@ -61,6 +63,12 @@ def main():
                 raise ValueError('Invalid Vosk archive paths.')
             bundle.extractall(RUNTIME)
         config.update(voice_python=str(python), voice_models=str(models), transcribe_python=str(python), transcribe_model=str(RUNTIME / 'vosk-model-small-en-us-0.15'))
+    if args.whisper:
+        server=shutil.which('whisper-server')
+        if not server:raise SystemExit('Install whisper.cpp first (on macOS: brew install whisper-cpp), then run setup.py --whisper again.')
+        model=RUNTIME/'whisper-models/ggml-base.en.bin'
+        download('https://huggingface.co/ggerganov/whisper.cpp/resolve/5359861c739e955e79d9a303bcbc70fb988958b1/ggml-base.en.bin',model,'a03779c86df3323075f5e796cb2ce5029f00ec8869eee3fdfb897afe36c6d002')
+        config.update(whisper_model=str(model),whisper_server=server)
     config_path.write_text(json.dumps(config, indent=2) + '\n')
     config_path.chmod(0o600)
     print('Studio assets ready. Start with ./Start-Moneypenny.command')

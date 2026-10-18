@@ -11,7 +11,11 @@ import wave
 from flask import Flask, Response, jsonify, render_template, request, send_from_directory, stream_with_context
 import requests
 from werkzeug.exceptions import HTTPException
-from speech import Voice, transcribe, voice_config
+from speech import Voice, voice_config
+from listening import Listening
+from motion import generate_plan, validate_plan
+import reminders
+import threading
 
 ROOT = Path(__file__).resolve().parent
 OLLAMA = os.environ.get("MONEYPENNY_OLLAMA_URL", "http://127.0.0.1:11434").rstrip("/")
@@ -19,6 +23,7 @@ app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = 4 * 1024 * 1024
 app.config["TEMPLATES_AUTO_RELOAD"] = True
 voice = Voice()
+listening = Listening()
 
 
 @app.before_request
@@ -105,7 +110,7 @@ def chat_payload(data):
     return {"model": model, "messages": messages, "stream": True, "keep_alive": "10m", "options": {
         "temperature": number(data.get("temperature", .7), "Creativity", .1, 1.5),
         "num_predict": number(data.get("max_tokens", 256), "Reply length", 64, 1024, integer=True),
-        "num_ctx": 8192,
+        "num_ctx": 4096,
     }}
 
 
@@ -166,6 +171,16 @@ def three(filename):
     return send_from_directory(ROOT / "node_modules/three", filename)
 
 
+@app.get('/vendor/vad/<path:filename>')
+def vad_assets(filename):
+    return send_from_directory(ROOT/'node_modules/@ricky0123/vad-web/dist',filename)
+
+
+@app.get('/vendor/onnx/<path:filename>')
+def onnx_assets(filename):
+    return send_from_directory(ROOT/'node_modules/onnxruntime-web/dist',filename)
+
+
 @app.get("/api/status")
 def status():
     models, error = [], None
@@ -176,9 +191,10 @@ def status():
     except (requests.RequestException, ValueError, KeyError):
         error = "Ollama is unavailable. Start Ollama to chat."
     config = voice_config()
-    return jsonify(app="moneypenny-studio", version="2.0.0", models=models, ollama_error=error, voice_ready=voice.available(),
+    return jsonify(app="moneypenny-studio", version="2.1.0", models=models, ollama_error=error, voice_ready=voice.available(),
                    voice="Moneypenny · British English · bf_emma", voice_engine="Kokoro ONNX",
-                   microphone_ready=bool(config.get("transcribe_python") and Path(config.get("transcribe_model", "__missing__")).is_dir()),
+                   microphone_ready=listening.available() or bool(config.get("transcribe_python") and Path(config.get("transcribe_model", "__missing__")).is_dir()),
+                   listening_engine='Whisper base.en' if listening.available() else 'Vosk',
                    avatar_ready=(ROOT / "static/avatars/mpfb.glb").is_file())
 
 
@@ -225,9 +241,48 @@ def microphone():
             pcm = recording.readframes(recording.getnframes())
     except (wave.Error, EOFError):
         raise ValueError("Invalid microphone recording.")
-    return jsonify(text=transcribe(pcm))
+    return jsonify(text=listening.transcribe(pcm))
+
+
+@app.post('/api/listening/warm')
+def warm_listening():
+    threading.Thread(target=listening.warm,daemon=True).start()
+    return jsonify(state='warming',engine='Whisper' if listening.available() else 'Vosk')
+
+
+@app.post('/api/motion/plan')
+def motion_plan():
+    data=body()
+    if 'plan' in data:return jsonify(validate_plan(data['plan']))
+    return jsonify(generate_plan(text(data.get('prompt'),'Movement instruction',2000),
+        text(data.get('persona',''),'Movement persona',3000,empty=True),text(data.get('model','MoneyPenny:latest'),'Model',150),OLLAMA))
+
+
+@app.get('/api/reminders')
+def list_reminders():
+    return jsonify(reminders=reminders.pending(),now=time.time())
+
+
+@app.post('/api/reminders')
+def add_reminder():
+    data=body()
+    return jsonify(reminders.add(text(data.get('text'),'Follow-up',1000),number(data.get('delay'),'Delay',1,604800)))
+
+
+@app.post('/api/reminders/<identity>/claim')
+def claim_reminder(identity):
+    return jsonify(claimed=reminders.claim(identity))
 
 
 if __name__ == "__main__":
+    import signal
+
+    def shutdown(signum, frame):
+        listening.close()
+        voice.close()
+        raise SystemExit(0)
+
+    signal.signal(signal.SIGTERM, shutdown)
+    signal.signal(signal.SIGINT, shutdown)
     print("Moneypenny Studio: http://127.0.0.1:8090", flush=True)
     app.run(host="127.0.0.1", port=int(os.environ.get("MONEYPENNY_PORT", "8090")), debug=False, threaded=True)

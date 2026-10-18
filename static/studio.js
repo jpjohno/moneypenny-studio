@@ -1,6 +1,10 @@
 import { TalkingHead } from '/static/vendor/talkinghead/talkinghead.mjs';
 import { HeadAudio } from '/static/vendor/headaudio/headaudio.min.mjs';
 import { Recorder } from './recorder.js';
+import * as THREE from 'three';
+import { MotionDirector, movementFromText } from './motion.js';
+import { Wardrobe } from './wardrobe.js';
+import { LiveSession, SpeechSegmenter, SpeechPipeline, controlIntent } from './live.js';
 
 const $ = id => document.getElementById(id);
 const owner = crypto.randomUUID();
@@ -10,13 +14,16 @@ const presets = {
   companion: 'You are Moneypenny, a friendly adult British conversation companion. Be curious, thoughtful and warm. Listen carefully, remember what has been said within this conversation and ask natural follow-up questions. Use gentle humour and a relaxed manner.',
   playful: 'You are Moneypenny, an adult British woman with a confident, witty and subtly flirtatious personality. Use warm smiles, gentle teasing and clever wordplay when welcome. Keep flirtation non-explicit and responsive. Shift to a clear, considerate manner when the topic calls for it. Speak like a natural conversation.',
 };
-const settingIds = ['personaName','personaPreset','systemPrompt','movement','mood','wardrobe','modelSelect','speed','temperature','maxTokens','autoSpeak'];
+const settingIds = ['personaName','personaPreset','systemPrompt','movement','mood','wardrobe','footwear','autonomy','aiMotion','activity','behaviourPrompt','modelSelect','speed','temperature','maxTokens','autoSpeak'];
 let head, lips, analyser, visualizer, avatarReady = false, lipReady = false;
 let generation = 0, controller = null, busy = false, currentSource = null, speechEnded = null;
 let history = [], statusData = {}, avatarURL = null, portraitURL = null, recordingPending = false;
 let studioOutfit = [];
 let actionTimers=[];
 let activeReply=null;
+let motion=null,wardrobe=null,liveSession=null,speechGate=null,userSpeaking=false,listenEpoch=0,liveTranscription=null,interruption=Promise.resolve();
+let quietUntil=Number(localStorage.getItem('moneypenny-quiet-until')||0),reminderPolling=false;
+let turnStarted=0,firstVoiceAt=0;
 const recorder = new Recorder();
 
 function notify(message='') { $('notice').textContent = message; $('notice').hidden = !message; }
@@ -27,7 +34,7 @@ function setState(label, state='ready') {
 function setBusy(value) {
   busy = value; $('send').disabled = value || !statusData.models?.length || recorder.active || recordingPending;
   $('stop').hidden = !value && !recorder.active && !recordingPending;
-  $('record').disabled = value || recordingPending || !statusData.microphone_ready;
+  $('record').disabled = value || recordingPending || !statusData.microphone_ready || !!liveSession?.active;
   $('previewVoice').disabled = value || !avatarReady || !lipReady || !statusData.voice_ready;
 }
 function settings() { return Object.fromEntries(settingIds.map(id => [id, $(id).type==='checkbox' ? $(id).checked : $(id).value])); }
@@ -36,13 +43,14 @@ function applySettings(value) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('Invalid persona file.');
   for (const id of settingIds) {
     if (!(id in value) || id==='modelSelect') continue;
-    if (id==='autoSpeak') { if (typeof value[id]==='boolean') $(id).checked=value[id]; continue; }
+    if ($(id).type==='checkbox') { if (typeof value[id]==='boolean') $(id).checked=value[id]; continue; }
     if (typeof value[id] !== 'string') continue;
     if (id==='systemPrompt' && value[id].length>6000 || id==='personaName' && value[id].length>60) continue;
     $(id).value=value[id];
   }
   if (typeof value.modelSelect==='string' && [...$('modelSelect').options].some(x=>x.value===value.modelSelect)) $('modelSelect').value=value.modelSelect;
   if (!$('personaPreset').value) $('personaPreset').value='custom';
+  if(!$('wardrobe').value)$('wardrobe').value='casual';
   updateSettings();
 }
 function updateSettings() {
@@ -56,12 +64,8 @@ function updateSettings() {
     head.opt.avatarIdleHeadMove = movement * .4;
     head.opt.avatarSpeakingHeadMove = movement * .6;
   }
-  for(const {material,map,color} of studioOutfit){
-    const wardrobe=$('wardrobe').value;
-    material.map=wardrobe==='original'?map:null;
-    if(wardrobe==='original')material.color.copy(color);else material.color.set(wardrobe==='ink'?'#273c4b':'#b7ab94');
-    material.needsUpdate=true;
-  }
+  wardrobe?.set($('wardrobe').value,$('footwear').value);
+  if(motion){motion.autonomous=$('autonomy').checked;motion.activity=Number($('activity').value);motion.persona=$('behaviourPrompt').value+' '+$('systemPrompt').value;}
   saveSettings();
 }
 
@@ -100,21 +104,38 @@ function validateGLB(buffer) {
   const names=(gltf.nodes||[]).map(x=>(x.name||'').replace(/^mixamorig[:_]?/i,'').toLowerCase());
   if (!gltf.skins?.length || !['hips','head','leftarm','rightarm'].every(x=>names.includes(x)) || !shapes.includes('viseme_aa') || !shapes.includes('viseme_PP')) throw new Error('This model needs a Mixamo-compatible body rig and Oculus mouth shapes (viseme_aa, viseme_PP, etc.). See the character guide in the README.');
 }
+function frameCharacter(view,plan=null) {
+  const lying=plan?.steps?.some(step=>step.skill==='lie_back');
+  head.setView(view,{cameraY:view==='full'?(lying?.75:0):.6,cameraRotateX:lying?-.35:0});
+  document.querySelectorAll('[data-view]').forEach(button=>button.classList.toggle('selected',button.dataset.view===view));
+}
 async function showAvatar(file=null) {
   avatarReady=false; setBusy(busy); $('stageLoader').hidden=false; $('loadLabel').textContent='Preparing her entrance…';
   const previous=avatarURL;
   let next=null;
   try {
     if (file) { if(file.size>80*1024*1024)throw new Error('Use a GLB smaller than 80 MB.'); validateGLB(await file.arrayBuffer()); next=URL.createObjectURL(file); }
+    wardrobe?.dispose();
     await head.showAvatar({url:next||'/static/avatars/mpfb.glb',body:'F',avatarMood:'neutral',lipsyncLang:'en',avatarIdleEyeContact:.6,avatarSpeakingEyeContact:.85}, e=>{
       if(e.lengthComputable) $('loadLabel').textContent=`Loading character · ${Math.round(100*e.loaded/e.total)}%`;
     });
     avatarURL=next; if(previous)URL.revokeObjectURL(previous);
+    motion=new MotionDirector(head,value=>{$('motionState').textContent=value;});
+    motion.onChoosePlan=async()=>{
+      if(busy||userSpeaking||!$('autonomy').checked||!$('aiMotion').checked||!$('modelSelect').value)return;
+      const epoch=generation,persona=$('behaviourPrompt').value;
+      try{
+        const plan=await(await api('/api/motion/plan',{prompt:'Choose one short physical activity for yourself now, based on your movement personality and recent conversation. Use custom keyframes for original gestures, or an existing skill. Recent conversation: '+history.slice(-2).map(x=>x.content).join(' ').slice(0,600),persona,model:$('modelSelect').value})).json();
+        if(epoch===generation&&!busy&&!userSpeaking&&$('autonomy').checked)motion.plan(plan,'persona');
+      }catch{};
+    };
+    wardrobe=new Wardrobe(head);
+    head.armature.traverse(node=>{if(node.isMesh){node.castShadow=true;node.receiveShadow=true;for(const material of [node.material].flat()){material.envMapIntensity=.6;if(/body/i.test(material.name))material.roughness=.64;}}});
     studioOutfit=[];
     if(!file)head.armature.traverse(node=>{if(node.isMesh&&node.name.includes('female_casualsuit')){for(const material of [node.material].flat())studioOutfit.push({material,map:material.map,color:material.color.clone()});}});
-    $('wardrobe').disabled=!!file;
+    $('wardrobe').disabled=!!file;$('footwear').disabled=!!file;
     $('avatarLabel').textContent=file ? `Your character · ${file.name||'imported GLB'}` : 'Studio character · CC0 sample';
-    avatarReady=true; $('stageLoader').hidden=true; head.setView('upper');
+    avatarReady=true; $('stageLoader').hidden=true; frameCharacter('upper');
     document.querySelectorAll('[data-view]').forEach(x=>x.classList.toggle('selected',x.dataset.view==='upper'));
     head.setMood($('mood').value||'neutral'); head.lookAtCamera(1500);
     setState('Here with you'); updateSettings();
@@ -127,24 +148,37 @@ async function showAvatar(file=null) {
 async function initializeStage() {
   try {
     head=new TalkingHead($('avatar'),{
-      lipsyncModules:[],lipsyncLang:'en',cameraView:'upper',cameraY:.6,cameraRotateEnable:true,cameraZoomEnable:true,
+      lipsyncModules:[],lipsyncLang:'en',cameraView:'upper',cameraY:.6,cameraRotateEnable:true,cameraZoomEnable:false,
       modelPixelRatio:Math.min(devicePixelRatio,1.75),modelFPS:40,modelMovementFactor:.65,
-      lightAmbientIntensity:1.2,lightDirectIntensity:4,lightDirectColor:'#fff2dc',lightDirectPhi:.6,lightDirectTheta:1.3,
-      lightSpotIntensity:1.5,lightSpotColor:'#d2e8b6',lightSpotPhi:.2,lightSpotTheta:4,
+      lightAmbientIntensity:.65,lightDirectIntensity:2.4,lightDirectColor:'#fff2e6',lightDirectPhi:.8,lightDirectTheta:1.1,
+      lightSpotIntensity:1.1,lightSpotColor:'#d9e5ef',lightSpotPhi:.3,lightSpotTheta:4,
       avatarIdleEyeContact:.6,avatarSpeakingEyeContact:.85,avatarIdleHeadMove:.25,avatarSpeakingHeadMove:.4,
     });
+    head.renderer.toneMappingExposure=.85;
+    head.renderer.shadowMap.enabled=true;head.renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+    head.lightDirect.castShadow=true;head.lightDirect.shadow.mapSize.set(2048,2048);head.lightDirect.shadow.bias=-.0002;
+    Object.assign(head.lightDirect.shadow.camera,{left:-2,right:2,top:2,bottom:-2,near:.05,far:10});
     let saved=null; try {saved=await asset('avatar');}catch{}
     if(saved) { try{await showAvatar(saved);}catch{notify('The saved character is incompatible. The studio character has been restored.'); await showAvatar();} }
     else await showAvatar();
+    const floor=new THREE.Mesh(new THREE.PlaneGeometry(6,6),new THREE.ShadowMaterial({opacity:.22}));floor.rotation.x=-Math.PI/2;floor.position.y=-.003;floor.receiveShadow=true;head.scene.add(floor);
     await head.audioCtx.audioWorklet.addModule('/static/vendor/headaudio/headworklet.min.mjs');
     lips=new HeadAudio(head.audioCtx,{parameterData:{vadGateActiveDb:-40,vadGateInactiveDb:-55,speakerMeanHz:220}});
     await lips.loadModel('/static/vendor/headaudio/model-en-mixed.bin');
     head.audioSpeechGainNode.connect(lips);
     const delay=head.audioCtx.createDelay(1); delay.delayTime.value=.08;
-    head.audioSpeechGainNode.disconnect(head.audioReverbNode); head.audioSpeechGainNode.connect(delay); delay.connect(head.audioReverbNode);
+    speechGate=head.audioCtx.createGain();
+    head.audioSpeechGainNode.disconnect(head.audioReverbNode); head.audioSpeechGainNode.connect(delay); delay.connect(speechGate);speechGate.connect(head.audioReverbNode);
     analyser=head.audioCtx.createAnalyser(); analyser.fftSize=256; head.audioSpeechGainNode.connect(analyser);
     lips.onvalue=(key,value)=>{const target=head.mtAvatar[key];if(target)Object.assign(target,{newvalue:value,needsUpdate:true});};
-    head.opt.update=dt=>lips.update(dt);
+    head.opt.update=dt=>{lips.update(dt);if(motion){motion.engaged=busy||userSpeaking;motion.update(dt);}};
+    liveSession=new LiveSession({audioContext:head.audioCtx,onState:value=>$('liveState').textContent=value,
+      onStart:()=>{
+        userSpeaking=true;listenEpoch++;liveTranscription?.abort();motion?.stop();
+        interruption=stopAll(false);setState('Listening to you','busy');$('liveState').textContent='Listening to you';
+      },onEnd:audio=>handleLiveTurn(audio),onLevel:probability=>$('micLevel').value=probability,
+      onError:error=>{notify(error.name==='NotAllowedError'?'Microphone permission is needed for live conversation.':error.message);updateLiveControls();},
+    });
     lipReady=true; setBusy(busy);
     // Pause graphics in background tabs, retaining audio playback.
     document.addEventListener('visibilitychange',()=>{if(document.hidden)head.stop();else head.start();});
@@ -154,8 +188,10 @@ async function initializeStage() {
 async function stopAll(clearNotice=true) {
   const cancelled=generation;
   generation++; controller?.abort(); controller=null;
+  const stopGeneration=generation;
+  if(speechGate)speechGate.gain.setValueAtTime(0,head.audioCtx.currentTime);
   if(activeReply){activeReply.body.textContent=activeReply.body.textContent==='…'?'Reply stopped.':`${activeReply.body.textContent}\n\n[Stopped]`;activeReply=null;}
-  recorder.cancel(); recordingPending=false; $('record').classList.remove('recording'); $('recordLabel').textContent='Speak';
+  recorder.cancel(); recordingPending=false; $('record').classList.remove('recording'); $('recordLabel').textContent='Record note';
   if(currentSource) {currentSource.onended=null;try{currentSource.stop();}catch{} currentSource.disconnect();currentSource=null;}
   speechEnded?.(); speechEnded=null;
   head?.stopSpeaking(); head?.stopGesture(150); lips?.resetAll();
@@ -163,7 +199,7 @@ async function stopAll(clearNotice=true) {
   actionTimers.forEach(clearTimeout);actionTimers=[];
   for(const key of ['headRotateX','headRotateZ','bodyRotateX','eyeBlinkLeft'])head?.setValue(key,0,150);
   try {await api('/api/speech/stop',{owner:`${owner}:${cancelled}`});} catch {}
-  if(clearNotice)notify(); setBusy(false); setState(avatarReady?'Here with you':'Character unavailable',avatarReady?'ready':'');
+  if(generation===stopGeneration){if(clearNotice)notify();setBusy(false);setState(userSpeaking?'Listening to you':avatarReady?'Here with you':'Character unavailable',avatarReady?'ready':'');}
 }
 
 function performActions(performance={}) {
@@ -174,22 +210,29 @@ function performActions(performance={}) {
   if(performance.gesture&&movement>.2)head.playGesture(performance.gesture,3);
   else if(movement>.45)head.speakWithHands(0,.35);
   const actions=(performance.actions||'').toLowerCase();
+  const plan=movementFromText(actions);if(plan)motion?.plan(plan,'conversation');
   function move(key,value,duration){head.setValue(key,value,200);actionTimers.push(setTimeout(()=>head.setValue(key,0,300),duration));}
   if(/\bnod/.test(actions))move('headRotateX',.15*movement,500);
   if(/tilt/.test(actions))move('headRotateZ',-.13*movement,2200);
   if(/lean|closer/.test(actions))move('bodyRotateX',.13*movement,3200);
   if(/wink/.test(actions))move('eyeBlinkLeft',1,350);
 }
-async function playSpeech(value, token, performance={}) {
+async function prepareSpeech(value, token) {
   if(!statusData.voice_ready)throw new Error('The local British voice needs setup. Text chat is available.');
   if(!avatarReady||!lipReady)throw new Error('The 3D character and mouth animation must finish loading before speaking.');
   if(value.length>2400)throw new Error('This reply is too long for one voice performance. Choose a shorter reply length or replay a shorter message.');
   await head.audioCtx.resume();
-  setState('Preparing her voice','busy');
+  if(!currentSource)setState('Preparing her voice','busy');
   const response=await api('/api/speech',{text:value,speed:Number($('speed').value),owner:`${owner}:${token}`},controller?.signal);
   const audio=await head.audioCtx.decodeAudioData(await response.arrayBuffer());
+  if(token!==generation)throw new DOMException('Stopped','AbortError');
+  return audio;
+}
+async function playPrepared(audio, token, performance={}) {
   if(token!==generation)return;
+  if(speechGate)speechGate.gain.setValueAtTime(1,head.audioCtx.currentTime);
   setState('Speaking','speaking');
+  if(turnStarted&&!firstVoiceAt){firstVoiceAt=(performanceNow()-turnStarted)/1000;$('chatMetrics').dataset.firstVoiceSeconds=firstVoiceAt.toFixed(2);$('chatMetrics').textContent=`Voice in ${firstVoiceAt.toFixed(1)}s`;}
   performActions(performance);
   // One continuous WAV. HeadAudio analyses this exact audio, rather than a timer
   // guessing at phonemes. A short audio delay compensates for processing time.
@@ -208,11 +251,14 @@ async function playSpeech(value, token, performance={}) {
       source.disconnect(); if(currentSource===source)currentSource=null;
       head.isSpeaking=false; speechEnded=null; cancelAnimationFrame(visualizer);
       // Let the delayed audio and mouth closure drain before reporting idle.
-      setTimeout(resolve,120);
+      resolve();
     };
     source.start();
   });
-  if(token===generation) {setState('Here with you');head.setMood($('mood').value||'neutral');}
+  if(token===generation) {setState(liveSession?.active?'Listening':'Here with you');head.setMood($('mood').value||'neutral');}
+}
+async function playSpeech(value, token, performance={}) {
+  await playPrepared(await prepareSpeech(value,token),token,performance);
 }
 
 function addMessage(role, value='') {
@@ -230,13 +276,28 @@ function addReplay(message, value) {
   replay.onclick=async()=>{await stopAll();const token=generation;controller=new AbortController();setBusy(true);try{await playSpeech(value,token);}catch(e){if(token===generation)notify(e.message);}finally{if(token===generation)setBusy(false);}};
   message.article.append(replay);
 }
-async function sendMessage(event) {
-  event?.preventDefault(); const prompt=$('userInput').value.trim();
+async function sendMessage(event,spokenOverride=null) {
+  event?.preventDefault(); const prompt=(spokenOverride||$('userInput').value).trim();
   if(!prompt||busy||recorder.active||recordingPending)return;
   setBusy(true); await stopAll(); const token=generation;controller=new AbortController(); setBusy(true);notify();setState('Thinking with you','busy');
+  try{if(await handleControl(prompt)){setBusy(false);return;}}catch(error){notify(error.message);setBusy(false);return;}
+  const requestedMotion=movementFromText(prompt);if(requestedMotion){motion?.plan(requestedMotion,'instruction');if(requestedMotion.steps.some(x=>['dance','jig','walk','splits','lie_back','kneel','sit'].includes(x.skill)))frameCharacter('full',requestedMotion);}
+  if(/\b(?:wear|put on|change into|change clothes|remove (?:your )?(?:jacket|dress|outer))\b/i.test(prompt)){
+    if(/remove/i.test(prompt))$('wardrobe').value='base';else $('wardrobe').value=/dress/i.test(prompt)?'dress':/casual|trousers|jeans/i.test(prompt)?'casual':'office';
+    if(/trainer/i.test(prompt))$('footwear').value='trainers';else if(/heel/i.test(prompt))$('footwear').value='heels';updateSettings();
+    motion?.plan({steps:[{skill:'reach',target:'shoulder',side:'right',duration:2},{skill:'turn',duration:2}]},'wardrobe');
+  }
   const messages=history.slice(-20); addMessage('user',prompt);const reply=addMessage('assistant','…');$('userInput').value='';scrollChat();
+  turnStarted=performanceNow();firstVoiceAt=0;delete $('chatMetrics').dataset.firstVoiceSeconds;delete $('chatMetrics').dataset.replyDoneSeconds;
   activeReply=reply;
   let raw='',finished=false;
+  let firstPerformance=true;
+  const speaking=$('autoSpeak').checked&&voiceAllowed();
+  const pipeline=new SpeechPipeline(part=>prepareSpeech(part,token),audio=>{
+    const performance=firstPerformance?{mood:'happy',actions:raw.match(/\*([^*]+)\*/)?.[1]||''}:{};firstPerformance=false;
+    return playPrepared(audio,token,performance);
+  });
+  const segmenter=new SpeechSegmenter(part=>pipeline.push(part));
   try {
     // Resume directly after the click; subsequent synthesis may take a moment.
     head?.audioCtx.resume();
@@ -250,7 +311,7 @@ async function sendMessage(event) {
       for(const line of lines){
         if(!line.trim())continue;const data=JSON.parse(line);
         if(data.type==='error')throw new Error(data.error);
-        if(data.type==='delta'){raw+=data.text;reply.body.textContent=raw;scrollChat();}
+        if(data.type==='delta'){raw+=data.text;reply.body.textContent=raw;if(speaking)segmenter.update(raw);scrollChat();}
         if(data.type==='done'){result=data;finished=true;}
       }
     }
@@ -259,12 +320,13 @@ async function sendMessage(event) {
     activeReply=null;
     reply.body.textContent=result.dialogue;reply.action.textContent=result.actions;reply.action.hidden=!result.actions;
     history.push({role:'user',content:prompt},{role:'assistant',content:result.dialogue});history=history.slice(-20);
-    $('chatMetrics').textContent=`Reply in ${result.elapsed.toFixed(1)}s`;
+    $('chatMetrics').dataset.replyDoneSeconds=result.elapsed.toFixed(2);if(!firstVoiceAt)$('chatMetrics').textContent=`Reply in ${result.elapsed.toFixed(1)}s`;
     addReplay(reply,result.dialogue);scrollChat();
-    if($('autoSpeak').checked)await playSpeech(result.dialogue,token,result);
+    if(speaking){segmenter.update(raw,true);await pipeline.done();}
     else {performActions(result);setState('Here with you');}
   }catch(e){
     if(token!==generation||e.name==='AbortError')return;
+    await stopAll(false);
     if(!finished) {reply.body.textContent=raw?`${raw}\n\n[Reply incomplete]`:'No reply received.';$('userInput').value=prompt;}
     notify(e.message);setState('Needs attention','');
   }finally{if(token===generation){activeReply=null;setBusy(false);controller=null;}}
@@ -284,7 +346,7 @@ async function toggleRecord() {
       $('userInput').value=[$('userInput').value,result.text].filter(Boolean).join(' ').slice(0,4000);
       notify('Recording transcribed on this Mac. Review the words, then send.');setState('Ready when you are');
     }catch(e){if(token===generation&&e.name!=='AbortError'){notify(e.message);setState('Here with you');}}
-    finally{if(token===generation){recordingPending=false;$('recordLabel').textContent='Speak';setBusy(false);}}
+    finally{if(token===generation){recordingPending=false;$('recordLabel').textContent='Record note';setBusy(false);}}
   }else{
     await stopAll();const token=generation;recordingPending=true;setBusy(false);
     try{
@@ -296,12 +358,86 @@ async function toggleRecord() {
   }
 }
 
+function voiceAllowed(){return quietUntil!==-1&&Date.now()>=quietUntil;}
+function performanceNow(){return window.performance.now();}
+function updateLiveControls(){
+  const active=!!liveSession?.active;
+  $('liveToggle').textContent=active?'■ Stop live conversation':'◉ Start live conversation';
+  $('liveToggle').classList.toggle('active',active);
+  if(!active){$('liveState').textContent='Microphone off';$('micLevel').value=0;}
+  $('resumeButton').hidden=voiceAllowed();
+  setBusy(busy);
+}
+function setQuiet(until){quietUntil=until;localStorage.setItem('moneypenny-quiet-until',String(until));updateLiveControls();}
+async function handleControl(prompt){
+  const intent=controlIntent(prompt);if(!intent)return false;
+  addMessage('user',prompt);
+  if(intent.type==='quiet'){
+    setQuiet(intent.delay?Date.now()+intent.delay*1000:-1);
+    addMessage('assistant',intent.delay?`I'll stay quiet for ${Math.round(intent.delay/60*10)/10} minutes. You can speak to me again whenever you like.`:'I’ll stay quiet. Say “resume” or ask another question when you want to talk.');
+    setState('Quiet · still listening');
+  }else if(intent.type==='resume'){setQuiet(0);addMessage('assistant','I’m here. What would you like to talk about?');setState('Listening');}
+  else{
+    await api('/api/reminders',{text:prompt,delay:intent.delay});setQuiet(Date.now()+intent.delay*1000);
+    addMessage('assistant',`I’ll check back at ${new Date(Date.now()+intent.delay*1000).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}. Keep the studio open for the follow-up.`);
+    $('followupState').textContent='Follow-up saved';setState('Quiet until your follow-up');
+  }
+  $('userInput').value='';scrollChat();return true;
+}
+async function handleLiveTurn(audio){
+  const epoch=listenEpoch;userSpeaking=false;
+  $('liveState').textContent='Transcribing locally…';setState('Listening back','busy');
+  liveTranscription=new AbortController();
+  try{
+    const response=await fetch('/api/transcribe',{method:'POST',headers:{'Content-Type':'audio/wav','X-Studio-Client':'moneypenny'},body:audio,signal:liveTranscription.signal});
+    const data=await response.json();if(!response.ok)throw new Error(data.error);
+    if(epoch!==listenEpoch||!liveSession.active)return;
+    const words=(data.text||'').trim();if(!words){$('liveState').textContent='Listening';return;}
+    await interruption;if(epoch!==listenEpoch||!liveSession.active)return;
+    $('liveState').textContent='Listening · speak to interrupt';
+    if(!controlIntent(words))setQuiet(0);
+    await sendMessage(null,words);
+  }catch(error){if(epoch===listenEpoch&&error.name!=='AbortError'){notify(error.message);$('liveState').textContent='Listening · previous transcription failed';}}
+}
+async function pollReminders(){
+  if(reminderPolling||document.hidden)return;reminderPolling=true;
+  try{
+    const response=await fetch('/api/reminders');if(!response.ok)return;
+    const data=await response.json();const list=data.reminders||[];
+    $('followupState').textContent=list.length?`${list.length} follow-up${list.length===1?'':'s'} saved`:'';
+    const due=list.find(item=>item.due<=data.now);
+    if(!due||busy||userSpeaking)return;
+    const claimed=await (await api(`/api/reminders/${due.id}/claim`,{})).json();if(!claimed.claimed)return;
+    setQuiet(0);const message='You asked me to check back with you. How are you getting on?';
+    const entry=addMessage('assistant',message);entry.action.textContent=`Your follow-up: ${due.text}`;entry.action.hidden=false;scrollChat();
+    if($('autoSpeak').checked&&avatarReady&&lipReady){await stopAll(false);const token=generation;controller=new AbortController();setBusy(true);try{await playSpeech(message,token);}finally{if(token===generation)setBusy(false);}}
+  }catch{}finally{reminderPolling=false;}
+}
+
+$('liveToggle').onclick=async()=>{
+  if(!liveSession){notify('Wait for the character and voice system to finish loading.');return;}
+  if(liveSession.active){listenEpoch++;liveTranscription?.abort();await liveSession.stop();await stopAll();userSpeaking=false;updateLiveControls();return;}
+  $('autoSpeak').checked=true;setQuiet(0);
+  api('/api/listening/warm',{}).catch(()=>{});
+  const started=liveSession.start();updateLiveControls();await started;updateLiveControls();
+};
+$('quietButton').onclick=async()=>{await stopAll();setQuiet(-1);setState('Quiet · microphone unchanged');};
+$('resumeButton').onclick=()=>{setQuiet(0);setState(liveSession?.active?'Listening':'Here with you');};
+$('planMotion').onclick=async()=>{
+  const prompt=$('motionPrompt').value.trim();if(!prompt||!motion)return;
+  $('planMotion').disabled=true;
+  try{const local=movementFromText(prompt);const plan=local||await(await api('/api/motion/plan',{prompt,persona:$('behaviourPrompt').value,model:$('modelSelect').value})).json();motion.plan(plan,'choreography');frameCharacter('full',plan);}
+  catch(error){notify(error.message);}finally{$('planMotion').disabled=false;}
+};
+$('stopMotion').onclick=()=>{motion?.stop();$('autonomy').checked=false;updateSettings();$('motionState').textContent='Independent movement paused';};
+setInterval(pollReminders,2500);
+
 $('chatForm').addEventListener('submit',sendMessage);
 $('userInput').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();sendMessage();}});
-$('stop').onclick=()=>stopAll();$('record').onclick=toggleRecord;
+$('stop').onclick=async()=>{listenEpoch++;liveTranscription?.abort();userSpeaking=false;await stopAll();await liveSession?.stop();updateLiveControls();};$('record').onclick=toggleRecord;
 $('newChat').onclick=async()=>{await stopAll();history=[];$('messages').replaceChildren();$('welcome').hidden=false;$('chatMetrics').textContent='Local conversation';};
 document.querySelectorAll('[data-prompt]').forEach(button=>button.onclick=()=>{$('userInput').value=button.dataset.prompt;sendMessage();});
-document.querySelectorAll('[data-view]').forEach(button=>button.onclick=()=>{if(!avatarReady)return;head.setView(button.dataset.view);document.querySelectorAll('[data-view]').forEach(x=>x.classList.toggle('selected',x===button));});
+document.querySelectorAll('[data-view]').forEach(button=>button.onclick=()=>{if(!avatarReady)return;frameCharacter(button.dataset.view);});
 $('wave').onclick=()=>{if(avatarReady){head.playGesture('handup',3);head.setMood('happy');}};
 $('previewMood').onclick=()=>{if(avatarReady)head.setMood($('mood').value);};
 $('fullscreen').onclick=()=>{if(document.fullscreenElement)document.exitFullscreen();else $('stage').requestFullscreen?.().catch(e=>notify(e.message));};
@@ -331,7 +467,7 @@ $('exportPersona').onclick=()=>{
 };
 $('importPersona').onclick=()=>$('personaFile').click();
 $('personaFile').onchange=async e=>{const file=e.target.files[0];if(!file)return;try{if(file.size>30000)throw new Error('Persona files must be smaller than 30 KB.');applySettings(JSON.parse(await file.text()));notify('Persona settings imported.');}catch(error){notify(error.message);}e.target.value='';};
-window.addEventListener('pagehide',()=>{recorder.cancel();head?.stopSpeaking();try{currentSource?.stop();}catch{};fetch('/api/speech/stop',{method:'POST',headers:{'Content-Type':'application/json','X-Studio-Client':'moneypenny'},body:JSON.stringify({owner:`${owner}:${generation}`}),keepalive:true}).catch(()=>{});});
+window.addEventListener('pagehide',()=>{recorder.cancel();liveSession?.stop();head?.stopSpeaking();try{currentSource?.stop();}catch{};fetch('/api/speech/stop',{method:'POST',headers:{'Content-Type':'application/json','X-Studio-Client':'moneypenny'},body:JSON.stringify({owner:`${owner}:${generation}`}),keepalive:true}).catch(()=>{});});
 
 async function initialize() {
   $('systemPrompt').value=presets.moneypenny;
@@ -351,5 +487,6 @@ async function initialize() {
     setBusy(false);saveSettings();
   }catch(e){notify(e.message);$('connectionNote').textContent='Local services unavailable';}
   await initializeStage();
+  updateLiveControls();pollReminders();
 }
 initialize();

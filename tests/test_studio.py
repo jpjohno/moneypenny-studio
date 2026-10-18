@@ -99,13 +99,19 @@ def test_stop_does_not_terminate_another_tab():
 
 
 def test_transcription_only_accepts_bounded_mono_pcm_wav(client, monkeypatch):
-    transcribe=Mock(return_value='hello');monkeypatch.setattr(studio,'transcribe',transcribe)
+    transcribe=Mock(return_value='hello');monkeypatch.setattr(studio.listening,'transcribe',transcribe)
     assert client.post('/api/transcribe',headers=HEADERS,data=b'not wav'*20).status_code==400
     output=io.BytesIO()
     with wave.open(output,'wb') as recording:
         recording.setparams((2,2,16000,0,'NONE','not compressed'));recording.writeframes(b'\0'*400)
     assert client.post('/api/transcribe',headers=HEADERS,data=output.getvalue()).status_code==400
     transcribe.assert_not_called()
+    output=io.BytesIO();pcm=b'\0'*16000
+    with wave.open(output,'wb') as recording:
+        recording.setparams((1,2,16000,0,'NONE','not compressed'));recording.writeframes(pcm)
+    result=client.post('/api/transcribe',headers=HEADERS,data=output.getvalue())
+    assert result.status_code==200 and result.json=={'text':'hello'}
+    transcribe.assert_called_once_with(pcm)
 
 
 def test_private_audio_response(client, monkeypatch):
