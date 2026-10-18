@@ -118,3 +118,84 @@ python3 scripts/launch_blender.py --check
 "$HOME/Applications/Blender-4.5-LTS.app/Contents/MacOS/Blender" --background --factory-startup --python-exit-code 1 --python scripts/character/verify_studio_controls.py -- .runtime/studio-controls-test.glb
 node scripts/character/verify_motion_export.mjs .runtime/studio-controls-test.glb
 ```
+
+
+## Surface review continuation, 18 October 2026
+
+The working v6 source is preserved. Three additional packed Blender sources and browser candidates were built locally:
+
+- v7: spatial face/body roughness, multiscale baked micro-normal maps, revised corneal/iris response, short tapered eyebrow filaments and portrait lighting. The skin colour is still the existing MargaretToigo CC0 2048px painted atlas, not a scan.
+- v8: a replacement 12,000-strand cap-following ribbon groom covering the front scalp, 42 expression shapes transferred to the brow filaments, and restrained iris reflections.
+- v9: scalp-cap fitting (1,941 moved vertices) with preserved UVs, weights and relative shape displacements. Its self-contained GLB is 51,148,284 bytes and retains 54 bones, 15 speech visemes, four corrective bindings and fitted clothing. Native portrait and full-body renders are in `verification/surface-v9-portrait.png` and `verification/surface-v9-full-body.png`.
+
+Actual source scripts, in order:
+
+```sh
+BLENDER="$HOME/Applications/Blender-4.5-LTS.app/Contents/MacOS/Blender"
+"$BLENDER" -b -t 6 --python scripts/character/refine_surface_look.py -- "$PWD"
+"$BLENDER" -b -t 6 --python scripts/character/rebuild_surface_groom.py -- "$PWD"
+"$BLENDER" -b -t 6 --python scripts/character/conform_surface_cap.py -- "$PWD"
+```
+
+They preserve existing versioned outputs; each requires its preceding local source. No source asset is fetched or silently purchased by these scripts. `Open Performance Character.command` and the Python Blender launcher prefer the new source when it exists. That stage preferred v9; the current styling revision below takes priority when present.
+
+The deterministic native sweep uses 1,000 configurations: four hair arrangements, five skin-roughness scales, five subsurface amounts, five exposures and two fill ratios. Previews are intentionally only 128×160 at four samples; they are look-development comparisons, not 1,000 full-quality improvements. It writes per-image settings to ignored `.runtime/character-workshop/surface-sweep/renders.jsonl` and resumes without rerendering existing previews. Selected `--frame` configurations can be rendered at higher resolution and saved as separate review sources.
+
+```sh
+"$BLENDER" -b -t 6 --python scripts/character/render_surface_variants.py -- "$PWD" --count 1000 --size 128 --samples 4
+"$BLENDER" -b -t 6 --python scripts/character/render_surface_variants.py -- "$PWD" --frame 368 --size 600 --samples 32 --save-source
+node scripts/character/verify_performance_glb.mjs .runtime/character-workshop/Moneypenny-Performance-Candidate-v9.glb
+```
+
+**Visual assessment: photographic quality is not achieved.** The reviewed face, hair silhouette and materials still read as CG. v9 is an iterative surface study, not a completed photographic replacement. More render samples cannot supply absent captured skin detail or a production groom. The inherited anatomical-source redistribution question also remains unresolved; new generated models and textures remain local.
+
+The user explicitly chose to keep the workflow free. Paid character tools were evaluated but not purchased or activated. The subsequent free route below supersedes those suggestions.
+
+
+## Free CC0 source replacement study, 18 October 2026
+
+The user chose **free assets only**. The selected research route is the [Vitruvian/CharMorph data assembled in VitruvianGodot](https://github.com/ibrews/VitruvianGodot), pinned at `bdecdcd537b4031fdd0fb299b7e4f93f084fffa0`. Upstream `NOTICE.md` identifies the character/maps as CC0 and its code/shaders as MIT. `scripts/character/free-surface-assets.json` pins 18 data/notice files and SHA-256 hashes (116,340,527 bytes total). Upstream executable scripts are neither installed nor executed. Godot-specific shaders and hair physics have not been represented as automatically portable. No payment, email subscription or vendor account is involved.
+
+The free assembly uses a new fictional face and clothed body; it is not a restoration of the earlier detailed anatomical study. The upstream body export omits some skin hidden under clothing. The old complete body source and its controls remain preserved.
+
+Free build chain, preserving each prior source:
+
+```sh
+python3 scripts/character/setup_free_surface_assets.py
+BLENDER="$HOME/Applications/Blender-4.5-LTS.app/Contents/MacOS/Blender"
+"$BLENDER" -b -t 6 --disable-autoexec --python-exit-code 1 --python scripts/character/build_free_surface_character.py -- "$PWD"
+"$BLENDER" -b -t 6 --disable-autoexec --python-exit-code 1 --python scripts/character/optimise_free_surface.py -- "$PWD"
+"$BLENDER" -b -t 6 --disable-autoexec --python-exit-code 1 --python scripts/character/refine_free_surface_face.py -- "$PWD"
+"$BLENDER" -b -t 6 --disable-autoexec --python-exit-code 1 --python scripts/character/weld_free_surface_neck.py -- "$PWD"
+node scripts/character/verify_performance_glb.mjs .runtime/character-workshop/Moneypenny-Free-Surface-v16.glb --free-surface
+```
+
+The unoptimised v10 source/candidate is preserved. Two oversize experimental exports (v11 and v12) failed the 80 MiB budget and were not promoted. The v13 browser copy loads the original packed images before resizing; it retains 2048px face colour/normal data, reduces selected body/hair/roughness maps to 1024px, uses JPEG colour encoding and simplifies hair geometry. v14 adds expression-linked brow/lash filaments and optical-eye geometry; v15 restores continuous neck skin and hides only the overlapping head-neck polygons. Native portrait/full-body review PNGs are in `verification/free-surface-v15-*.png`.
+
+The new source has a 54-bone humanoid/gaze rig and a mouth/eye FACS bridge exposing 15 runtime viseme slots. Some phoneme slots reuse an authored source deformation, so this is not a claim of 15 independently captured mouth shapes. Authored elbow/knee corrective shapes and Godot spring-hair physics are absent from this new source. Extreme poses, all speech phonemes and photographic quality remain unverified. The runtime can fall back through the v9 study, v6 performance candidate and CC0 bundled sample.
+
+**The 1,000-preview sweep actually completed:** 1,000 unique 128×160 four-sample renders, in 597.1 seconds. `verification/surface-sweep-index.html` browses the full local set and lists settings. These compare the v7 source; they are separate from the subsequent new CC0 character assembly. They do not establish photographic quality.
+
+
+## Current clothed styling revision v24
+
+The free full-character experiments were visually rejected. v14/v15 had neck seam problems; v16 welded 4,222 duplicate boundary vertices and passed the geometry checks, but still looked CG in the isolated browser review. None is the normal app default. Only the CC0 bob is reused in the current MPFB-based clothed character, fitted to its Head bone. No user photograph is bundled, uploaded or used as a texture.
+
+`style_character.py` derives v24 from the preserved v9 source. It narrows the frame by 6%, adds a substantially fuller bust with shared body/garment deformation, makes subtle jaw/lip changes, brightens the iris to blue-green, and replaces the striped clothing with matte champagne/ink tailoring and an embedded weave normal. The CC0 bob is lengthened, given slight wave and a lighter varied blonde atlas. These are authored changes, not a photographic scan or measured bra cup size.
+
+The complete Blender source is saved before an under-garment face mask is applied to the clothed browser export. This prevents covered skin showing through the blouse; hiding that garment is not a complete undressed-body view. v17/v18 were rejected for visible clothing breakthrough; v19 fixed coverage but its bob was too dark/short. All previous sources remain local.
+
+The player now captures the imported bind pose before TalkingHead replaces it with generic shoulder rotations. It lowers arms by length-preserving IK while retaining the clavicles, and resets the body to this neutral before studio movements. Imported user characters retain the existing loading behavior. Slow continuous chest breathing and slight body sway are layered on the local studio character. This is kinematic animation, not muscle/cloth simulation.
+
+```sh
+"$HOME/Applications/Blender-4.5-LTS.app/Contents/MacOS/Blender" -b --python-exit-code 1 --python scripts/character/style_character.py -- "$PWD"
+node scripts/character/verify_performance_glb.mjs .runtime/character-workshop/Moneypenny-Style-v24.glb
+```
+
+The build needs the existing local v9 and free v16 sources. Binary sources, render variants, private media and generated exports remain ignored/local; the repository holds the scripts, pinned free-data manifest and continuation instructions. Photographic realism, broad extreme-pose fit and natural speech/motion acceptance remain unfinished.
+
+The final v22 styling pass removes solid eyebrow cards while keeping expression-linked brow filaments, uses cooler blonde hair and stronger blue irises, broadens the clothed bust deformation to avoid a narrow projected tip, and slightly defines jaw/lip forms. The local source and export are versioned separately from rejected v17–v21 experiments.
+
+The user then preferred warmer, longer blonde hair and accepted the bust size. v23 keeps that bust, subtly slims the cheeks, uses the existing natural MakeHuman blue-eye atlas, and corrects 4,672 chest weights on body/blouse. Native hair is still card-based and has no collision physics; shoulder-length hair and clothing need broad motion review.
+
+v24 adds root coverage under the bob and exports it with alpha MASK rather than BLEND to prevent card self-sorting gaps. The default local wave uses IK on one hand and retains the authored clavicles. Library clips remain available but are not certified for the enlarged outfit. Photographic quality has not been achieved.

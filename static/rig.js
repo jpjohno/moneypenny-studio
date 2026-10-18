@@ -32,24 +32,54 @@ export function solveLimb(upper,lower,end,target,pole){
   return {error:point(end).distanceTo(target),clamped:Math.abs(requested-distance)>.002};
 }
 
+// Capture before TalkingHead substitutes its own canonical shoulder rotations.
+// Imported rigs can use different bone axes even when their names match.
+export function authoredNeutral(scene){
+  const bones={},rest={};
+  scene.traverse(b=>{if(b.isBone)bones[b.name.replaceAll('mixamorig','').replace(/^:/,'')]=b;});
+  scene.updateMatrixWorld(true);
+  for(const side of ['Left','Right']){
+    const upper=bones[side+'Arm'],lower=bones[side+'ForeArm'],hand=bones[side+'Hand'];
+    if(!upper||!lower||!hand)continue;
+    const start=point(upper),length=start.distanceTo(point(lower))+point(lower).distanceTo(point(hand));
+    const sign=side==='Left'?1:-1;
+    // The GLB convention is Y up, +Z forward. Leave the clavicles authored;
+    // lower the arms with IK instead of guessing local Euler axes.
+    const target=start.clone().add(new THREE.Vector3(sign*.21,-.95,.045).multiplyScalar(length));
+    solveLimb(upper,lower,hand,target,start.clone().add(new THREE.Vector3(sign*.4,-.3,-.2)));
+  }
+  for(const [name,bone] of Object.entries(bones))rest[name]={q:bone.quaternion.clone(),p:bone.position.clone()};
+  return rest;
+}
+
 export class RigController {
   constructor(head,onState=()=>{}){
     this.head=head;this.onState=onState;this.bones={};this.rest={};this.output={};this.targets=new Map();this.smoothing=.12;
     this.root=head.armature;this.origin=this.root.position.clone();this.rootRest=this.root.quaternion.clone();
     this.root.updateMatrixWorld(true);this.space=this.root.matrixWorld.clone();
-    this.root.traverse(b=>{if(b.isBone){this.bones[b.name]=b;this.rest[b.name]={q:(head.poseBase?.props[`${b.name}.quaternion`]||b.quaternion).clone(),p:(head.poseBase?.props[`${b.name}.position`]||b.position).clone()};}});
+    this.root.traverse(b=>{if(b.isBone){this.bones[b.name]=b;this.rest[b.name]={q:(head.studioNeutral?.[b.name]?.q||head.poseBase?.props[`${b.name}.quaternion`]||b.quaternion).clone(),p:(head.studioNeutral?.[b.name]?.p||head.poseBase?.props[`${b.name}.position`]||b.position).clone()};}});
     this.bodyNames=Object.keys(this.bones).filter(name=>!['Head','Neck','LeftEye','RightEye'].includes(name));
     this.resetBody();this.root.updateMatrixWorld(true);
     this.neutral={};this.footRotations={};
-    for(const name of ['Hips','LeftHand','RightHand','LeftFoot','RightFoot','LeftUpLeg','RightUpLeg'])if(this.bones[name]){
+    for(const name of ['Hips','LeftArm','RightArm','LeftHand','RightHand','LeftFoot','RightFoot','LeftUpLeg','RightUpLeg'])if(this.bones[name]){
       this.neutral[name]=point(this.bones[name]).applyMatrix4(this.space.clone().invert());
       if(name.endsWith('Foot'))this.footRotations[name]=this.bones[name].getWorldQuaternion(new THREE.Quaternion());
     }
     for(const name of this.bodyNames)this.output[name]={q:this.bones[name].quaternion.clone(),p:this.bones[name].position.clone()};
     this.rootOutput={q:this.root.quaternion.clone(),p:this.root.position.clone()};this.lastStatus='';
+    this.idleTime=0;this.chestScale=this.bones.Spine2?.scale.clone();
+  }
+  breathe(dt,quiet=false){
+    this.idleTime+=Math.max(0,dt);
+    const chest=this.bones.Spine2;if(!chest||!this.head.studioNeutral)return;
+    // Slow, continuous respiration; never restart a breath at a turn boundary.
+    const breath=Math.sin(this.idleTime*2*Math.PI/4.8);
+    chest.scale.copy(this.chestScale);chest.scale.x*=1+.003*breath;chest.scale.z*=1+.004*breath;
+    const sway=quiet?0:Math.sin(this.idleTime*.63)*.004;
+    chest.quaternion.multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(.002*breath,sway,.002*Math.sin(this.idleTime*.47))));
   }
   resetBody(neutral=true){
-    if(neutral||this.settling>0)for(const name of this.bodyNames){this.bones[name].quaternion.copy(this.rest[name].q);this.bones[name].position.copy(this.rest[name].p);}
+    if(neutral||this.head.studioNeutral||this.settling>0)for(const name of this.bodyNames){this.bones[name].quaternion.copy(this.rest[name].q);this.bones[name].position.copy(this.rest[name].p);}
     this.bones.Hips.position.copy(this.rest.Hips.p);
     this.root.position.copy(this.origin);this.root.quaternion.copy(this.rootRest);this.root.updateMatrixWorld(true);
   }
@@ -83,10 +113,15 @@ export class RigController {
     const target=this.neutral[raised].clone().add(new THREE.Vector3(0,.4*scale,.28*scale));
     return {raised,standing,target,height:.4*scale,scale};
   }
-  poseSkill(skill,weight,side='right'){
+  poseSkill(skill,weight,side='right',time=0){
     const hips=this.neutral.Hips.clone(),left=this.neutral.LeftFoot.clone(),right=this.neutral.RightFoot.clone();
     if(!hips||!left||!right)return;
-    if(skill==='bend_forward'){
+    if(skill==='wave'){
+      const name=side==='left'?'LeftHand':'RightHand',arm=side==='left'?'LeftArm':'RightArm',sign=side==='left'?1:-1;
+      const target=this.neutral[arm].clone().add(new THREE.Vector3(sign*.12,.12,.15));
+      this.limb(name,this.neutral[name].clone().lerp(target,weight));
+      this.bones[name].quaternion.multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(0,Math.sin(time*7)*.22*weight,0)));
+    }else if(skill==='bend_forward'){
       const scale=(hips.y-left.y)/.9;
       hips.y-=.04*scale*weight;hips.z-=.12*scale*weight;this.setHips(hips);
       const pelvis=this.bones.Hips,spine=this.bones.Spine;

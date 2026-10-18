@@ -3,7 +3,7 @@ import math
 import re
 import requests
 
-SKILLS={'reach','jig','dance','walk','turn','stretch','bow','sit','kneel','lie_back','splits','supported_step','bend_forward','idle','custom'}
+SKILLS={'reach','wave','jig','dance','walk','turn','stretch','bow','sit','kneel','lie_back','splits','supported_step','bend_forward','idle','custom'}
 TARGETS={'shoulder','head','chin','chest','belly','hip','knee','ear','nose'}
 BONES={'Hips','Spine','Spine1','Spine2','Neck','Head'} | {side+name for side in ('Left','Right') for name in ('Shoulder','Arm','ForeArm','Hand','UpLeg','Leg','Foot')}
 

@@ -8,7 +8,8 @@ export class Wardrobe {
     this.head=head;this.layers=[];this.shoes=[];this.original=[];this.reference=null;
     head.armature.traverse(node=>{if(node.isSkinnedMesh&&node.name.includes('female_casualsuit')){this.reference=node;for(const mat of [node.material].flat())this.original.push({mat,map:mat.map,color:mat.color.clone()});}});
     this.tagged=[];
-    head.armature.traverse(node=>{if(node.isMesh&&typeof node.userData.wardrobeSlot==='string')this.tagged.push(node);});
+    // Multi-material GLB garments load as a Group with skinned child meshes.
+    head.armature.traverse(node=>{if((node.isMesh||node.isGroup)&&typeof node.userData.wardrobeSlot==='string')this.tagged.push(node);});
     if(!this.reference)return;
     this.createGarments();
   }

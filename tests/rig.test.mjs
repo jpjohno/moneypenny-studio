@@ -80,3 +80,52 @@ test('the Blender-baked GLB study loads and retargets actual arm movement',async
  let largest=0;for(let i=0;i<arm.values.length;i+=4)largest=Math.max(largest,first.angleTo(new THREE.Quaternion().fromArray(arm.values,i)));
  assert.ok(largest>.2,`baked arm motion ${largest}`);
 });
+
+test('authored neutral retains clavicles and survives upstream idle pose overrides',async()=>{
+ const {authoredNeutral}=await import('../static/rig.js');
+ const head=rig(),shoulder=head.armature.getObjectByName('LeftShoulder');
+ const authored=shoulder.quaternion.clone();
+ const upper=head.armature.getObjectByName('LeftArm'),fore=head.armature.getObjectByName('LeftForeArm'),hand=head.armature.getObjectByName('LeftHand');
+ const lengths=[position(upper).distanceTo(position(fore)),position(fore).distanceTo(position(hand))];
+ head.studioNeutral=authoredNeutral(head.armature);
+ assert.ok(shoulder.quaternion.angleTo(authored)<1e-7);
+ assert.ok(position(hand).y<position(upper).y-.3,'arm does not hang beside torso');
+ assert.ok(Math.abs(position(upper).distanceTo(position(fore))-lengths[0])<1e-6);
+ assert.ok(Math.abs(position(fore).distanceTo(position(hand))-lengths[1])<1e-6);
+ head.poseBase={props:{'LeftShoulder.quaternion':new THREE.Quaternion().setFromEuler(new THREE.Euler(1.6,0,1.7))}};
+ const r=new RigController(head);
+ for(let frame=0;frame<120;frame++){
+  shoulder.quaternion.copy(head.poseBase.props['LeftShoulder.quaternion']);
+  r.resetBody(false);r.update(1/60);
+ }
+ assert.ok(shoulder.quaternion.angleTo(authored)<1e-7,'generic shoulder pose returned while idle');
+});
+
+test('breathing remains bounded and continuous across quiet and moving states',async()=>{
+ const {authoredNeutral}=await import('../static/rig.js');
+ const head=rig();head.studioNeutral=authoredNeutral(head.armature);const r=new RigController(head),base=r.chestScale.clone();
+ for(let i=0;i<600;i++){
+  r.resetBody(false);r.breathe(1/60,i>300);r.update(1/60);
+  assert.ok(Math.abs(r.bones.Spine2.scale.x/base.x-1)<=.00301);
+  assert.ok(Math.abs(r.bones.Spine2.scale.z/base.z-1)<=.00401);
+ }
+ assert.ok(Math.abs(r.idleTime-10)<1e-6);
+});
+
+test('procedural motion shares the authored neutral instead of generic shoulder axes',async()=>{
+ const {authoredNeutral}=await import('../static/rig.js');const {MotionDirector}=await import('../static/motion.js');
+ const head=rig();head.studioNeutral=authoredNeutral(head.armature);
+ head.poseBase={props:{'LeftShoulder.quaternion':new THREE.Quaternion().setFromEuler(new THREE.Euler(1.6,0,1.7))}};
+ const r=new RigController(head),motion=new MotionDirector(head,()=>{},r);
+ motion.animatePose({LeftShoulder:[0,0,0]},1);
+ assert.ok(r.bones.LeftShoulder.quaternion.angleTo(r.rest.LeftShoulder.q)<1e-7);
+});
+
+test('local wave lifts one hand without imposing a generic pose on both shoulders',async()=>{
+ const {authoredNeutral}=await import('../static/rig.js');const head=rig();head.studioNeutral=authoredNeutral(head.armature);const r=new RigController(head);
+ const left=position(r.bones.LeftHand),shoulders=['LeftShoulder','RightShoulder'].map(n=>r.bones[n].quaternion.clone());
+ r.poseSkill('wave',1,'right',1);
+ assert.ok(position(r.bones.RightHand).y>r.world(r.neutral.RightHand).y+.25);
+ assert.ok(position(r.bones.LeftHand).distanceTo(left)<1e-6);
+ ['LeftShoulder','RightShoulder'].forEach((n,i)=>assert.deepEqual(r.bones[n].quaternion.toArray(),shoulders[i].toArray()));
+});

@@ -22,6 +22,9 @@ import threading
 ROOT = Path(__file__).resolve().parent
 OLLAMA = os.environ.get("MONEYPENNY_OLLAMA_URL", "http://127.0.0.1:11434").rstrip("/")
 LOCAL_CHARACTER = ROOT / ".runtime/character-workshop/Moneypenny-Performance-Candidate-v6.glb"
+SURFACE_CHARACTER = ROOT / ".runtime/character-workshop/Moneypenny-Performance-Candidate-v9.glb"
+STYLED_CHARACTER = ROOT / ".runtime/character-workshop/Moneypenny-Style-v24.glb"
+FREE_SURFACE_CHARACTER = ROOT / ".runtime/character-workshop/Moneypenny-Free-Surface-Reviewed.glb"
 app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = 26 * 1024 * 1024
 app.config["TEMPLATES_AUTO_RELOAD"] = True
@@ -29,18 +32,28 @@ voice = Voice()
 listening = Listening()
 
 
-def local_character_ready():
-    """Accept only the fixed local self-contained GLB candidate within the UI limit."""
+def valid_local_character(path):
+    """Check a fixed local candidate's container header and browser size limit."""
     try:
-        size = LOCAL_CHARACTER.stat().st_size
+        size = path.stat().st_size
         if not 24 <= size <= 80 * 1024 * 1024:
             return False
-        with LOCAL_CHARACTER.open("rb") as source:
+        with path.open("rb") as source:
             header = source.read(12)
         return (header[:4] == b"glTF" and int.from_bytes(header[4:8], "little") == 2
                 and int.from_bytes(header[8:12], "little") == size)
     except OSError:
         return False
+
+
+def local_character_path():
+    """Prefer the reviewed surface revision, retaining the previous working rig."""
+    return next((path for path in (STYLED_CHARACTER, FREE_SURFACE_CHARACTER, SURFACE_CHARACTER, LOCAL_CHARACTER)
+                 if valid_local_character(path)), None)
+
+
+def local_character_ready():
+    return local_character_path() is not None
 
 
 @app.before_request
@@ -207,9 +220,10 @@ def onnx_assets(filename):
 
 @app.get('/api/character/default')
 def default_character():
-    if not local_character_ready():
+    candidate = local_character_path()
+    if candidate is None:
         return jsonify(error="The local performance character is unavailable."), 404
-    return send_file(LOCAL_CHARACTER, mimetype="model/gltf-binary", conditional=True)
+    return send_file(candidate, mimetype="model/gltf-binary", conditional=True)
 
 
 @app.get("/api/status")
@@ -222,13 +236,15 @@ def status():
     except (requests.RequestException, ValueError, KeyError):
         error = "Ollama is unavailable. Start Ollama to chat."
     config = voice_config()
-    candidate = local_character_ready()
+    character_path = local_character_path()
+    candidate = character_path is not None
     return jsonify(app="moneypenny-studio", version="2.2.0", models=models, ollama_error=error, voice_ready=voice.available(),
                    voice="Moneypenny · British English · bf_emma", voice_engine="Kokoro ONNX",
                    microphone_ready=listening.available() or bool(config.get("transcribe_python") and Path(config.get("transcribe_model", "__missing__")).is_dir()),
                    listening_engine='Whisper base.en' if listening.available() else 'Vosk',
                    avatar_ready=candidate or (ROOT / "static/avatars/mpfb.glb").is_file(),
                    character_candidate_ready=candidate,
+                   character_revision="style-v24" if character_path == STYLED_CHARACTER else "free-surface-reviewed" if character_path == FREE_SURFACE_CHARACTER else "surface-v9" if character_path == SURFACE_CHARACTER else "performance-v6" if candidate else None,
                    character_source="local-performance-candidate" if candidate else "bundled-cc0-sample")
 
 

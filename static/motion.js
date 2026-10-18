@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 
-export const MOTION_SKILLS=['reach','jig','dance','walk','turn','stretch','bow','sit','kneel','lie_back','splits','supported_step','bend_forward','idle','custom'];
+export const MOTION_SKILLS=['reach','wave','jig','dance','walk','turn','stretch','bow','sit','kneel','lie_back','splits','supported_step','bend_forward','idle','custom'];
 const ease=x=>x*x*(3-2*x);
 const clamp=(x,a,b)=>Math.min(b,Math.max(a,x));
 
@@ -11,7 +11,7 @@ export class MotionDirector {
     this.rig=rig;
     this.head=head;this.onState=onState;this.bones={};this.rest={};this.queue=[];this.active=null;this.clock=0;this.nextDecision=6;
     this.origin=head.armature.position.clone();this.rootRotation=head.armature.quaternion.clone();
-    head.armature.traverse(bone=>{if(bone.isBone){this.bones[bone.name]=bone;this.rest[bone.name]=(head.poseBase?.props[`${bone.name}.quaternion`]||bone.quaternion).clone();}});
+    head.armature.traverse(bone=>{if(bone.isBone){this.bones[bone.name]=bone;this.rest[bone.name]=(rig?.rest[bone.name]?.q||head.studioNeutral?.[bone.name]?.q||head.poseBase?.props[`${bone.name}.quaternion`]||bone.quaternion).clone();}});
     this.hipsPosition=this.bones.Hips.position.clone();this.autonomous=true;this.activity=.45;this.persona='';this.engaged=false;
     this.height=head.avatarHeight||1.75;
     this.onChoosePlan=null;this.planning=false;this.heading=0;this.currentHeading=0;
@@ -119,7 +119,7 @@ export class MotionDirector {
       case 'kneel':break;
       case 'lie_back':break;
       case 'splits':break;
-      case 'supported_step':case 'bend_forward':break;
+      case 'supported_step':case 'bend_forward':case 'wave':break;
       case 'reach':break;
       case 'custom': {
         const frames=a.frames||[];
@@ -132,7 +132,7 @@ export class MotionDirector {
     const q=this.rootRotation.clone().multiply(new THREE.Quaternion().setFromEuler(root));
     this.head.armature.quaternion.copy(this.rootRotation).slerp(q,w);
     this.head.armature.position.copy(this.origin).addScaledVector(offset,w);
-    if(this.rig&&['splits','sit','kneel','lie_back','supported_step','bend_forward'].includes(a.skill))this.rig.poseSkill(a.skill,w,a.side);
+    if(this.rig&&['splits','sit','kneel','lie_back','supported_step','bend_forward','wave'].includes(a.skill))this.rig.poseSkill(a.skill,w,a.side,t);
     if(a.skill==='reach')this.reach(a.target,a.side,w);
     const directTurn=a.skill==='turn'&&!['persona','conversation'].includes(a.source);
     const heading=a.frozenHeading??(this.heading+(directTurn?Math.PI*ease(clamp(t/Math.max(.2,a.duration-.3),0,1)):0));

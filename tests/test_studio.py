@@ -14,7 +14,9 @@ HEADERS = {'X-Studio-Client': 'moneypenny'}
 
 
 @pytest.fixture
-def client():
+def client(monkeypatch, tmp_path):
+    monkeypatch.setattr(studio, 'FREE_SURFACE_CHARACTER', tmp_path / 'missing-free.glb')
+    monkeypatch.setattr(studio, 'STYLED_CHARACTER', tmp_path / 'missing-style.glb')
     studio.app.config.update(TESTING=True)
     return studio.app.test_client()
 
@@ -124,6 +126,7 @@ def test_private_audio_response(client, monkeypatch):
 
 
 def test_fixed_local_character_is_reported_and_served(client, monkeypatch, tmp_path):
+    monkeypatch.setattr(studio, 'SURFACE_CHARACTER', tmp_path / 'missing-surface.glb')
     candidate = tmp_path / 'candidate.glb'
     payload = b'{}  '
     candidate.write_bytes(b'glTF' + struct.pack('<IIII', 2, 20 + len(payload), len(payload), 0x4e4f534a) + payload)
@@ -139,9 +142,52 @@ def test_fixed_local_character_is_reported_and_served(client, monkeypatch, tmp_p
 
 
 def test_missing_local_character_keeps_sample_fallback(client, monkeypatch, tmp_path):
+    monkeypatch.setattr(studio, 'SURFACE_CHARACTER', tmp_path / 'missing-surface.glb')
     monkeypatch.setattr(studio, 'LOCAL_CHARACTER', tmp_path / 'missing.glb')
     monkeypatch.setattr(studio.requests, 'get', Mock(side_effect=requests.ConnectionError()))
     status = client.get('/api/status').json
     assert status['character_candidate_ready'] is False
     assert status['character_source'] == 'bundled-cc0-sample'
     assert client.get('/api/character/default').status_code == 404
+
+
+def test_surface_candidate_preferred_and_corrupt_surface_falls_back(client, monkeypatch, tmp_path):
+    original, surface = tmp_path / 'original.glb', tmp_path / 'surface.glb'
+    def glb(payload):
+        return b'glTF' + struct.pack('<IIII', 2, 20 + len(payload), len(payload), 0x4e4f534a) + payload
+    original.write_bytes(glb(b'{}  '))
+    surface.write_bytes(glb(b'{ } '))
+    monkeypatch.setattr(studio, 'LOCAL_CHARACTER', original)
+    monkeypatch.setattr(studio, 'SURFACE_CHARACTER', surface)
+    assert client.get('/api/character/default').data == surface.read_bytes()
+    surface.write_bytes(b'glTF' + b'broken')
+    assert client.get('/api/character/default').data == original.read_bytes()
+
+
+def test_free_candidate_preferred_then_previous_surface(client, monkeypatch, tmp_path):
+    previous, free = tmp_path / 'previous.glb', tmp_path / 'free.glb'
+    def glb(payload):
+        return b'glTF' + struct.pack('<IIII', 2, 20 + len(payload), len(payload), 0x4e4f534a) + payload
+    previous.write_bytes(glb(b'{}  '))
+    free.write_bytes(glb(b'{ } '))
+    monkeypatch.setattr(studio, 'SURFACE_CHARACTER', previous)
+    monkeypatch.setattr(studio, 'FREE_SURFACE_CHARACTER', free)
+    assert client.get('/api/character/default').data == free.read_bytes()
+    free.write_bytes(b'not a glb')
+    assert client.get('/api/character/default').data == previous.read_bytes()
+
+
+def test_styled_candidate_and_status_match_with_safe_corrupt_fallback(client, monkeypatch, tmp_path):
+    styled, previous = tmp_path / 'styled.glb', tmp_path / 'previous.glb'
+    def glb(payload):
+        return b'glTF' + struct.pack('<IIII', 2, 20 + len(payload), len(payload), 0x4e4f534a) + payload
+    styled.write_bytes(glb(b'{ } '))
+    previous.write_bytes(glb(b'{}  '))
+    monkeypatch.setattr(studio, 'STYLED_CHARACTER', styled)
+    monkeypatch.setattr(studio, 'SURFACE_CHARACTER', previous)
+    monkeypatch.setattr(studio.requests, 'get', Mock(side_effect=requests.ConnectionError()))
+    assert client.get('/api/status').json['character_revision'] == 'style-v24'
+    assert client.get('/api/character/default').data == styled.read_bytes()
+    styled.write_bytes(b'broken')
+    assert client.get('/api/status').json['character_revision'] == 'surface-v9'
+    assert client.get('/api/character/default').data == previous.read_bytes()

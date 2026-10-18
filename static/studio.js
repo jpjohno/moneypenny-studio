@@ -6,7 +6,7 @@ import { MotionDirector, movementFromText } from './motion.js';
 import { Wardrobe } from './wardrobe.js';
 import { LiveSession, SpeechSegmenter, SpeechPipeline, controlIntent } from './live.js';
 
-import { RigController } from './rig.js';
+import { RigController, authoredNeutral } from './rig.js';
 import { RigView } from './rig-view.js';
 import { MotionLibrary } from './motion-library.js';
 import { StudioTools } from './studio-tools.js';
@@ -131,9 +131,10 @@ async function showAvatar(file=null, localCharacter=null) {
   try {
     if (file) { if(file.size>80*1024*1024)throw new Error('Use a GLB smaller than 80 MB.'); validateGLB(await file.arrayBuffer()); next=URL.createObjectURL(file); }
     wardrobe?.dispose();rigView?.dispose();motionLibrary?.dispose();seatSupport?.dispose();disposeAppearance?.();disposeAppearance=null;
+    head.studioNeutral=null;
     await head.showAvatar({url:next||localCharacter?.url||'/static/avatars/mpfb.glb',body:'F',avatarMood:'neutral',lipsyncLang:'en',avatarIdleEyeContact:.6,avatarSpeakingEyeContact:.85}, e=>{
       if(e.lengthComputable) $('loadLabel').textContent=`Loading character · ${Math.round(100*e.loaded/e.total)}%`;
-    });
+    },gltf=>{if(localCharacter)head.studioNeutral=authoredNeutral(gltf.scene);});
     avatarURL=next; if(previous)URL.revokeObjectURL(previous);
     rig=new RigController(head,value=>{$('rigState').textContent=value;});
     rigView=new RigView(head,rig,(name,target,held)=>tools?.rigChanged(name,target,held));
@@ -193,7 +194,7 @@ async function initializeStage() {
     let saved=null; try {saved=await asset('avatar');}catch{}
     if(saved) { try{await showAvatar(saved);}catch{notify('The saved character is incompatible. The studio character has been restored.'); await showAvatar();} }
     else if(statusData.character_candidate_ready) {
-      try{await showAvatar(null,{url:'/api/character/default',label:'Moneypenny · local performance candidate'});}
+      try{await showAvatar(null,{url:'/api/character/default',label:statusData.character_revision==='style-v24'?'Moneypenny · styled character v24':statusData.character_revision==='free-surface-reviewed'?'Moneypenny · free character study':statusData.character_revision==='surface-v9'?'Moneypenny · surface study v9':'Moneypenny · local performance candidate'});}
       catch{notify('The local performance character could not load. The studio sample has been restored.');await showAvatar();}
     } else await showAvatar();
     const floor=new THREE.Mesh(new THREE.PlaneGeometry(6,6),new THREE.ShadowMaterial({opacity:.22}));floor.rotation.x=-Math.PI/2;floor.position.y=-.003;floor.receiveShadow=true;head.scene.add(floor);
@@ -211,6 +212,7 @@ async function initializeStage() {
       const seconds=dt/1000;
       if((busy||userSpeaking)&&motionLibrary?.currentSource==='persona')motionLibrary.stop();
       rig.resetBody(!!motion?.active||!!motion?.queue.length||motionLibrary?.playing||rig.targets.size>0);
+      rig.breathe(seconds,!!motion?.active||!!motionLibrary?.playing);
       if(motionLibrary?.playing)motionLibrary.update(seconds);
       else if(motion){motion.engaged=busy||userSpeaking;motion.update(dt);}
       rig.update(seconds);
@@ -504,12 +506,12 @@ $('stop').onclick=async()=>{listenEpoch++;liveTranscription?.abort();userSpeakin
 $('newChat').onclick=async()=>{await stopAll();history=[];$('messages').replaceChildren();$('welcome').hidden=false;$('chatMetrics').textContent='Local conversation';};
 document.querySelectorAll('[data-prompt]').forEach(button=>button.onclick=()=>{$('userInput').value=button.dataset.prompt;sendMessage();});
 document.querySelectorAll('[data-view]').forEach(button=>button.onclick=()=>{if(!avatarReady)return;frameCharacter(button.dataset.view);});
-$('wave').onclick=async()=>{if(avatarReady){motion?.stop();motionLibrary?.stop();head.setMood('happy');try{await motionLibrary.play('studio-wave');}catch(error){notify(error.message);}}};
+$('wave').onclick=async()=>{if(avatarReady){motion?.stop();motionLibrary?.stop();head.setMood('happy');if(head.studioNeutral)motion.plan({steps:[{skill:'wave',duration:4,intensity:.7}]});else try{await motionLibrary.play('studio-wave');}catch(error){notify(error.message);}}};
 $('previewMood').onclick=()=>{if(avatarReady)head.setMood($('mood').value);};
 $('fullscreen').onclick=()=>{if(document.fullscreenElement)document.exitFullscreen();else $('stage').requestFullscreen?.().catch(e=>notify(e.message));};
 $('previewVoice').onclick=async()=>{
   await stopAll();const token=generation;controller=new AbortController();setBusy(true);
-  try{head.setMood('happy');head.playGesture('handup',3);await playSpeech(`Hello, I'm ${$('personaName').value||'Moneypenny'}. A familiar voice, a little personality, and a moment to think together. What shall we start with?`,token);}
+  try{head.setMood('happy');motion?.stop();if(head.studioNeutral)motion.plan({steps:[{skill:'wave',duration:4,intensity:.7}]});else try{await motionLibrary?.play('studio-wave');}catch{}await playSpeech(`Hello, I'm ${$('personaName').value||'Moneypenny'}. A familiar voice, a little personality, and a moment to think together. What shall we start with?`,token);}
   catch(e){if(token===generation)notify(e.message);}finally{if(token===generation)setBusy(false);}
 };
 for(const id of settingIds)$(id).addEventListener('input',()=>{if(id==='systemPrompt')$('personaPreset').value='custom';if(['systemPrompt','personaName','modelSelect','personaPreset'].includes(id))tools?.markDirty();updateSettings();});
