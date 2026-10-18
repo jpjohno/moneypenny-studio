@@ -7,7 +7,8 @@ const clamp=(x,a,b)=>Math.min(b,Math.max(a,x));
 // A body director runs after TalkingHead's face/body pass. Speech and movement
 // remain separate: a persona can move without having to generate spoken text.
 export class MotionDirector {
-  constructor(head,onState=()=>{}) {
+  constructor(head,onState=()=>{},rig=null) {
+    this.rig=rig;
     this.head=head;this.onState=onState;this.bones={};this.rest={};this.queue=[];this.active=null;this.clock=0;this.nextDecision=6;
     this.origin=head.armature.position.clone();this.rootRotation=head.armature.quaternion.clone();
     head.armature.traverse(bone=>{if(bone.isBone){this.bones[bone.name]=bone;this.rest[bone.name]=(head.poseBase?.props[`${bone.name}.quaternion`]||bone.quaternion).clone();}});
@@ -104,10 +105,10 @@ export class MotionDirector {
       case 'turn':root.y=Math.sin(p*Math.PI)*Math.PI*1.1*k;break;
       case 'stretch':set('LeftArm',-.2,0,-1.75*k);set('RightArm',-.2,0,1.75*k);set('Spine',-.12*k,0,.08*Math.sin(t)*k);break;
       case 'bow':set('Spine',.55*k);set('Spine1',.25*k);set('Head',.15*k);break;
-      case 'sit':set('LeftUpLeg',-1.45);set('RightUpLeg',-1.45);set('LeftLeg',1.5);set('RightLeg',1.5);offset.y=-.42;break;
-      case 'kneel':set('LeftUpLeg',-.3);set('RightUpLeg',-.3);set('LeftLeg',2.1);set('RightLeg',2.1);offset.y=-.48;break;
-      case 'lie_back':root.x=-Math.PI/2;offset.y=.11;offset.z=.75;break;
-      case 'splits':set('LeftUpLeg',0,0,-1.4);set('RightUpLeg',0,0,1.4);set('LeftFoot',-.1);set('RightFoot',-.1);offset.y=-.72;break;
+      case 'sit':break;
+      case 'kneel':break;
+      case 'lie_back':break;
+      case 'splits':break;
       case 'reach':break;
       case 'custom': {
         const frames=a.frames||[];
@@ -120,7 +121,7 @@ export class MotionDirector {
     const q=this.rootRotation.clone().multiply(new THREE.Quaternion().setFromEuler(root));
     this.head.armature.quaternion.copy(this.rootRotation).slerp(q,w);
     this.head.armature.position.copy(this.origin).addScaledVector(offset,w);
-    if(a.skill==='lie_back')this.bones.Hips.position.copy(this.hipsPosition);
+    if(this.rig&&['splits','sit','kneel','lie_back'].includes(a.skill))this.rig.poseSkill(a.skill,w);
     if(a.skill==='reach')this.reach(a.target,a.side,w);
     this.head.armature.updateMatrixWorld(true);
     if(p>=1||a.release!==undefined&&this.clock-a.release>.4){this.active=null;this.onState(this.autonomous?'Persona movement enabled':'Movement paused');}
@@ -129,6 +130,7 @@ export class MotionDirector {
 
 export function movementFromText(value) {
   const lower=value.toLowerCase(),found=[];
+  if(/\b(?:don't|do not|avoid|without|stop)\b/.test(lower))return null;
   const duration=lower.match(/(?:for|hold)\s+(\d+)\s*seconds?/);
   for(const match of lower.matchAll(/(?:touch|rest|place|put|reach)[^.?!]{0,45}?(shoulder|belly button|belly|navel|head|chin|chest|hip|knee|ear|nose)/g))found.push({at:match.index,step:{skill:'reach',target:/belly|navel/.test(match[1])?'belly':match[1],side:match[0].includes('left hand')?'left':'right',duration:duration?clamp(Number(duration[1]),1,20):5}});
   for(const [pattern,skill] of [[/\bjig\b/,'jig'],[/\bdanc(?:e|ing)\b/,'dance'],[/\bsplits\b/,'splits'],[/lie.*back|lying.*back/,'lie_back'],[/\bkneel/,'kneel'],[/\bsit\b/,'sit'],[/\bstretch/,'stretch'],[/\bwalk/,'walk'],[/turn around|\bspin\b/,'turn'],[/\bbow\b/,'bow']]){

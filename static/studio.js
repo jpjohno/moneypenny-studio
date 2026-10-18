@@ -6,6 +6,12 @@ import { MotionDirector, movementFromText } from './motion.js';
 import { Wardrobe } from './wardrobe.js';
 import { LiveSession, SpeechSegmenter, SpeechPipeline, controlIntent } from './live.js';
 
+import { RigController } from './rig.js';
+import { RigView } from './rig-view.js';
+import { MotionLibrary } from './motion-library.js';
+import { StudioTools } from './studio-tools.js';
+import { prepareSampleMaterials, setLook } from './appearance.js';
+
 const $ = id => document.getElementById(id);
 const owner = crypto.randomUUID();
 const presets = {
@@ -14,16 +20,17 @@ const presets = {
   companion: 'You are Moneypenny, a friendly adult British conversation companion. Be curious, thoughtful and warm. Listen carefully, remember what has been said within this conversation and ask natural follow-up questions. Use gentle humour and a relaxed manner.',
   playful: 'You are Moneypenny, an adult British woman with a confident, witty and subtly flirtatious personality. Use warm smiles, gentle teasing and clever wordplay when welcome. Keep flirtation non-explicit and responsive. Shift to a clear, considerate manner when the topic calls for it. Speak like a natural conversation.',
 };
-const settingIds = ['personaName','personaPreset','systemPrompt','movement','mood','wardrobe','footwear','autonomy','aiMotion','activity','behaviourPrompt','modelSelect','speed','temperature','maxTokens','autoSpeak'];
+const settingIds = ['personaName','personaPreset','systemPrompt','movement','mood','wardrobe','footwear','lightingLook','lightBrightness','autonomy','aiMotion','activity','behaviourPrompt','modelSelect','speed','temperature','maxTokens','autoSpeak'];
 let head, lips, analyser, visualizer, avatarReady = false, lipReady = false;
 let generation = 0, controller = null, busy = false, currentSource = null, speechEnded = null;
 let history = [], statusData = {}, avatarURL = null, portraitURL = null, recordingPending = false;
-let studioOutfit = [];
+let studioOutfit = [],disposeAppearance=null;
 let actionTimers=[];
 let activeReply=null;
 let motion=null,wardrobe=null,liveSession=null,speechGate=null,userSpeaking=false,listenEpoch=0,liveTranscription=null,interruption=Promise.resolve();
 let quietUntil=Number(localStorage.getItem('moneypenny-quiet-until')||0),reminderPolling=false;
 let turnStarted=0,firstVoiceAt=0;
+let rig=null,rigView=null,motionLibrary=null,tools=null;
 const recorder = new Recorder();
 
 function notify(message='') { $('notice').textContent = message; $('notice').hidden = !message; }
@@ -32,6 +39,7 @@ function setState(label, state='ready') {
   $('waveform').classList.toggle('speaking', state === 'speaking');
 }
 function setBusy(value) {
+  for(const id of ['playMotion','pauseMotion','stopLibraryMotion','pinFeet','releaseTarget','resetRig','planMotion','stopMotion'])$(id).disabled=!avatarReady;
   busy = value; $('send').disabled = value || !statusData.models?.length || recorder.active || recordingPending;
   $('stop').hidden = !value && !recorder.active && !recordingPending;
   $('record').disabled = value || recordingPending || !statusData.microphone_ready || !!liveSession?.active;
@@ -63,7 +71,9 @@ function updateSettings() {
     head.opt.modelMovementFactor = movement;
     head.opt.avatarIdleHeadMove = movement * .4;
     head.opt.avatarSpeakingHeadMove = movement * .6;
+    setLook(head,$('lightingLook').value,$('lightBrightness').value);
   }
+  if(statusData.models?.length)$('connectionNote').textContent=`${$('modelSelect').value} · ${statusData.voice_ready?'British voice connected':'voice needs setup'}`;
   wardrobe?.set($('wardrobe').value,$('footwear').value);
   if(motion){motion.autonomous=$('autonomy').checked;motion.activity=Number($('activity').value);motion.persona=$('behaviourPrompt').value+' '+$('systemPrompt').value;}
   saveSettings();
@@ -106,7 +116,8 @@ function validateGLB(buffer) {
 }
 function frameCharacter(view,plan=null) {
   const lying=plan?.steps?.some(step=>step.skill==='lie_back');
-  head.setView(view,{cameraY:view==='full'?(lying?.75:0):.6,cameraRotateX:lying?-.35:0});
+  const low=plan?.steps?.some(step=>['splits','kneel','sit'].includes(step.skill));
+  head.setView(view,{cameraY:view==='full'?(lying?.75:low?.35:0):.6,cameraDistance:view==='head'?.8:0,cameraRotateX:lying?-.35:0});
   document.querySelectorAll('[data-view]').forEach(button=>button.classList.toggle('selected',button.dataset.view===view));
 }
 async function showAvatar(file=null) {
@@ -115,14 +126,23 @@ async function showAvatar(file=null) {
   let next=null;
   try {
     if (file) { if(file.size>80*1024*1024)throw new Error('Use a GLB smaller than 80 MB.'); validateGLB(await file.arrayBuffer()); next=URL.createObjectURL(file); }
-    wardrobe?.dispose();
+    wardrobe?.dispose();rigView?.dispose();motionLibrary?.dispose();disposeAppearance?.();disposeAppearance=null;
     await head.showAvatar({url:next||'/static/avatars/mpfb.glb',body:'F',avatarMood:'neutral',lipsyncLang:'en',avatarIdleEyeContact:.6,avatarSpeakingEyeContact:.85}, e=>{
       if(e.lengthComputable) $('loadLabel').textContent=`Loading character · ${Math.round(100*e.loaded/e.total)}%`;
     });
     avatarURL=next; if(previous)URL.revokeObjectURL(previous);
-    motion=new MotionDirector(head,value=>{$('motionState').textContent=value;});
+    rig=new RigController(head,value=>{$('rigState').textContent=value;});
+    rigView=new RigView(head,rig,(name,target,held)=>tools?.rigChanged(name,target,held));
+    rigView.show($('showRig').checked);rigView.select($('rigTarget').value);
+    motionLibrary=new MotionLibrary(head,rig,value=>{$('libraryState').textContent=value;});
+    try{motionLibrary.mapping=JSON.parse(localStorage.getItem('moneypenny-bone-map')||'{}');}catch{}
+    motion=new MotionDirector(head,value=>{$('motionState').textContent=value;},rig);
+    tools?.refreshMotions().catch(error=>notify(error.message));
     motion.onChoosePlan=async()=>{
-      if(busy||userSpeaking||!$('autonomy').checked||!$('aiMotion').checked||!$('modelSelect').value)return;
+      if(busy||userSpeaking||!$('autonomy').checked)return;
+      const choices=motionLibrary.items.filter(item=>motionLibrary.autoIds.includes(item.id));
+      if(choices.length&&!$('aiMotion').checked){motion.queue=[];motion.active=null;motion.nextDecision=motion.clock+20+(1-motion.activity)*20;motionLibrary.loop=false;try{await motionLibrary.play(choices[Math.floor(Math.random()*choices.length)].id,0,'persona');}catch{}return;}
+      if(!$('aiMotion').checked||!$('modelSelect').value)return;
       const epoch=generation,persona=$('behaviourPrompt').value;
       try{
         const plan=await(await api('/api/motion/plan',{prompt:'Choose one short physical activity for yourself now, based on your movement personality and recent conversation. Use custom keyframes for original gestures, or an existing skill. Recent conversation: '+history.slice(-2).map(x=>x.content).join(' ').slice(0,600),persona,model:$('modelSelect').value})).json();
@@ -130,7 +150,12 @@ async function showAvatar(file=null) {
       }catch{};
     };
     wardrobe=new Wardrobe(head);
-    head.armature.traverse(node=>{if(node.isMesh){node.castShadow=true;node.receiveShadow=true;for(const material of [node.material].flat()){material.envMapIntensity=.6;if(/body/i.test(material.name))material.roughness=.64;}}});
+    motionLibrary.onProgress=(time,duration)=>{$('motionPosition').disabled=false;$('motionPosition').max=String(duration);if(document.activeElement!==$('motionPosition'))$('motionPosition').value=String(time);$('motionTime').textContent=`${time.toFixed(1)} / ${duration.toFixed(1)} s`;};
+    motionLibrary.onCue=cue=>{try{wardrobe.setGarment(cue.garment,cue.visible);const garment=wardrobe.garments().find(item=>item.id===cue.garment);$('cueState').textContent=`${garment?.name||cue.garment} ${cue.visible?'visible':'removed'} at ${cue.at}s`;}catch(error){notify(error.message);}};
+    try{motionLibrary.autoIds=JSON.parse(localStorage.getItem('moneypenny-autonomous-clips')||'["studio-stretch"]');motionLibrary.aliasOverrides=JSON.parse(localStorage.getItem('moneypenny-motion-aliases')||'{}');motionLibrary.cueOverrides=JSON.parse(localStorage.getItem('moneypenny-garment-cues')||'{}');}catch{}
+    tools?.refreshGarments();
+    if(!file)disposeAppearance=prepareSampleMaterials(head.armature);
+    setLook(head,$('lightingLook').value,$('lightBrightness').value);
     studioOutfit=[];
     if(!file)head.armature.traverse(node=>{if(node.isMesh&&node.name.includes('female_casualsuit')){for(const material of [node.material].flat())studioOutfit.push({material,map:material.map,color:material.color.clone()});}});
     $('wardrobe').disabled=!!file;$('footwear').disabled=!!file;
@@ -171,7 +196,7 @@ async function initializeStage() {
     head.audioSpeechGainNode.disconnect(head.audioReverbNode); head.audioSpeechGainNode.connect(delay); delay.connect(speechGate);speechGate.connect(head.audioReverbNode);
     analyser=head.audioCtx.createAnalyser(); analyser.fftSize=256; head.audioSpeechGainNode.connect(analyser);
     lips.onvalue=(key,value)=>{const target=head.mtAvatar[key];if(target)Object.assign(target,{newvalue:value,needsUpdate:true});};
-    head.opt.update=dt=>{lips.update(dt);if(motion){motion.engaged=busy||userSpeaking;motion.update(dt);}};
+    head.opt.update=dt=>{lips.update(dt);if(rig){if((busy||userSpeaking)&&motionLibrary?.currentSource==='persona')motionLibrary.stop();rig.resetBody(!!motion?.active||!!motion?.queue.length||motionLibrary?.playing||rig.targets.size>0);if(motionLibrary?.playing)motionLibrary.update(dt/1000);else if(motion){motion.engaged=busy||userSpeaking;motion.update(dt);}rig.update(dt/1000);rigView?.update();}};
     liveSession=new LiveSession({audioContext:head.audioCtx,onState:value=>$('liveState').textContent=value,
       onStart:()=>{
         userSpeaking=true;listenEpoch++;liveTranscription?.abort();motion?.stop();
@@ -187,7 +212,7 @@ async function initializeStage() {
 
 async function stopAll(clearNotice=true) {
   const cancelled=generation;
-  generation++; controller?.abort(); controller=null;
+  generation++; controller?.abort(); controller=null;motionLibrary?.stop();
   const stopGeneration=generation;
   if(speechGate)speechGate.gain.setValueAtTime(0,head.audioCtx.currentTime);
   if(activeReply){activeReply.body.textContent=activeReply.body.textContent==='…'?'Reply stopped.':`${activeReply.body.textContent}\n\n[Stopped]`;activeReply=null;}
@@ -281,7 +306,10 @@ async function sendMessage(event,spokenOverride=null) {
   if(!prompt||busy||recorder.active||recordingPending)return;
   setBusy(true); await stopAll(); const token=generation;controller=new AbortController(); setBusy(true);notify();setState('Thinking with you','busy');
   try{if(await handleControl(prompt)){setBusy(false);return;}}catch(error){notify(error.message);setBusy(false);return;}
-  const requestedMotion=movementFromText(prompt);if(requestedMotion){motion?.plan(requestedMotion,'instruction');if(requestedMotion.steps.some(x=>['dance','jig','walk','splits','lie_back','kneel','sit'].includes(x.skill)))frameCharacter('full',requestedMotion);}
+  const requestedMotion=movementFromText(prompt);
+  const libraryMatch=(!requestedMotion||requestedMotion.steps.length===1)&&motionLibrary?.match(prompt);
+  if(libraryMatch){try{motion?.stop();await motionLibrary.play(libraryMatch.id);frameCharacter('full');}catch(error){notify(error.message);}}
+  else if(requestedMotion){motion?.plan(requestedMotion,'instruction');if(requestedMotion.steps.some(x=>['dance','jig','walk','splits','lie_back','kneel','sit'].includes(x.skill)))frameCharacter('full',requestedMotion);}
   if(/\b(?:wear|put on|change into|change clothes|remove (?:your )?(?:jacket|dress|outer))\b/i.test(prompt)){
     if(/remove/i.test(prompt))$('wardrobe').value='base';else $('wardrobe').value=/dress/i.test(prompt)?'dress':/casual|trousers|jeans/i.test(prompt)?'casual':'office';
     if(/trainer/i.test(prompt))$('footwear').value='trainers';else if(/heel/i.test(prompt))$('footwear').value='heels';updateSettings();
@@ -301,7 +329,7 @@ async function sendMessage(event,spokenOverride=null) {
   try {
     // Resume directly after the click; subsequent synthesis may take a moment.
     head?.audioCtx.resume();
-    const response=await api('/api/chat/stream',{prompt,history:messages,model:$('modelSelect').value,system:`Character name: ${$('personaName').value||'Moneypenny'}.\n${$('systemPrompt').value}`,temperature:Number($('temperature').value),max_tokens:Number($('maxTokens').value)},controller.signal);
+    const response=await api('/api/chat/stream',{prompt,history:messages,persona_id:tools?.personaId,avatar_motion:requestedMotion?.steps.map(step=>step.skill)||[],model:$('modelSelect').value,system:`Character name: ${$('personaName').value||'Moneypenny'}.\n${$('systemPrompt').value}`,temperature:Number($('temperature').value),max_tokens:Number($('maxTokens').value)},controller.signal);
     const reader=response.body.getReader(),decoder=new TextDecoder();let pending='';
     let result;
     while(true){
@@ -425,11 +453,12 @@ $('quietButton').onclick=async()=>{await stopAll();setQuiet(-1);setState('Quiet 
 $('resumeButton').onclick=()=>{setQuiet(0);setState(liveSession?.active?'Listening':'Here with you');};
 $('planMotion').onclick=async()=>{
   const prompt=$('motionPrompt').value.trim();if(!prompt||!motion)return;
+  if(/\b(?:don't|do not|avoid|without|stop)\b/i.test(prompt)){motionLibrary?.stop();motion.stop();$('motionState').textContent='Movement request cancelled';return;}
   $('planMotion').disabled=true;
-  try{const local=movementFromText(prompt);const plan=local||await(await api('/api/motion/plan',{prompt,persona:$('behaviourPrompt').value,model:$('modelSelect').value})).json();motion.plan(plan,'choreography');frameCharacter('full',plan);}
+  try{const matched=motionLibrary?.match(prompt);if(matched){motion.stop();await motionLibrary.play(matched.id);frameCharacter('full');return;}motionLibrary?.stop();rig?.clear();const local=movementFromText(prompt);if(!local&&!$('aiMotion').checked){notify('No matching movement is saved yet. Add a compatible animation and give it these movement words.');return;}const plan=local||await(await api('/api/motion/plan',{prompt,persona:$('behaviourPrompt').value,model:$('modelSelect').value})).json();motion.plan(plan,'choreography');frameCharacter('full',plan);}
   catch(error){notify(error.message);}finally{$('planMotion').disabled=false;}
 };
-$('stopMotion').onclick=()=>{motion?.stop();$('autonomy').checked=false;updateSettings();$('motionState').textContent='Independent movement paused';};
+$('stopMotion').onclick=()=>{motionLibrary?.stop();motion?.stop();$('autonomy').checked=false;updateSettings();$('motionState').textContent='Independent movement paused';};
 setInterval(pollReminders,2500);
 
 $('chatForm').addEventListener('submit',sendMessage);
@@ -438,7 +467,7 @@ $('stop').onclick=async()=>{listenEpoch++;liveTranscription?.abort();userSpeakin
 $('newChat').onclick=async()=>{await stopAll();history=[];$('messages').replaceChildren();$('welcome').hidden=false;$('chatMetrics').textContent='Local conversation';};
 document.querySelectorAll('[data-prompt]').forEach(button=>button.onclick=()=>{$('userInput').value=button.dataset.prompt;sendMessage();});
 document.querySelectorAll('[data-view]').forEach(button=>button.onclick=()=>{if(!avatarReady)return;frameCharacter(button.dataset.view);});
-$('wave').onclick=()=>{if(avatarReady){head.playGesture('handup',3);head.setMood('happy');}};
+$('wave').onclick=async()=>{if(avatarReady){motion?.stop();motionLibrary?.stop();head.setMood('happy');try{await motionLibrary.play('studio-wave');}catch(error){notify(error.message);}}};
 $('previewMood').onclick=()=>{if(avatarReady)head.setMood($('mood').value);};
 $('fullscreen').onclick=()=>{if(document.fullscreenElement)document.exitFullscreen();else $('stage').requestFullscreen?.().catch(e=>notify(e.message));};
 $('previewVoice').onclick=async()=>{
@@ -446,7 +475,7 @@ $('previewVoice').onclick=async()=>{
   try{head.setMood('happy');head.playGesture('handup',3);await playSpeech(`Hello, I'm ${$('personaName').value||'Moneypenny'}. A familiar voice, a little personality, and a moment to think together. What shall we start with?`,token);}
   catch(e){if(token===generation)notify(e.message);}finally{if(token===generation)setBusy(false);}
 };
-for(const id of settingIds)$(id).addEventListener('input',()=>{if(id==='systemPrompt')$('personaPreset').value='custom';updateSettings();});
+for(const id of settingIds)$(id).addEventListener('input',()=>{if(id==='systemPrompt')$('personaPreset').value='custom';if(['systemPrompt','personaName','modelSelect','personaPreset'].includes(id))tools?.markDirty();updateSettings();});
 $('personaPreset').addEventListener('change',()=>{if(presets[$('personaPreset').value])$('systemPrompt').value=presets[$('personaPreset').value];updateSettings();});
 $('avatarUpload').onchange=async e=>{
   const file=e.target.files[0];if(!file)return;
@@ -478,8 +507,9 @@ async function initialize() {
     const response=await fetch('/api/status');if(!response.ok)throw new Error('Local status check failed.');statusData=await response.json();
     $('modelSelect').replaceChildren();
     for(const model of statusData.models){const option=document.createElement('option');option.value=model;option.textContent=model;$('modelSelect').append(option);}
-    if(statusData.models.includes('MoneyPenny:latest'))$('modelSelect').value='MoneyPenny:latest';
-    if(saved?.modelSelect&&statusData.models.includes(saved.modelSelect))$('modelSelect').value=saved.modelSelect;
+    if(statusData.models.includes('uncensored-3b:latest'))$('modelSelect').value='uncensored-3b:latest';
+    else if(statusData.models.includes('MoneyPenny:latest'))$('modelSelect').value='MoneyPenny:latest';
+    if(saved?.modelSelect&&saved.modelSelect!=='MoneyPenny:latest'&&statusData.models.includes(saved.modelSelect))$('modelSelect').value=saved.modelSelect;
     if(!statusData.models.length){const option=document.createElement('option');option.textContent='Ollama unavailable';$('modelSelect').append(option);}
     $('connectionNote').textContent=statusData.voice_ready&&statusData.models.length?'Local model & British voice connected':statusData.ollama_error||'Local voice needs setup · see README';
     if(statusData.ollama_error)notify(statusData.ollama_error);
@@ -487,6 +517,10 @@ async function initialize() {
     setBusy(false);saveSettings();
   }catch(e){notify(e.message);$('connectionNote').textContent='Local services unavailable';}
   await initializeStage();
+  tools=new StudioTools({getRig:()=>rig,getRigView:()=>rigView,getLibrary:()=>motionLibrary,getMotion:()=>motion,getWardrobe:()=>wardrobe,settings,applySettings,post:api,notify,frame:frameCharacter,stopConversation:stopAll,
+    resetConversation:async()=>{await stopAll();history=[];$('messages').replaceChildren();$('welcome').hidden=false;},
+    download:(filename,value)=>{const url=URL.createObjectURL(new Blob([JSON.stringify(value,null,2)],{type:'application/json'}));const link=document.createElement('a');link.href=url;link.download=filename;link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}});
+  try{await tools.start();}catch(error){notify(error.message);}
   updateLiveControls();pollReminders();
 }
 initialize();

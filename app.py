@@ -13,14 +13,16 @@ import requests
 from werkzeug.exceptions import HTTPException
 from speech import Voice, voice_config
 from listening import Listening
-from motion import generate_plan, validate_plan
+from motion import generate_plan, validate_plan, SKILLS
 import reminders
+import personas
+import motion_assets
 import threading
 
 ROOT = Path(__file__).resolve().parent
 OLLAMA = os.environ.get("MONEYPENNY_OLLAMA_URL", "http://127.0.0.1:11434").rstrip("/")
 app = Flask(__name__)
-app.config["MAX_CONTENT_LENGTH"] = 4 * 1024 * 1024
+app.config["MAX_CONTENT_LENGTH"] = 26 * 1024 * 1024
 app.config["TEMPLATES_AUTO_RELOAD"] = True
 voice = Voice()
 listening = Listening()
@@ -86,16 +88,23 @@ def number(value, label, lower, upper, integer=False):
 
 def chat_payload(data):
     prompt = text(data.get("prompt"), "Message", 4000)
+    if data.get('persona_id'):
+        record=personas.resolve(text(data['persona_id'],'Persona identity',200))
+        data={**data,'model':record['model'],'system':record['system']}
     model = text(data.get("model", "MoneyPenny:latest"), "Model", 150)
     system = text(data.get("system", "You are Moneypenny, a warm, witty British assistant."), "Personality", 6000, empty=True)
     history = data.get("history", [])
     if not isinstance(history, list) or len(history) > 40:
         raise ValueError("Conversation history is limited to 40 messages.")
+    movement=data.get('avatar_motion',[])
+    if not isinstance(movement,list) or len(movement)>8 or any(not isinstance(x,str) or x not in SKILLS for x in movement):raise ValueError('Invalid avatar movement status.')
+    movement_note=(' The local avatar controller has queued: '+', '.join(movement)+'. You may acknowledge that queued avatar performance; do not claim it has finished.') if movement else ' No avatar movement was queued for this turn.'
     messages = [{"role": "system", "content": system + "\n\n" + (
         "Reply in conversational English. Keep replies concise unless detail is requested. "
         "Optionally begin with one short physical expression between asterisks, e.g. *smiles and nods*. "
         "Then speak naturally, without quotation marks, markdown, or role labels. "
-        "Never claim to have used tools, sent a message, accessed files or completed an action: this studio only chats."
+        "You speak for a visible 3D avatar. Its body is animated by a separate local controller. "
+        "Never claim to have sent messages, accessed files or performed real-world actions." + movement_note
     )}]
     total = 0
     for item in history:
@@ -191,7 +200,7 @@ def status():
     except (requests.RequestException, ValueError, KeyError):
         error = "Ollama is unavailable. Start Ollama to chat."
     config = voice_config()
-    return jsonify(app="moneypenny-studio", version="2.1.0", models=models, ollama_error=error, voice_ready=voice.available(),
+    return jsonify(app="moneypenny-studio", version="2.2.0", models=models, ollama_error=error, voice_ready=voice.available(),
                    voice="Moneypenny · British English · bf_emma", voice_engine="Kokoro ONNX",
                    microphone_ready=listening.available() or bool(config.get("transcribe_python") and Path(config.get("transcribe_model", "__missing__")).is_dir()),
                    listening_engine='Whisper base.en' if listening.available() else 'Vosk',
@@ -212,6 +221,33 @@ def chat():
         if event["type"] == "error":
             return jsonify(error=event["error"]), 503
     return jsonify(error="No reply was received."), 503
+
+
+@app.get('/api/motion/library')
+def list_motion_library():
+    return jsonify(motions=motion_assets.library())
+
+
+@app.post('/api/motion/library')
+def add_motion_asset():
+    uploaded=request.files.get('file')
+    if not uploaded:raise ValueError('Choose an animation file.')
+    return jsonify(motion_assets.add(request.form.get('name',''),uploaded.filename,uploaded.read(24*1024*1024+1)))
+
+
+@app.get('/api/motion/assets/<identity>')
+def motion_asset(identity):
+    return send_from_directory(motion_assets.DIRECTORY,motion_assets.asset(identity))
+
+
+@app.get('/api/personas')
+def list_personas():
+    return jsonify(personas.catalogue())
+
+
+@app.post('/api/personas')
+def save_persona():
+    return jsonify(personas.save(body()))
 
 
 @app.post("/api/speech")

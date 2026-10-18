@@ -68,6 +68,14 @@ brew install whisper-cpp
 
 The pinned `base.en` model is about 148 MB. The studio starts its own loopback Whisper server and keeps it warm. On this Mac the existing whisper.cpp install was reused.
 
+## Motion library, rig and character workshop
+
+The studio now has saved/imported GLB/BVH animation clips, crossfades, speed/loop/pause controls, named movement words, bone mapping, draggable hand/foot/hip targets and foot planting. Clothing visibility can follow markers in an authored dressing animation. Named personas can be saved here or loaded from the existing local Open WebUI model catalogue, with `uncensored-3b:latest` selected directly by default.
+
+On this Mac, Blender 4.5 LTS and MPFB are installed, with an editable character workshop and a separate unfinished adult body source. Double-click **Open Character Workshop.command**. See [CHARACTER_WORKSHOP.md](CHARACTER_WORKSHOP.md) for usage, formats, rig controls, source status and the distinction between the implemented library and unfinished photographic/body/clothing assets.
+
+**Open Body Editor.command** opens the separate editable adult base, with actual MPFB body-shape controls and initial skin development. **Set Up NVIDIA Motion.command** and **Generate NVIDIA Motion.command** prepare and run genuine ARDY offline motion generation. The native Mac core is installed and its checkpoint loads on CPU; required text-model access and full generation remain unverified. See [NVIDIA_MOTION.md](NVIDIA_MOTION.md) for the measured tests and remaining setup.
+
 ## Bring in your own person
 
 Use **Import 3D character** with a self-contained GLB 2.0 file under 80 MB. The renderer expects a TalkingHead-compatible, Mixamo-style humanoid rig and Oculus mouth shapes (including `viseme_aa` and `viseme_PP`), plus facial shapes for the supported expressions. It validates the container, embedded assets and basic rig/shapes before loading. A complete compatibility check occurs during loading. VRM and arbitrary unrigged meshes are not supported by this import.

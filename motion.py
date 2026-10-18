@@ -44,6 +44,7 @@ def validate_plan(value):
 
 def direct_plan(text):
     lower=text.lower();steps=[]
+    if re.search(r"\b(?:don't|do not|avoid|without|stop)\b",lower):return None
     for match in re.finditer(r'(?:touch|rest|place|put|reach)[^.?!]{0,45}?(shoulder|belly button|belly|navel|head|chin|chest|hip|knee|ear|nose)',lower):
         target=match.group(1);target='belly' if target in {'belly button','navel'} else target
         steps.append({'_at':match.start(),'skill':'reach','target':target,'side':'left' if 'left hand' in match.group() else 'right','duration':4})

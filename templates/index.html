@@ -16,6 +16,11 @@
   <main class="workspace">
     <aside class="settings" aria-label="Persona settings">
       <div class="panel-heading"><span class="eyebrow">01 / CREATE</span><h1>Make her<br><em>your own.</em></h1><p>A personality. A presence.<br>A conversation that feels natural.</p></div>
+      <details open><summary>Saved personas <span>＋</span></summary>
+        <label for="personaLibrary">Choose a saved persona</label><select id="personaLibrary"><option value="">Current draft</option></select>
+        <div class="control-pair"><button id="newPersona" class="text-button">New persona</button><button id="savePersona" class="text-button">Save persona</button></div>
+        <p class="hint" id="personaSource">Local persona library</p><button id="exportWebUI" class="text-button">Export for Open WebUI</button><a class="text-button" href="http://127.0.0.1:8080/workspace/models" target="_blank" rel="noreferrer">Manage in Open WebUI ↗</a>
+      </details>
       <label for="personaName">Character name</label><input id="personaName" maxlength="60" value="Moneypenny">
       <label for="personaPreset">Personality</label><select id="personaPreset"><option value="moneypenny">Moneypenny · witty & warm</option><option value="professional">Professional · calm & capable</option><option value="companion">Companion · curious & friendly</option><option value="playful">Playful · confident & flirtatious</option><option value="custom">Custom personality</option></select>
       <label for="systemPrompt">In her own words</label><textarea id="systemPrompt" rows="5" maxlength="6000"></textarea>
@@ -32,8 +37,35 @@
         <button id="planMotion" class="file-button">Perform movement ↗</button><button id="stopMotion" class="text-button">Stop movement</button>
         <p class="hint" id="motionState" role="status">Independent body controller preparing…</p>
       </details>
+      <details open><summary>Motion library <span>＋</span></summary>
+        <label for="motionLibrary">Saved movement</label><select id="motionLibrary"></select>
+        <label for="motionClip">Animation clip</label><select id="motionClip"><option value="0">First clip</option></select>
+        <div class="control-pair"><button id="playMotion" class="file-button">Play movement</button><button id="pauseMotion" class="text-button">Pause movement</button></div><button id="stopLibraryMotion" class="text-button">Stop library movement</button>
+<label for="motionPosition">Animation position <output id="motionTime">0.0 s</output></label><input id="motionPosition" type="range" min="0" max="1" step=".05" value="0" disabled>
+        <label for="motionSpeed">Playback speed</label><input id="motionSpeed" type="range" min=".5" max="1.5" step=".05" value="1">
+        <label for="motionBlend">Transition time</label><input id="motionBlend" type="range" min=".2" max="1.5" step=".1" value=".6">
+        <label class="toggle-label"><input id="autoLibraryMotion" type="checkbox"> Include in independent movement</label>
+        <label class="toggle-label"><input id="loopMotion" type="checkbox"> Loop selected movement</label>
+        <label for="motionAliases">Words that request this movement</label><input id="motionAliases" maxlength="300" placeholder="For example: bow, take a bow"><button id="saveMotionAliases" class="text-button">Save movement words</button>
+        <details><summary>Outfit changes with movement <span>＋</span></summary><label for="cueGarment">Garment</label><select id="cueGarment"></select><label for="cueTime">Change at (seconds)</label><input id="cueTime" type="number" min="0" max="120" step=".1" value="1"><label class="toggle-label"><input id="cueVisible" type="checkbox" checked> Garment visible after this point</label><button id="addGarmentCue" class="text-button">Add outfit change</button><button id="clearGarmentCues" class="text-button">Clear outfit changes</button><p class="hint" id="cueState">Use a dressing animation fitted to the garment. The sample's fixed coverage layer stays underneath.</p></details>
+        <label for="motionName">Name a new movement</label><input id="motionName" maxlength="80" placeholder="For example: relaxed sitting">
+        <label class="file-button" for="motionUpload">＋ Add animation <small>GLB · BVH · motion JSON</small></label><input class="visually-hidden" id="motionUpload" type="file" accept=".glb,.bvh,.json">
+        <p class="hint" id="libraryState" role="status">Loading the animation library…</p>
+        <details><summary>Animation bone mapping <span>＋</span></summary><p class="hint">Use this when a motion-capture skeleton has different bone names.</p><label for="mapTarget">Character bone</label><select id="mapTarget"><option>Hips</option><option>Spine</option><option>Spine1</option><option>Spine2</option><option>Neck</option><option>Head</option><option>LeftArm</option><option>RightArm</option><option>LeftForeArm</option><option>RightForeArm</option><option>LeftUpLeg</option><option>RightUpLeg</option><option>LeftLeg</option><option>RightLeg</option><option>LeftFoot</option><option>RightFoot</option></select><label for="mapSource">Name in the animation</label><input id="mapSource" maxlength="120" placeholder="For example: pelvis"><button id="saveBoneMap" class="text-button">Apply bone mapping</button></details>
+      </details>
+      <details><summary>Rig controls <span>＋</span></summary>
+        <label class="toggle-label"><input id="showRig" type="checkbox"> Show skeleton and drag handles</label>
+        <label for="rigTarget">Control</label><select id="rigTarget"><option value="RightHand">Right hand</option><option value="LeftHand">Left hand</option><option value="RightFoot">Right foot</option><option value="LeftFoot">Left foot</option><option value="Hips">Hips</option></select>
+        <label for="rigX">Side to side <output id="rigXValue"></output></label><input id="rigX" type="range" min="-1.5" max="1.5" step=".01" value="0">
+        <label for="rigY">Height <output id="rigYValue"></output></label><input id="rigY" type="range" min="0" max="2.2" step=".01" value="1">
+        <label for="rigZ">Forward and back <output id="rigZValue"></output></label><input id="rigZ" type="range" min="-1.5" max="1.5" step=".01" value="0">
+        <div class="control-pair"><button id="pinFeet" class="text-button">Plant both feet</button><button id="releaseTarget" class="text-button">Release this target</button></div><button id="resetRig" class="text-button">Reset all rig controls</button>
+        <p class="hint" id="rigState" role="status">Move a slider or drag a handle to hold a target. Distances are metres; targets beyond a limb's reach are clamped.</p>
+      </details>
       <details class="character-details" open><summary>Character & appearance <span>＋</span></summary>
         <p class="hint" id="avatarLabel">Studio character · CC0 sample</p>
+        <label for="lightingLook">Lighting</label><select id="lightingLook"><option value="daylight">Soft daylight</option><option value="portrait">Portrait studio</option><option value="neutral">Neutral fitting light</option></select>
+        <label for="lightBrightness">Brightness</label><input id="lightBrightness" type="range" min=".65" max="1.25" step=".05" value="1">
         <label for="wardrobe">Outfit</label><select id="wardrobe"><option value="office">Office · waistcoat & skirt</option><option value="casual" selected>Casual · top & trousers</option><option value="dress">Evening · dress</option><option value="base">Remove outer layers</option><option value="original">Original sample outfit</option></select>
         <label for="footwear">Footwear</label><select id="footwear"><option value="flats">Black flats</option><option value="heels">Dark shoes · raised heel</option><option value="trainers">Cream trainers</option><option value="original">Original footwear</option></select>
         <p class="hint">Outer garments are separate prototype meshes. The sample's coverage layer stays underneath. Bespoke anatomy and photographic character detail need a production body asset.</p>

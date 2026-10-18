@@ -4,7 +4,7 @@ Requested target: a fictional adult human who remains convincing at photographic
 
 ## Required asset layers
 
-- Complete adult body mesh underneath clothing, with continuous topology, realistic skin surface/normal/roughness maps and anatomically correct external detail. Required underlying features must actually exist in the source mesh/textures; a checkbox or a garment-coloured surface is not a substitute.
+- Complete adult female body mesh underneath clothing, including modelled nipples, external genital anatomy, natural pubic hair and realistic buttock/gluteal forms, with continuous topology, realistic skin surface/normal/roughness maps and anatomically correct external detail. Required underlying features must actually exist in the source mesh/textures; a checkbox or a garment-coloured surface is not a substitute.
 - Face with believable proportions, asymmetric detail, eyelids, tear line, eyes with correct corneal depth/refraction, teeth, tongue and natural lip closures.
 - Realistic hair, eyebrows and eyelashes using suitable groom or high-quality cards. Check the profile and rear of the head, not only a frontal portrait.
 - Separate fitted underwear/coverage layers, outer garments and footwear. The requested starting catalogue is office, casual and evening dress, with flats, trainers and a properly modelled raised-heel option.
@@ -44,3 +44,9 @@ Requested target: a fictional adult human who remains convincing at photographic
 [MetaHuman](https://www.metahuman.com/license) is a candidate high-quality character pipeline under Epic's applicable licence conditions. It needs actual character creation/export and rig/wardrobe integration. No MetaHuman account, agreement, install or character import was completed in this run.
 
 The existing avatar remains clearly labelled as a sample until a production asset passes the visual and motion checks. No naked generated photograph, private portrait, borrowed likeness or non-commercial sample has been substituted and represented as the finished commercial character.
+
+## Workshop progress, 18 October 2026
+
+Blender 4.5.14 LTS and MPFB 2.0.18 are now installed on the Mac. The local editable workshop contains a separate adult female MPFB base and Mixamo rig, hidden as unfinished source. This is actual source geometry, but the requested anatomical detail, skin/hair/eye finish, facial mapping, garment fitting and photographic review have not been completed or certified. The live stage continues to use the clothed CC0 sample. The expandable animation library, rig targets and garment markers are implemented; they do not certify body quality or realistic cloth handling. See `CHARACTER_WORKSHOP.md`.
+
+A second standalone body scene now exposes that adult base for editing, with a shape profile applied before rig fitting, preserve-volume deformation, subdivision and an initial textured skin surface. The source report records 19,158 vertices and 52 bones. It does not certify the requested detailed anatomy, facial readiness, hair/nails or garment fit. Browser skin/eye shading and lighting have been adjusted while preserving mouth geometry and imported production materials. The genuine ARDY motion bridge is separate; see `NVIDIA_MOTION.md`.
