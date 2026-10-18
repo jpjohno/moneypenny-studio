@@ -3,7 +3,13 @@
 Updated: 18 October 2026. Checkout: `/Users/jamesjohnston/Documents/Moneypenny-Studio`. Repository: `jpjohno/moneypenny-studio`, branch `codex/live-3d-persona`, draft PR [#1](https://github.com/jpjohno/moneypenny-studio/pull/1). Local URL: http://127.0.0.1:8090.
 
 
-## Latest continuation: Dolphin retained at user request
+## Latest continuation: installed Uncensored 3B selected
+
+The active Continue configuration now includes **Uncensored 3B - Local** (`uncensored-3b:latest`) with chat/edit/apply roles, 8,192 context tokens and temperature 0.2. It is selected in a fresh Chat session in VS Code. The Ollama inventory confirms that this tag and `sadiq-bd/llama3.2-3b-uncensored:latest` have identical model digests; no additional model was downloaded. Dolphin and the existing fallback remain available. The previous configuration was backed up privately.
+
+A real Continue request produced a complete Python clamp function, including reversed-range validation. The exact response was recovered from the local session and independently compiled and executed after inspection: its three assertions plus six independent checks passed. This establishes connection and basic code generation, not autonomous workspace edits, Blender integration, live dictation, or coding reliability on complex tasks. The private proof code remains ignored under `verification/`. Qwen remains removed. Continue's existing Dolphin compatibility setting remains ON.
+
+## Earlier continuation: Dolphin retained at user request
 
 The user explicitly chose the existing Dolphin model over the optional Qwen coding alternative. `qwen3.5:9b-q4_K_M` was downloaded and its native tool capability confirmed, but its disposable Continue check was stopped before any edit or test command completed. It read two fixture files; that is not evidence of a completed coding task or a benchmark. The optional Qwen tag was then deleted through Ollama and its absence verified. The existing Dolphin tag was retained. No Qwen dependency is added to this repository.
 

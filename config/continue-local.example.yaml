@@ -1,9 +1,21 @@
-# Optional local Continue configuration. Back up your own config before adopting.
-# Also enable Settings > Experimental > Only use system message tools.
+# Local Continue configuration. Back up your own config before adopting.
+# Dolphin Agent requires Settings > Experimental > Only use system message tools.
 name: Moneypenny Local Dolphin
 version: 1.0.0
 schema: v1
 models:
+  - name: Uncensored 3B - Local
+    provider: ollama
+    model: uncensored-3b:latest
+    apiBase: http://127.0.0.1:11434
+    roles:
+      - chat
+      - edit
+      - apply
+    defaultCompletionOptions:
+      contextLength: 8192
+      maxTokens: 1536
+      temperature: 0.2
   - name: Dolphin Llama 3 - Local
     provider: ollama
     model: cognitivecomputations/dolphin-llama3:latest
