@@ -11,7 +11,8 @@ free_character_file="$studio_root/.runtime/character-workshop/Moneypenny-Free-Su
 if [[ -f "$free_character_file" ]]; then
   character_file="$free_character_file"
 fi
-styled_character_file="$studio_root/.runtime/character-workshop/Moneypenny-Style-v25.blend"
+styled_character_file="$studio_root/.runtime/character-workshop/Moneypenny-Style-v26.blend"
+[[ -f "$styled_character_file" ]] || styled_character_file="$studio_root/.runtime/character-workshop/Moneypenny-Style-v25.blend"
 if [[ -f "$styled_character_file" ]]; then
   character_file="$styled_character_file"
 fi

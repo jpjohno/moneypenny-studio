@@ -197,7 +197,7 @@ async function initializeStage() {
     let saved=null; try {saved=await asset('avatar');}catch{}
     if(saved) { try{await showAvatar(saved);}catch{notify('The saved character is incompatible. The studio character has been restored.'); await showAvatar();} }
     else if(statusData.character_candidate_ready) {
-      try{await showAvatar(null,{url:'/api/character/default',label:statusData.character_revision==='style-v25'?'Moneypenny · styled character v25':statusData.character_revision==='free-surface-reviewed'?'Moneypenny · free character study':statusData.character_revision==='surface-v9'?'Moneypenny · surface study v9':'Moneypenny · local performance candidate'});}
+      try{await showAvatar(null,{url:'/api/character/default',label:statusData.character_revision==='style-v26'?'Moneypenny · balanced character v26':statusData.character_revision==='free-surface-reviewed'?'Moneypenny · free character study':statusData.character_revision==='surface-v9'?'Moneypenny · surface study v9':'Moneypenny · local performance candidate'});}
       catch{notify('The local performance character could not load. The studio sample has been restored.');await showAvatar();}
     } else await showAvatar();
     const floor=new THREE.Mesh(new THREE.PlaneGeometry(6,6),new THREE.ShadowMaterial({opacity:.22}));floor.rotation.x=-Math.PI/2;floor.position.y=-.003;floor.receiveShadow=true;head.scene.add(floor);
@@ -539,6 +539,22 @@ $('exportPersona').onclick=()=>{
 $('importPersona').onclick=()=>$('personaFile').click();
 $('personaFile').onchange=async e=>{const file=e.target.files[0];if(!file)return;try{if(file.size>30000)throw new Error('Persona files must be smaller than 30 KB.');applySettings(JSON.parse(await file.text()));notify('Persona settings imported.');}catch(error){notify(error.message);}e.target.value='';};
 window.addEventListener('pagehide',()=>{recorder.cancel();liveSession?.stop();head?.stopSpeaking();try{currentSource?.stop();}catch{};fetch('/api/speech/stop',{method:'POST',headers:{'Content-Type':'application/json','X-Studio-Client':'moneypenny'},body:JSON.stringify({owner:`${owner}:${generation}`}),keepalive:true}).catch(()=>{});});
+
+const jarvisEmbed=new URLSearchParams(location.search).get('embed')==='jarvis';
+if(jarvisEmbed){
+  window.addEventListener('message',async event=>{
+    if(!['http://127.0.0.1:8766','http://localhost:8766'].includes(event.origin)||event.source!==parent)return;
+    const message=event.data||{};
+    if(message.type==='jjrvis-stop'){await stopAll(false);return;}
+    if(message.type==='jjrvis-wave'&&avatarReady){motion?.stop();motionLibrary?.stop();head.setMood('happy');motion?.plan({steps:[{skill:'wave',duration:4,intensity:.65}]});return;}
+    if(message.type!=='jjrvis-speak'||typeof message.text!=='string'||!message.text.trim())return;
+    await stopAll(false);const token=generation;controller=new AbortController();setBusy(true);
+    try{parent.postMessage({type:'moneypenny-presence-speaking'},event.origin);await playSpeech(message.text.trim().slice(0,2400),token,{mood:message.mood||'neutral',actions:message.actions||'look attentive and speak naturally'});}
+    catch(error){if(token===generation)notify(error.message);}
+    finally{if(token===generation)setBusy(false);parent.postMessage({type:'moneypenny-presence-idle'},event.origin);}
+  });
+  window.addEventListener('load',()=>parent.postMessage({type:'moneypenny-presence-ready'},'http://127.0.0.1:8766'));
+}
 
 async function initialize() {
   $('systemPrompt').value=presets.moneypenny;

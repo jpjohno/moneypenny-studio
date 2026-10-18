@@ -189,7 +189,7 @@ The player now captures the imported bind pose before TalkingHead replaces it wi
 
 ```sh
 "$HOME/Applications/Blender-4.5-LTS.app/Contents/MacOS/Blender" -b --python-exit-code 1 --python scripts/character/style_character.py -- "$PWD"
-node scripts/character/verify_performance_glb.mjs .runtime/character-workshop/Moneypenny-Style-v25.glb
+node scripts/character/verify_performance_glb.mjs .runtime/character-workshop/Moneypenny-Style-v26.glb
 ```
 
 The build needs the existing local v9 and free v16 sources. Binary sources, render variants, private media and generated exports remain ignored/local; the repository holds the scripts, pinned free-data manifest and continuation instructions. Photographic realism, broad extreme-pose fit and natural speech/motion acceptance remain unfinished.

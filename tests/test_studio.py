@@ -186,7 +186,7 @@ def test_styled_candidate_and_status_match_with_safe_corrupt_fallback(client, mo
     monkeypatch.setattr(studio, 'STYLED_CHARACTER', styled)
     monkeypatch.setattr(studio, 'SURFACE_CHARACTER', previous)
     monkeypatch.setattr(studio.requests, 'get', Mock(side_effect=requests.ConnectionError()))
-    assert client.get('/api/status').json['character_revision'] == 'style-v25'
+    assert client.get('/api/status').json['character_revision'] == 'style-v26'
     assert client.get('/api/character/default').data == styled.read_bytes()
     styled.write_bytes(b'broken')
     assert client.get('/api/status').json['character_revision'] == 'surface-v9'

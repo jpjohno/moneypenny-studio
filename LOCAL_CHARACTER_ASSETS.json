@@ -15,8 +15,8 @@
       "path": ".runtime/character-workshop/Moneypenny-Adult-Anatomy-Study-v3.blend",
       "role": "Earlier editable anatomical study",
       "present": true,
-      "bytes": 71535851,
-      "sha256": "9100e9eeccc78d996632bb126e69b319997b79250fa156d123e35ee587fee5ab"
+      "bytes": 71775432,
+      "sha256": "7ec8c1fbe21febbceacc950895c2f57d585bcd84fd17bd15203da99ae7e1741d"
     },
     {
       "path": ".runtime/character-workshop/Moneypenny-Performance-Final-Fit-v3.blend",
@@ -164,6 +164,20 @@
       "present": true,
       "bytes": 49883680,
       "sha256": "03f917c59dfc1a2650f944b0e1ce7870cdd98e48ce796c8b117d9c3f5317bde0"
+    },
+    {
+      "path": ".runtime/character-workshop/Moneypenny-Style-v26.blend",
+      "role": "v26 complete source with balanced profile and refitted blouse",
+      "present": true,
+      "bytes": 229807082,
+      "sha256": "a090b49e9cfd10f8958e06a61942098395cbdc955a342d8d788842dd1423528e"
+    },
+    {
+      "path": ".runtime/character-workshop/Moneypenny-Style-v26.glb",
+      "role": "v26 clothed browser candidate; balanced profile and Jarvis presence source",
+      "present": true,
+      "bytes": 49895224,
+      "sha256": "1b1da4b2e234b83012b3e370258f09e1b6bb5119f082de881621aa79373c0cee"
     }
   ]
 }

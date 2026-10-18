@@ -23,7 +23,7 @@ ROOT = Path(__file__).resolve().parent
 OLLAMA = os.environ.get("MONEYPENNY_OLLAMA_URL", "http://127.0.0.1:11434").rstrip("/")
 LOCAL_CHARACTER = ROOT / ".runtime/character-workshop/Moneypenny-Performance-Candidate-v6.glb"
 SURFACE_CHARACTER = ROOT / ".runtime/character-workshop/Moneypenny-Performance-Candidate-v9.glb"
-STYLED_CHARACTER = ROOT / ".runtime/character-workshop/Moneypenny-Style-v25.glb"
+STYLED_CHARACTER = ROOT / ".runtime/character-workshop/Moneypenny-Style-v26.glb"
 FREE_SURFACE_CHARACTER = ROOT / ".runtime/character-workshop/Moneypenny-Free-Surface-Reviewed.glb"
 app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = 26 * 1024 * 1024
@@ -76,7 +76,8 @@ def private_response(response):
     response.headers["Content-Security-Policy"] = (
         "default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; "
         "img-src 'self' blob: data:; connect-src 'self' blob:; worker-src 'self' blob:; "
-        "media-src 'self' blob:; object-src 'none'; frame-ancestors 'none'; base-uri 'self'"
+        "media-src 'self' blob:; object-src 'none'; "
+        "frame-ancestors 'self' http://127.0.0.1:8766 http://localhost:8766; base-uri 'self'"
     )
     if request.path.startswith(("/api/", "/chat")):
         response.headers["Cache-Control"] = "no-store"
@@ -244,7 +245,7 @@ def status():
                    listening_engine='Whisper base.en' if listening.available() else 'Vosk',
                    avatar_ready=candidate or (ROOT / "static/avatars/mpfb.glb").is_file(),
                    character_candidate_ready=candidate,
-                   character_revision="style-v25" if character_path == STYLED_CHARACTER else "free-surface-reviewed" if character_path == FREE_SURFACE_CHARACTER else "surface-v9" if character_path == SURFACE_CHARACTER else "performance-v6" if candidate else None,
+                   character_revision="style-v26" if character_path == STYLED_CHARACTER else "free-surface-reviewed" if character_path == FREE_SURFACE_CHARACTER else "surface-v9" if character_path == SURFACE_CHARACTER else "performance-v6" if candidate else None,
                    character_source="local-performance-candidate" if candidate else "bundled-cc0-sample")
 
 
