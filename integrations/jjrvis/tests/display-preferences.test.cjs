@@ -8,9 +8,10 @@ function harness(saved,reduce=false){
  const context={document,localStorage:{getItem:key=>storage.get(key)||null,setItem:(key,value)=>storage.set(key,value)},window:{matchMedia:()=>({matches:reduce,addEventListener(){}}),dispatchEvent:event=>events.push(event)},CustomEvent:function(type,options){this.type=type;this.detail=options.detail;}};
  vm.createContext(context);vm.runInContext(source,context);return {settings:context.window.JJSettings,document,events,storage};
 }
-test('Sky replaces the old implicit default while an explicit Midnight choice survives',()=>{
- assert.equal(harness().document.documentElement.dataset.appearance,'sky');
- assert.equal(harness({appearance:'midnight',density:'compact'}).settings.preferences().appearance,'sky');
+test('Midnight opens consistently while explicit light palette choices survive',()=>{
+ assert.equal(harness().document.documentElement.dataset.appearance,'midnight');
+ assert.equal(harness({appearance:'midnight',density:'compact'}).settings.preferences().appearance,'midnight');
+ assert.equal(harness({appearance:'sky',appearanceChosen:true}).settings.preferences().appearance,'sky');
  assert.equal(harness({appearance:'midnight',appearanceChosen:true}).settings.preferences().appearance,'midnight');
  assert.equal(harness({appearance:'slate'}).settings.preferences().appearance,'midnight');
 });
@@ -48,7 +49,7 @@ test('light palettes, native keyboard choices and reduced motion work in the act
    return route.fulfill({status:200,contentType:asset?(pathname.endsWith('.js')?'text/javascript':'text/css'):'text/html',headers:{'Content-Security-Policy':"default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; base-uri 'none'"},body:asset||html});
   });
   await page.goto('http://display.test/');
-  assert.equal(await page.locator('html').getAttribute('data-appearance'),'sky');
+  assert.equal(await page.locator('html').getAttribute('data-appearance'),'midnight');
   await page.evaluate(()=>window.JJSettings.open({api:async()=>({devices:[]})}));
   assert.equal(await page.locator('[data-palette]').count(),5);
   const previews=await page.locator('.palette-preview').evaluateAll(elements=>elements.map(element=>({background:getComputedStyle(element).backgroundColor,accent:getComputedStyle(element.querySelector('i:nth-child(2)')).backgroundColor,height:element.getBoundingClientRect().height})));

@@ -1,0 +1,99 @@
+{
+  "prepared": "2026-10-19",
+  "scope": "Layered command scene, compact navigation, read-only clock/device HUD and explicit source drawers.",
+  "automated_checks": {
+    "combined_command_module_and_production_fixture_passed": 13,
+    "combined_failed": 0,
+    "combined_skipped": 0,
+    "combined_seconds": 10.903,
+    "command_module_tests": 8,
+    "production_fixture_tests": 5,
+    "fixture_viewports": [
+      "1280x800",
+      "1440x900",
+      "390x844"
+    ],
+    "fixture_palettes": [
+      "midnight",
+      "sky",
+      "pearl",
+      "sage",
+      "lavender"
+    ],
+    "fixture_source": "Production styles and view helpers; no workspace.js, live avatar renderer, owner endpoint or 3D engine loaded.",
+    "fixture_results": [
+      "Saved palettes retained and unsaved startup dark",
+      "No page or navigation horizontal overflow; rightmost disclosure inside viewport",
+      "Desktop globe at least 570px and larger than previous styles",
+      "Telemetry stays inside reserved scene area; clock contrast checked",
+      "All primary phone targets at least 44px; actual brief/weather/device tools and pairing callback receive taps",
+      "Keyboard, native modal Escape, drawer focus and original source/nav/frame identity preserved",
+      "Actual companion button fills desktop and phone viewports, hides instruments and returns with Escape",
+      "No camera or microphone permission requested"
+    ],
+    "root_voice_globe_preferences_focused_passed": 31,
+    "theme_init_tests_passed": 3,
+    "test_scope_note": "The final 39 unique broker checks include the focused command/theme/production-style checks. The earlier 13 and latest 16 combined results overlap with them; do not add these scopes. The 52 Studio appearance checks and 412 broker Python checks are separate suites.",
+    "application_python_tests_passed": 412,
+    "application_python_seconds": 19.89,
+    "application_python_scope": "tests/ only; one deprecation warning",
+    "root_wide_legacy_collection": "Not claimed passed; previous unrelated brand/colour tests require separately absent Pillow.",
+    "latest_command_module_theme_and_production_fixture_passed": 16,
+    "latest_combined_failed": 0,
+    "latest_combined_skipped": 0,
+    "latest_combined_seconds": 10.138,
+    "latest_unique_broker_focused_passed": 39,
+    "latest_unique_broker_focused_failed": 0,
+    "latest_unique_broker_focused_skipped": 0,
+    "latest_unique_broker_focused_seconds": 13.695,
+    "studio_appearance_javascript_tests_passed": 52
+  },
+  "data_and_permissions": {
+    "clock": "Actual browser local/date and UTC time; pauses when hidden, offscreen or companion; listener/timer cleanup tested.",
+    "devices": "Supplied heartbeat records only; reporting first, then recent last report. All-record counts with a bounded visible list. A 180-second stale threshold prevents old online records appearing current.",
+    "hud_requests": "No API, model or speech request from command-deck itself.",
+    "overview_refresh": "Root integration uses existing authenticated device and system metadata reads while overview is active; no new mail or inference polling.",
+    "drawers": "Daily brief/news, weather and saved device panels mount only on explicit open. Existing sources and timestamps remain in use.",
+    "permissions": "No new grant, provider verification, camera, microphone, vehicle control or trading action.",
+    "startup_palette": "Legacy implicit Sky migrates to Midnight; explicit saved palette choices remain selected. Theme is applied before the first stylesheet."
+  },
+  "public_routes": {
+    "artifact": "COMMAND_PUBLIC_ROUTES.json",
+    "public_scripts_and_styles_status": 200,
+    "unauthenticated_renderer_status": 401,
+    "owner_renderer_status": 200,
+    "parent_unframeable": true,
+    "child_nonce_csp_and_capture_block": true,
+    "owner_cookie_issued": false,
+    "provenance_note": "The route artifact includes an earlier direct Node runtime run with 8 passes and 5 browser skips. The separate compatible Node/Chrome production-fixture run above executed all 13 checks."
+  },
+  "live_browser_acceptance": {
+    "state": "completed_narrow_desktop_browser",
+    "artifact": "COMMAND_BROWSER_VERIFICATION.json",
+    "viewport": {
+      "width": 566,
+      "height": 647,
+      "kind": "narrow desktop browser pane; not physical iPhone hardware"
+    },
+    "real_publisher_headlines_weather_and_device_details": true,
+    "junomo_review_columns": [
+      "Company",
+      "Website evidence",
+      "Decision"
+    ],
+    "companion_fullscreen_icon_hide_restore_dashboard": "passed",
+    "workbench_lazy_mount_single_shared_earth_no_duplicate_motion_control": "passed",
+    "new_page_console_errors": 0,
+    "desktop_full_width_acceptance": "Isolated production-CSS fixture matrix only; not a final full-width owner browser session.",
+    "native_iphone_hardware_tested": false,
+    "photographic_realism_accepted": false,
+    "new_signins_or_permissions_granted": false,
+    "private_recording_or_screenshot_included": false
+  },
+  "release": {
+    "exact_patch_application_verified": true,
+    "previous_patch_chain_preserved": true,
+    "full_private_source_included": false,
+    "runtime_credentials_model_or_avatar_assets_included": false
+  }
+}

@@ -8,6 +8,8 @@ A further performance, companion and Apple connections increment is included as 
 
 The following daily-board and quieter-overview increment is `jjrvis-ux-polish.patch`. Apply it after the performance patch using `UX_RELEASE_BASES.json`; all three before hashes match that earlier patch's output. `UX_POLISH_RELEASE.md` lists its required helpers, saved-versus-current data labels, bounded news read and unchanged permission/provider review requirements.
 
+The 19 October command-scene increment is `jjrvis-command-scene.patch`, applied after the UX patch using `COMMAND_RELEASE_BASES.json`. It adds dark startup, a larger layered world, compact navigation disclosures, read-only local/UTC clock and device status, and explicit drawers for the existing daily/weather/device views. `COMMAND_SCENE_RELEASE.md` lists required helper copies, fixture checks and remaining live/device limits.
+
 The running package is `outputs/communication_broker` in the JARVIS project. Its owner workspace is http://127.0.0.1:8766/workspace ; Moneypenny runs at http://127.0.0.1:8090/ . Synced `sources/` files are read-only.
 
 ## Included changes

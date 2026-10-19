@@ -1,0 +1,29 @@
+{
+  "prepared": "2026-10-19",
+  "status": "patch_source_and_narrow_desktop_browser_verified_with_device_limits",
+  "apply_after": "jjrvis-ux-polish.patch",
+  "preceding_published_repository_commit": "1c16c76",
+  "patch_context_lines": 1,
+  "basis": "Exact independent before captures matching the preceding UX release outputs. Full private source captures are excluded.",
+  "before_sha256": {
+    "workspace.js": "92b11262256276a97284e489625e9108e9fac6750d20f65f1cb970adcd288f8f",
+    "workspace.html": "2765ec118033c45217966e3b9d591c9d898efef46e25a12e1103cb453755d9d4",
+    "jarvis_comm_broker.py": "4e0c9c64675cc256e5fe871253abbdc7f82222e60252e40daae5c6390940272c"
+  },
+  "after_sha256": {
+    "workspace.js": "368d7376cdf96f151226d96e59084155c075acbfd541905227d506c85209aa50",
+    "workspace.html": "bf17188c04ac2737f72d743052ec9852d644af436de7dd835cd4dfaa18a43cce",
+    "jarvis_comm_broker.py": "fc3c5987b7216e4e3eaf1c79ddae9aa256e595a011d3f54f4b95ed6df9cb60b1"
+  },
+  "before_matches_ux_after": true,
+  "patch": "jjrvis-command-scene.patch",
+  "patch_sha256": "6eb6db315d44070d9e88f202ce3cad83cbd337bd14abee894bea164495423bd9",
+  "application_verification": "Ordinary git apply --check and git apply succeeded against private temporary copies of all three exact before captures. Every applied file matched the current source SHA-256 byte for byte. Private temporary copies were removed.",
+  "prior_patch_sha256": {
+    "jjrvis-core-recovery.patch": "9e960d9011901d7637c401597a9dfff0a35b2487c96ae47a2dc80a59a56a8bf1",
+    "jjrvis-integration.patch": "a8ab1e450e7a403dd09ddef0e2ee4a2b10c86ef95803108564c8656f5194afc6",
+    "jjrvis-performance.patch": "def162c31426fdad03900219ee2eef6f2a3247ecb33928de1a20cfb56ef04f78",
+    "jjrvis-release.patch": "1018340c95a25cbb7131e0c205eba2328e8067a36e225719d1dc7927630e1cc9",
+    "jjrvis-ux-polish.patch": "47ee5775b94277fa9534395eb81a765c4f929c0bd042f2e59924c092edb1cf8f"
+  }
+}

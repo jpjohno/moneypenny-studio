@@ -11,16 +11,15 @@
     {id:'lavender',name:'Lavender',description:'Quiet violet',background:'#f1eef8',ink:'#3d3554',accent:'#69538f'},
     {id:'midnight',name:'Midnight',description:'Deep blue',background:'#091723',ink:'#e4f0f7',accent:'#7bc8e1'},
   ];
-  const defaults = {appearance:'sky',density:'comfortable',text:'standard',presence:'together',startView:'workspace',motion:true,startup:false,volume:0.85};
+  const defaults = {appearance:'midnight',density:'comfortable',text:'standard',presence:'together',startView:'workspace',motion:true,startup:false,volume:0.85};
   const reducedMotion=window.matchMedia?.('(prefers-reduced-motion: reduce)');
   function read() {try {
     const saved=JSON.parse(localStorage.getItem(key)||'{}');
     if(!saved||typeof saved!=='object'||Array.isArray(saved))return {...defaults};
     let appearance=saved.appearance;
-    // Midnight was previously written as a default, even without a user choice.
-    if(appearance==='midnight'&&saved.appearanceChosen!==true)appearance='sky';
+    if(appearance==='sky'&&saved.appearanceChosen!==true)appearance='midnight';
     if(appearance==='slate')appearance='midnight';
-    if(!palettes.some(palette=>palette.id===appearance))appearance='sky';
+    if(!palettes.some(palette=>palette.id===appearance))appearance='midnight';
     return {...defaults,...saved,appearance,startView:saved.startView==='companion'?'companion':'workspace',startup:saved.startupChosen===true?!!saved.startup:false,presence:['moneypenny','jarvis','together'].includes(saved.presence)?saved.presence:defaults.presence,motion:saved.motionChosen===true?!!saved.motion:true};
   } catch {return {...defaults};}}
   function apply(p) {
