@@ -16,7 +16,13 @@ For editing existing code with this Dolphin model, open the file, select the rel
 
 ## JJRVIS front of house
 
-Open the combined private workspace at http://127.0.0.1:8766/workspace . The existing JJRVIS service must be running separately. Moneypenny and the interactive device atlas share one scene; **Customise Moneypenny** opens this full studio. The embedded view has transparent surroundings and uses the local voice with speech-driven mouth shapes. v27 changes the clothed blouse drape while preserving the v26 body and all facial/body shape coordinates. It remains a CG character, not a photographic asset.
+Open the combined private workspace at http://127.0.0.1:8766/workspace . The existing JJRVIS service must be running separately. Moneypenny and the interactive device atlas share one scene; **Customise Moneypenny** opens this full studio. The embedded view has transparent surroundings and uses the local voice with speech-driven mouth shapes. The current v38 character improves the hair fringe, brow fit, portrait lighting and natural idle motion, following the hand and blouse-fit corrections. It remains a CG character, not a photographic asset.
+
+## Captured human previews
+
+Open **Realism previews** in the studio header, or http://127.0.0.1:8090/realism on the prepared Mac. **Recorded 4D** plays a real captured performance with camera rotation, play/pause and a timeline. The complete local review is 556 independent mesh frames at 15 fps, about 37 seconds, with only three decoded frames retained. **Clearer detail** uses 1024px captured textures; **Lighter playback** uses 512px textures. Its changing topology is evaluated independently for each frame. **Scanned character** is a separate rig and expression study with wave, mouth and blink controls.
+
+These private candidates do not replace the current conversational character. Recorded motion cannot generate new requested actions; the scanned speech controls are approximate and have not passed live pronunciation acceptance. Source assets are not in Git and are unavailable on a fresh checkout until prepared locally. The vendor's third-party app/SaaS restrictions require separate clearance before customer distribution. See [the review release and actual verification](integrations/jjrvis/SCANNED_4D_REVIEW_RELEASE.md).
 
 The integration patch and connection-status helper are in [integrations/jjrvis](integrations/jjrvis/README.md). They apply to James's existing JJRVIS package; this repository does not become a standalone JJRVIS installation. Runtime, credentials, private source records and generated large character binaries are not included. The [private concierge product strategy](integrations/jjrvis/PRODUCT_STRATEGY.md) separates implemented features from proposed phone, home, camera, car and household work.
 

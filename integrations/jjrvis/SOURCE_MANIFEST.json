@@ -1,7 +1,7 @@
 {
   "prepared": "2026-10-21",
-  "kind": "portrait_surface_and_natural_motion",
-  "status": "local_tests_passed_native_visual_reviewed_photographic_unachieved",
+  "kind": "captured_human_private_review_and_portrait_motion",
+  "status": "local_review_verified_source_only_customer_redistribution_uncleared",
   "files": {
     "CAPTURE_RATE_BASES.json": "e65b22d90ed1b0fdfcfd015e6b764df38e09c2e2f188ec5294d8df6b3661dd39",
     "CAPTURE_RATE_RELEASE.md": "85faea55c6c2bdcbc10f75e8581414ce2529567bec5c49496fadb0e31605a2e8",
@@ -158,6 +158,23 @@
     "HAND_FIT_RELEASE.md": "91c8566fecbb2c96e0e8682067a81c6caadb4f18f3d82b1953ddbf44e69fbeed",
     "HAND_FIT_VERIFICATION.json": "aab39c01bba83bb9eafbf09064d9d866cf11b391ab86c60f06d1148a84aee63a",
     "PORTRAIT_MOTION_RELEASE.md": "dae19bbedff9ead3126b73e1a3ee179031d23a2b43ac0fe1f05ee1513c3a3154",
-    "PORTRAIT_MOTION_VERIFICATION.json": "b3345ec55cd6c8fd6ddc0d92b1eddaa37bef9431b339dd7357342417d855010c"
+    "PORTRAIT_MOTION_VERIFICATION.json": "b3345ec55cd6c8fd6ddc0d92b1eddaa37bef9431b339dd7357342417d855010c",
+    "SCANNED_4D_REVIEW_RELEASE.md": "74badbb137c018a2dd5af8a84e3a6ebf0257de510c3b6bce976ff24f9ab9433f",
+    "SCANNED_4D_REVIEW_VERIFICATION.json": "ee9d57250f80008d711a80b111e504c0b41236d5cdaed49eec4c25fab1e0642f"
+  },
+  "studio_review_files": {
+    "README.md": "0b5fafe071bc967504653d4be49046747a2bdb37e511614e27034396bdc224d8",
+    "app.py": "809604a1f23a253c789b3d7d9a64dd3e1514f86dd28959937bf2f8e095a0fb26",
+    "package.json": "924817c5fc1b753443501130461a0bce2f495a4132eea64e40a2193029cd1aa8",
+    "templates/index.html": "2bf3a2e2749b2d808e36dd0fc1dc6335b1ac1e4af505d747a21c1d3db51b729c",
+    "templates/realism.html": "750a7b01e8c1f9d8defe575a4438f38368f9eb5d54a3d09556b06985c91caffe",
+    "static/realism.css": "80158566f230333ea83a38e8906f26d412721bf643d083ad4cdc29f595cc1d44",
+    "static/realism.js": "506ac2b023728b71924e9a3302b7333e770235d0217766879d40b8a74b65e883",
+    "static/fourd-player.js": "d0f612892eacc949b58a1904787439077bf169859b780bd5a931a33e6d4a278c",
+    "scripts/character/build_scanned_review.py": "852f3e6d03a2d2a3b9a8f9cd60dd0cb8bc2fb4268b5a57300563bd397e967012",
+    "scripts/character/convert_4d_review.py": "776f201c4c597ec9e574719f8702609bc87e9c811795de6cb9344a47f67fce20",
+    "tests/fourd-player.test.mjs": "b13c7fac1c02c9fc88ee75f05d506afa0da7d21654f3faf5b2737b7c14ec5028",
+    "tests/realism-integration.test.mjs": "852ce08142c2894fb84dc44fb45e43fb1ba9eff328593e437b93a3c9ebe6af5c",
+    "tests/test_realism_review.py": "68b6b6ac3720135ce2aef1b2a4cacde9c34c603586ca4b6e740987538214f6ab"
   }
 }

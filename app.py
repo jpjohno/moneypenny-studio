@@ -210,6 +210,48 @@ def index():
     return render_template("index.html")
 
 
+REVIEW_ROOT = ROOT / '.runtime/scan-review'
+
+
+@app.get('/realism')
+def realism_review():
+    return render_template('realism.html')
+
+
+@app.get('/api/review-assets/scan.glb')
+def scanned_review_asset():
+    # Fixed private local candidate; never accepts a caller-supplied file path.
+    path = REVIEW_ROOT / 'renderpeople-claudia/Claudia-private-talkinghead-prototype.glb'
+    if not valid_local_character(path):
+        return jsonify(error='The scanned character preview is not prepared on this Mac.'), 404
+    return send_file(path, mimetype='model/gltf-binary', conditional=True)
+
+
+def fourd_review_directory(quality):
+    folder = {'light': 'browser-review', 'detail': 'browser-review-detail'}.get(quality)
+    if folder is None:
+        raise ValueError('Unknown recorded preview quality.')
+    return REVIEW_ROOT / 'renderpeople-4d' / folder
+
+
+@app.get('/api/review-assets/4d/manifest.json', defaults={'quality': 'light'})
+@app.get('/api/review-assets/4d/<quality>/manifest.json')
+def fourd_review_manifest(quality):
+    path = fourd_review_directory(quality) / 'manifest.json'
+    if not path.is_file():
+        return jsonify(error='The recorded 4D preview is still being prepared.'), 404
+    return send_file(path, mimetype='application/json')
+
+
+@app.get('/api/review-assets/4d/frames/<filename>', defaults={'quality': 'light'})
+@app.get('/api/review-assets/4d/<quality>/frames/<filename>')
+def fourd_review_frame(filename, quality):
+    if not re.fullmatch(r'frame\d{4}\.glb', filename):
+        return jsonify(error='Unknown recorded frame.'), 404
+    return send_from_directory(fourd_review_directory(quality) / 'frames', filename,
+                               mimetype='model/gltf-binary', conditional=True)
+
+
 @app.get("/vendor/three/<path:filename>")
 def three(filename):
     return send_from_directory(ROOT / "node_modules/three", filename)
