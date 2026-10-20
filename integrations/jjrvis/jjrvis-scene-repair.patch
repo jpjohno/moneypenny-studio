@@ -1,6 +1,9 @@
 diff --git a/workspace.js b/workspace.js
 --- a/workspace.js
 +++ b/workspace.js
+@@ -73 +73 @@
+-const stateLabel = state => ({unavailable:'Broker feed unavailable',live_broker:'Live broker',stale_broker:'Last broker quote',capture_available:'Recorded quotes',unsupported_configuration:'Connection needs setup',not_configured:'Not configured',connected:'Connected',invalid:'Needs checking',stale:'Older capture',recent_timestamp:'Recent timestamp'}[state]||state);
++const stateLabel = state => ({waiting_for_ticks:'Waiting for broker quotes',unavailable:'Broker feed unavailable',live_broker:'Live broker',stale_broker:'Last broker quote',capture_available:'Recorded quotes',unsupported_configuration:'Connection needs setup',not_configured:'Not configured',connected:'Connected',invalid:'Needs checking',stale:'Older capture',recent_timestamp:'Recent timestamp'}[state]||state);
 @@ -123,2 +123,2 @@
 - const surface=window.JJGlobeSurface?.create(land,{element:reactor,resolution:512,maxFps:12,onReady:()=>{const credit=reactor.querySelector('.globe-credit');if(credit)credit.textContent='Earth · NASA Blue Marble · static imagery · Map © OpenStreetMap';}});
 - const ratio=Math.min(Math.max(window.devicePixelRatio||1,1.6),2);canvas.width=420*ratio;canvas.height=420*ratio;ctx.scale(ratio,ratio);

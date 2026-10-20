@@ -28,8 +28,11 @@ class AssetProfiles:
         return {'state': 'saved_profiles', 'assets': [{**item, 'location_state': 'unavailable', 'tracking_enabled': False} for item in self.read()]}
 
     def add(self, value):
-        name = str(value.get('name', '')).strip()
+        name = value.get('name', '')
         kind = value.get('kind')
+        if not isinstance(name, str) or not isinstance(kind, str):
+            raise ValueError('Enter a name and choose a supported profile type')
+        name = name.strip()
         if not name or len(name) > 80 or any(ord(c) < 32 for c in name) or kind not in KINDS:
             raise ValueError('Enter a name and choose a supported profile type')
         rows = self.read()

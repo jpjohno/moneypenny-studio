@@ -9,11 +9,11 @@
     "native_communications.py": "86d4ecf919786667673c9041a55294e9c6a31a6853ea8d9a5e670d9b97cff710"
   },
   "after_sha256": {
-    "workspace.js": "8d5b9acaccc7908aef69eef552340ba58f660824c9364e6f5a2b47b1cd9467f8",
+    "workspace.js": "a83bde0e0c8143b749a52b8d77507fd93dbfc22a3d2135dfb18568cbb42b7444",
     "jarvis_comm_broker.py": "8e69c1118183a805464f025ba272739097d057052e5369bcfc747587e3d009cc",
     "infrastructure.py": "b4b92c4aa79f4a7580dcd4f81bf80a755a90315dae573a05b6a48c643aa1815a",
     "native_communications.py": "d0a08c013e350c5230a400708a5d712eb297fb721607796e85555e9bd87aba93"
   },
-  "patch_sha256": "58e033d1a33ba32780ece8302e773be2e2c93bb2d19c2ae9641db4bcb4c39b81",
+  "patch_sha256": "267f2022449efd27015897adf2fa8f8c5f0f9482b33e35fb13ff36cd44ead631",
   "exact_patch_application_verified": true
 }

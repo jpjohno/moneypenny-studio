@@ -26,7 +26,7 @@
     "RELEASE_BASES.json": "e04928639d65fb42c2f9dee072f4164d068460c351d45de49dcf7027722243ea",
     "RELEASE_READINESS.json": "5570ac29ab66fbf2bd687c0ca2873e7e70615b84158d802b27a1022b2be66805",
     "SCENE_REPAIR_RELEASE.md": "b4deb9710427a3dc6acb9fcbaa76270314ae5f78c864d21dc690b06edbf56975",
-    "SCENE_REPAIR_RELEASE_BASES.json": "5eecda08d7170b9f72584b9b9b6624657ae621a77451d6299bb991f078ea3368",
+    "SCENE_REPAIR_RELEASE_BASES.json": "00b1138b4f5ccf711a12f0c2341f0f7e6d2444767869ea71b2c08ac0ff33aa9f",
     "SCENE_REPAIR_VERIFICATION.json": "497eaf89d5823f9c3cf4322d45eacd36f0a48a8572db4500564198e03ea6117f",
     "UX_BROWSER_VERIFICATION.json": "2d4e74e1b16e210ab59b104d7dff36b376acc121ea75ba7b2bbda646b949f1ef",
     "UX_POLISH_RELEASE.md": "94a437b48cd9b4ee3f4fd37545dabb17e9a62ff153a1f4375093ec85d2c4e6a2",
@@ -59,7 +59,7 @@
     "jjrvis-native-briefing.patch": "94faace6904508abd60f5db3bcf48eaf28a4257cddc8d88546e9aabf22923ef8",
     "jjrvis-performance.patch": "def162c31426fdad03900219ee2eef6f2a3247ecb33928de1a20cfb56ef04f78",
     "jjrvis-release.patch": "1018340c95a25cbb7131e0c205eba2328e8067a36e225719d1dc7927630e1cc9",
-    "jjrvis-scene-repair.patch": "58e033d1a33ba32780ece8302e773be2e2c93bb2d19c2ae9641db4bcb4c39b81",
+    "jjrvis-scene-repair.patch": "267f2022449efd27015897adf2fa8f8c5f0f9482b33e35fb13ff36cd44ead631",
     "jjrvis-ux-polish.patch": "47ee5775b94277fa9534395eb81a765c4f929c0bd042f2e59924c092edb1cf8f",
     "lifestyle.css": "9a4c101d35af9bf3e1c2e745859d5d7b603189a82d8d4ac60cfec081825919d2",
     "lifestyle.js": "ecb4b61dc04d9397b793333789ae99cd559efb3b37c4423a27f2fd4a99b2769e",
@@ -124,6 +124,6 @@
     "theme-init.js": "704c62a2ec6d070fdf106752ae9939d9add9243cd799bfe32cba266e0b982695",
     "voice_profiles.py": "7ec17629205d75121eb8517b390ba7a7aa6b04382029a36302257a0e7e04d30d",
     "workspace-polish.css": "9c9daadd72fc19293069bfcec84d42b9ad36fec7f3ac8ca106b46ead70d0dc1e",
-    "workspace_assets.py": "c90898dc154b1aff2b4e65c0573b5b105fe5fa483f63d3b2cd5b5d4bf21d2242"
+    "workspace_assets.py": "9b7d0f2dc8a7799fa4c28a87923169d21cfbeb698d343aa04ea23800e0b7d514"
   }
 }
