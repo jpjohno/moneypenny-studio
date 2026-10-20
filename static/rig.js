@@ -45,7 +45,7 @@ export function authoredNeutral(scene){
     const sign=side==='Left'?1:-1;
     // The GLB convention is Y up, +Z forward. Leave the clavicles authored;
     // lower the arms with IK instead of guessing local Euler axes.
-    const target=start.clone().add(new THREE.Vector3(sign*.16,-.97,.065).multiplyScalar(length));
+    const target=start.clone().add(new THREE.Vector3(sign*.12,-.94,.055).multiplyScalar(length));
     solveLimb(upper,lower,hand,target,start.clone().add(new THREE.Vector3(sign*.4,-.3,-.2)));
   }
   for(const [name,bone] of Object.entries(bones))rest[name]={q:bone.quaternion.clone(),p:bone.position.clone()};
@@ -140,7 +140,21 @@ export class RigController {
       const name=side==='left'?'LeftHand':'RightHand',arm=side==='left'?'LeftArm':'RightArm',sign=side==='left'?1:-1;
       const target=this.neutral[arm].clone().add(new THREE.Vector3(sign*.12,.12,.15));
       this.limb(name,this.neutral[name].clone().lerp(target,weight));
-      this.bones[name].quaternion.multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(0,Math.sin(time*7)*.22*weight,0)));
+      const hand=this.bones[name],prefix=name.startsWith('Left')?'Left':'Right',middle=this.bones[prefix+'HandMiddle1'];
+      if(middle){
+        const original=hand.quaternion.clone();
+        // Point the fingers upward in world space, then turn the palm toward
+        // the camera. Rotating an arbitrary local wrist axis twisted the hand.
+        aim(hand,point(middle).sub(point(hand)),new THREE.Vector3(Math.sin(time*3.2)*.12,1,0));
+        const index=this.bones[prefix+'HandIndex1'],pinky=this.bones[prefix+'HandPinky1'];
+        if(index&&pinky){
+          const fingers=point(middle).sub(point(hand)).normalize();
+          const normal=point(index).sub(point(pinky)).cross(fingers).multiplyScalar(prefix==='Right'?-1:1);
+          const forward=new THREE.Vector3(0,0,1).addScaledVector(fingers,-fingers.z).normalize();
+          if(normal.lengthSq()>1e-8)aim(hand,normal,forward);
+        }
+        const desired=hand.quaternion.clone();hand.quaternion.copy(original).slerp(desired,weight);hand.updateWorldMatrix(false,true);
+      }
     }else if(skill==='bend_forward'){
       const scale=(hips.y-left.y)/.9;
       hips.y-=.04*scale*weight;hips.z-=.12*scale*weight;this.setHips(hips);

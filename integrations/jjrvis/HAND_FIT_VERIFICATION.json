@@ -1,0 +1,25 @@
+{
+  "revision": "v36",
+  "nail_shell_components": 10,
+  "nail_center_gap_before_m": {
+    "min": 0.01308700442314148,
+    "max": 0.02772929146885872
+  },
+  "maximum_nail_surface_gap_after_m": 0.0003500562743283808,
+  "nail_weights": "nearest body surface, top four normalised influences",
+  "cuff_faces_reassigned": 6884,
+  "garment_vertices_refitted": 8101,
+  "maximum_fabric_displacement_m": 0.05753966344656381,
+  "body_and_face_shape_coordinates_unchanged": true,
+  "source_v33_preserved": true,
+  "bytes": 27273624,
+  "photographic_realism_verified": false,
+  "date": "2026-10-20",
+  "studio_node_passed": 61,
+  "studio_python_passed": 66,
+  "studio_python_skipped": 2,
+  "actual_export_rig_contract": "passed",
+  "native_visual": "Verified style-v36 in foreground JJRVIS: attached nails during wave, upright fingers, matching teal cuff, smoother blouse front and retained camera framing. Face remains CG; no photographic claim.",
+  "full_spoken_test": false,
+  "proof": "Local Downloads/JJRVIS-hand-fit-v36-20261020.png; not published"
+}

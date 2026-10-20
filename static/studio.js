@@ -150,7 +150,7 @@ async function showAvatar(file=null, localCharacter=null) {
     if (file) { if(file.size>80*1024*1024)throw new Error('Use a GLB smaller than 80 MB.'); validateGLB(await file.arrayBuffer()); next=URL.createObjectURL(file); }
     wardrobe?.dispose();rigView?.dispose();motionLibrary?.dispose();seatSupport?.dispose();disposeAppearance?.();disposeAppearance=null;
     head.studioNeutral=null;
-    await head.showAvatar({url:next||studioURL(localCharacter?.url||'/static/avatars/mpfb.glb'),body:'F',avatarMood:'neutral',lipsyncLang:'en',avatarIdleEyeContact:.6,avatarSpeakingEyeContact:.85}, e=>{
+    await head.showAvatar({url:next||studioURL(localCharacter?.url||'/static/avatars/mpfb.glb'),body:'F',avatarMood:'neutral',lipsyncLang:'en',avatarIdleEyeContact:.75,avatarSpeakingEyeContact:.9,avatarIdleHeadMove:.08,avatarSpeakingHeadMove:.16}, e=>{
       if(e.lengthComputable) $('loadLabel').textContent=`Loading character · ${Math.round(100*e.loaded/e.total)}%`;
     },gltf=>{if(localCharacter)head.studioNeutral=authoredNeutral(gltf.scene);});
     installWarmExpression(head);
@@ -224,7 +224,7 @@ async function initializeStage() {
       modelPixelRatio:profile.pixelRatioScale,modelFPS:profile.activeFPS,modelMovementFactor:.65,
       lightAmbientIntensity:.65,lightDirectIntensity:2.4,lightDirectColor:'#fff2e6',lightDirectPhi:.8,lightDirectTheta:1.1,
       lightSpotIntensity:1.1,lightSpotColor:'#d9e5ef',lightSpotPhi:.3,lightSpotTheta:4,
-      avatarIdleEyeContact:.6,avatarSpeakingEyeContact:.85,avatarIdleHeadMove:.25,avatarSpeakingHeadMove:.4,
+      avatarIdleEyeContact:.75,avatarSpeakingEyeContact:.9,avatarIdleHeadMove:.08,avatarSpeakingHeadMove:.16,avatarIdleHeadMove:.25,avatarSpeakingHeadMove:.4,
     });
     head.renderer.setClearColor(0x000000,0);head.scene.background=null;
     head.renderer.toneMappingExposure=.85;
@@ -243,7 +243,7 @@ async function initializeStage() {
     let saved=null; try {saved=await asset('avatar');}catch{}
     if(saved) { try{await showAvatar(saved);}catch{notify('The saved character is incompatible. The studio character has been restored.'); await showAvatar();} }
     else if(statusData.character_candidate_ready) {
-      try{await showAvatar(null,{url:'/api/character/default',label:statusData.character_revision==='style-v33'?'Moneypenny · soft drape & warm expression v33':statusData.character_revision==='style-v30'?'Moneypenny · softened fabric fit':statusData.character_revision==='style-v29'?'Moneypenny · fitted crepe blouse':statusData.character_revision==='style-v28'?'Moneypenny · crepe blouse':statusData.character_revision==='style-v27'?'Moneypenny · tailored fit v27':statusData.character_revision==='style-v26'?'Moneypenny · balanced character v26':statusData.character_revision==='free-surface-reviewed'?'Moneypenny · free character study':statusData.character_revision==='surface-v9'?'Moneypenny · surface study v9':'Moneypenny · local performance candidate'});}
+      try{await showAvatar(null,{url:'/api/character/default',label:statusData.character_revision==='style-v36'?'Moneypenny · attached nails & softer blouse v36':statusData.character_revision==='style-v30'?'Moneypenny · softened fabric fit':statusData.character_revision==='style-v29'?'Moneypenny · fitted crepe blouse':statusData.character_revision==='style-v28'?'Moneypenny · crepe blouse':statusData.character_revision==='style-v27'?'Moneypenny · tailored fit v27':statusData.character_revision==='style-v26'?'Moneypenny · balanced character v26':statusData.character_revision==='free-surface-reviewed'?'Moneypenny · free character study':statusData.character_revision==='surface-v9'?'Moneypenny · surface study v9':'Moneypenny · local performance candidate'});}
       catch{notify('The local performance character could not load. The studio sample has been restored.');await showAvatar();}
     } else await showAvatar();
     if(!jarvisEmbed){const floor=new THREE.Mesh(new THREE.PlaneGeometry(6,6),new THREE.ShadowMaterial({opacity:.22}));floor.rotation.x=-Math.PI/2;floor.position.y=-.003;floor.receiveShadow=true;head.scene.add(floor);}
@@ -636,7 +636,7 @@ if(jarvisEmbed){
       if(!plan){ack(false,'That movement is not in the current library. Add a compatible animation in Studio.');return;}
       if(text==='present'&&(motion.active||motionLibrary?.playing)){ack(true,'Current movement retained.');return;}
       motionLibrary?.stop();rig?.clear();motion.plan(plan,text==='present'?'conversation':'instruction');
-      if(text!=='present')frameCharacter('full',plan);stageActivity?.update({active:true,inView:true,parentVisible:true,documentVisible:!document.hidden});ack(true,text==='present'?'Presenting the next card.':'Movement queued.');return;
+      if(plan.steps.some(step=>!['wave','present'].includes(step.skill)))frameCharacter('full',plan);stageActivity?.update({active:true,inView:true,parentVisible:true,documentVisible:!document.hidden});ack(true,text==='present'?'Presenting the next card.':'Movement queued.');return;
     }
     if(message.type==='jjrvis-wave'&&avatarReady){motion?.stop();motionLibrary?.stop();setPersonaMood(head,'happy');motion?.plan({steps:[{skill:'wave',duration:4,intensity:.65}]});return;}
     if(message.type!=='jjrvis-speak'||typeof message.text!=='string'||!message.text.trim())return;

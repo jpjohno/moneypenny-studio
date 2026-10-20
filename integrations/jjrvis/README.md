@@ -1,3 +1,7 @@
+# Latest hand and blouse repair
+
+See [HAND_FIT_RELEASE.md](HAND_FIT_RELEASE.md) for the attached fingernails, corrected wave palm, calmer arm/head posture and smoother sleeve-preserving blouse fit. This changes Studio source and its private local candidate; it does not require a new broker patch.
+
 # Latest expression and glass-panel update
 
 See [WARM_GLASS_RELEASE.md](WARM_GLASS_RELEASE.md) for the rounder clothed drape, restrained smile and idle motion, and translucent animated briefing. Copy the matching view/proxy files after the movement recovery increment.

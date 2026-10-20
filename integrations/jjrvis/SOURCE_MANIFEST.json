@@ -1,7 +1,7 @@
 {
   "prepared": "2026-10-20",
-  "kind": "warm_expression_and_glass_briefing",
-  "status": "local_tests_passed_final_foreground_review_pending",
+  "kind": "hand_attachment_wave_and_garment_repair",
+  "status": "local_tests_passed_native_visual_verified",
   "files": {
     "CAPTURE_RATE_BASES.json": "e65b22d90ed1b0fdfcfd015e6b764df38e09c2e2f188ec5294d8df6b3661dd39",
     "CAPTURE_RATE_RELEASE.md": "85faea55c6c2bdcbc10f75e8581414ce2529567bec5c49496fadb0e31605a2e8",
@@ -31,7 +31,7 @@
     "PILOT_READINESS_20261020.md": "6999c2fc9d23aad25cbadad2903d41527cff3af28c2d5cd4fe3812ab1e9bb34f",
     "PRODUCT_STRATEGY.md": "c04455a296fd87fb4df35a8bd1c4a0ba7045f110c469cec0e43f1e0637c4ef3a",
     "PUBLIC_ROUTE_VERIFICATION.json": "bd5c1a7f654c4b37c7a4a6d91e272c30574d3815cc4bc25f112e7712aa19985f",
-    "README.md": "aed3e87ad8392022625f1035126852f30bf6ebf7e4caf3d99e6d2d7aad5b991b",
+    "README.md": "349c7f13c70c011e5a71979dfe8df2e620735e4bdbe99519322b5b19160c7ee6",
     "RELEASE_BASES.json": "e04928639d65fb42c2f9dee072f4164d068460c351d45de49dcf7027722243ea",
     "RELEASE_READINESS.json": "5570ac29ab66fbf2bd687c0ca2873e7e70615b84158d802b27a1022b2be66805",
     "SCENE_REPAIR_RELEASE.md": "b4deb9710427a3dc6acb9fcbaa76270314ae5f78c864d21dc690b06edbf56975",
@@ -46,7 +46,7 @@
     "VOICE_PHRASE_REPAIR.md": "e89580f7d9b91feb4e5aef2f5db8b6a53049cda77d96112c44557c009dce7dce",
     "WARM_GLASS_BASES.json": "8c9de26892f774408e95993625e75710ed617c3f7319ecb54241e46e2d694f0e",
     "WARM_GLASS_RELEASE.md": "07b180ad1dbedad6434be18583575f1535f6e66668d24ee8ad59eaff41bf204a",
-    "WARM_GLASS_VERIFICATION.json": "131ef8ae6e9c8d1cf997551f8bb5d018ebe882e8efa7230e9bdf01ef9259d8f5",
+    "WARM_GLASS_VERIFICATION.json": "4be2e2e3485dc1ed5494a5679e7523c803c48abb41f7809b3bc5d4c1ad24cfc3",
     "WORKSPACE_POLISH_BASES.json": "439a9d454197bd6239ba624e815ab2b657f014c8aaa985162f346f238fc405a5",
     "WORKSPACE_POLISH_RELEASE.md": "dd9e80e5aab5301640c3d2d021e33a4a2e83a70f85c9b12692e9cac1bfe0c653",
     "WORKSPACE_POLISH_VERIFICATION.json": "233122126f8f2ac8d4bd013bb63bba463132465cd70c5533bcb214457b5ebc74",
@@ -154,6 +154,8 @@
     "theme-init.js": "704c62a2ec6d070fdf106752ae9939d9add9243cd799bfe32cba266e0b982695",
     "voice_profiles.py": "7ec17629205d75121eb8517b390ba7a7aa6b04382029a36302257a0e7e04d30d",
     "workspace-polish.css": "9c9daadd72fc19293069bfcec84d42b9ad36fec7f3ac8ca106b46ead70d0dc1e",
-    "workspace_assets.py": "9b7d0f2dc8a7799fa4c28a87923169d21cfbeb698d343aa04ea23800e0b7d514"
+    "workspace_assets.py": "9b7d0f2dc8a7799fa4c28a87923169d21cfbeb698d343aa04ea23800e0b7d514",
+    "HAND_FIT_RELEASE.md": "91c8566fecbb2c96e0e8682067a81c6caadb4f18f3d82b1953ddbf44e69fbeed",
+    "HAND_FIT_VERIFICATION.json": "aab39c01bba83bb9eafbf09064d9d866cf11b391ab86c60f06d1148a84aee63a"
   }
 }

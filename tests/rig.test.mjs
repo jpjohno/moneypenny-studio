@@ -142,3 +142,14 @@ test('presentation gesture moves the hand while preserving limb lengths and rese
  assert.ok(Math.abs(moved[1].distanceTo(moved[2])-lengths[1])<1e-6);
  r.resetBody();assert.ok(position(r.bones.LeftHand).distanceTo(original[2])<1e-6);
 });
+
+
+test('wave raises the fingers upright without changing the finger segment lengths',async()=>{
+ const {authoredNeutral}=await import('../static/rig.js');const head=rig();head.studioNeutral=authoredNeutral(head.armature);const r=new RigController(head);
+ for(const side of ['left','right']){
+  r.resetBody();const prefix=side==='left'?'Left':'Right',hand=r.bones[prefix+'Hand'],middle=r.bones[prefix+'HandMiddle1'];
+  const length=position(hand).distanceTo(position(middle));r.poseSkill('wave',1,side,1);
+  const direction=position(middle).sub(position(hand)).normalize();
+  assert.ok(direction.y>.95,side+' fingers are not upright');assert.ok(Math.abs(length-position(hand).distanceTo(position(middle)))<1e-6);
+ }
+});
