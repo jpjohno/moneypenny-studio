@@ -70,11 +70,13 @@ export class MotionDirector {
   }
   autonomousChoice() {
     const playful=/play|dance|jig|lively|expressive|energetic/i.test(this.persona);
-    const choices=playful&&this.activity>.65?['dance','jig','turn','stretch','walk']:['idle','idle','stretch','idle','turn'];
+    const choices=playful&&this.activity>.65?['dance','jig','turn','stretch','walk']:['idle','present','idle','stretch','turn'];
     let skill=choices[Math.floor(Math.random()*choices.length)];
     if(skill===this.lastAutonomousSkill&&skill!=='idle')skill='idle';
     this.lastAutonomousSkill=skill;
-    this.queue=[{skill,duration:skill==='idle'?3:5+Math.random()*3,intensity:playful&&this.activity>.65?.25+this.activity*.4:.12+this.activity*.2,source:'persona'}];
+    const side=this.lastPresentationSide==='left'?'right':'left';
+    if(skill==='present')this.lastPresentationSide=side;
+    this.queue=[{skill,side,duration:skill==='idle'?3:5+Math.random()*3,intensity:playful&&this.activity>.65?.25+this.activity*.4:.12+this.activity*.2,source:'persona'}];
   }
   applyHeading(heading){
     const root=this.head.armature,yaw=new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0),heading);
@@ -135,7 +137,7 @@ export class MotionDirector {
     const q=this.rootRotation.clone().multiply(new THREE.Quaternion().setFromEuler(root));
     this.head.armature.quaternion.copy(this.rootRotation).slerp(q,w);
     this.head.armature.position.copy(this.origin).addScaledVector(offset,w);
-    if(this.rig&&['splits','sit','kneel','lie_back','supported_step','bend_forward','wave','present'].includes(a.skill))this.rig.poseSkill(a.skill,w,a.side,t);
+    if(this.rig&&['splits','sit','kneel','lie_back','supported_step','bend_forward','wave','present'].includes(a.skill))this.rig.poseSkill(a.skill,a.skill==='present'?w*k:w,a.side,t);
     if(this.rig&&this.head.studioNeutral&&a.skill==='stretch')this.rig.poseSkill('stretch',w*k);
     if(a.skill==='reach')this.reach(a.target,a.side,w);
     const directTurn=a.skill==='turn'&&!['persona','conversation'].includes(a.source);

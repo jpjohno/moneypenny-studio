@@ -68,25 +68,27 @@ export class RigController {
     for(const name of this.bodyNames)this.output[name]={q:this.bones[name].quaternion.clone(),p:this.bones[name].position.clone()};
     this.rootOutput={q:this.root.quaternion.clone(),p:this.root.position.clone()};this.lastStatus='';
     this.idleTime=0;this.chestScale=this.bones.Spine2?.scale.clone();
+    this.idleEuler=new THREE.Euler();this.idleRotation=new THREE.Quaternion();
   }
   breathe(dt,quiet=false){
     this.idleTime+=Math.max(0,dt);
     const chest=this.bones.Spine2;if(!chest||!this.head.studioNeutral)return;
-    // Slow, continuous respiration; never restart a breath at a turn boundary.
-    const breath=Math.sin(this.idleTime*2*Math.PI/4.8);
+    // A shorter inhale and longer exhale, with a slight slow change of tempo.
+    // Both joins have zero velocity; speaking or gestures never reset the phase.
+    const t=this.idleTime,phase=(t/5.2+.18+.012*Math.sin(t*.17))%1;
+    const breath=phase<.36?-Math.cos(Math.PI*phase/.36):Math.cos(Math.PI*(phase-.36)/.64);
     chest.scale.copy(this.chestScale);chest.scale.x*=1+.003*breath;chest.scale.z*=1+.004*breath;
     // Ease the quiet/active boundary instead of snapping an idle offset off.
     this.idleBlend=(this.idleBlend??0)+((quiet?0:1)-(this.idleBlend??0))*(1-Math.exp(-Math.max(0,dt)/.6));
-    const blend=this.idleBlend,t=this.idleTime;
+    const blend=this.idleBlend;
     const sway=blend*(Math.sin(t*.43)*.004+Math.sin(t*.19+.7)*.002);
-    // Counter-rotation through the torso gives small weight shifts without
-    // translating the pelvis and sliding both planted feet across the floor.
-    if(this.bones.Hips)this.bones.Hips.quaternion.multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(0,blend*Math.sin(t*.29)*.004,sway*.45)));
-    chest.quaternion.multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(.002*breath,sway,-sway*.7)));
+    // Keep the pelvis and legs planted. Even a small pelvis rotation moves
+    // both feet unless it is followed by contact IK; the torso can settle alone.
+    chest.quaternion.multiply(this.idleRotation.setFromEuler(this.idleEuler.set(.002*breath,sway,-sway*.7)));
     for(const [side,phase] of [['Left',0],['Right',1.7]]){
       const arm=this.bones[side+'Arm'],forearm=this.bones[side+'ForeArm'];
-      if(arm)arm.quaternion.multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(blend*Math.sin(t*.53+phase)*.009,0,0)));
-      if(forearm)forearm.quaternion.multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(blend*(.006+.004*Math.sin(t*.37+phase)),0,0)));
+      if(arm)arm.quaternion.multiply(this.idleRotation.setFromEuler(this.idleEuler.set(blend*Math.sin(t*.53+phase)*.009,0,0)));
+      if(forearm)forearm.quaternion.multiply(this.idleRotation.setFromEuler(this.idleEuler.set(blend*(.006+.004*Math.sin(t*.37+phase)),0,0)));
     }
   }
   resetBody(neutral=true){

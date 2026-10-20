@@ -1,3 +1,7 @@
+# Latest portrait and natural motion update
+
+See [PORTRAIT_MOTION_RELEASE.md](PORTRAIT_MOTION_RELEASE.md) for the clear-eye hair fit, expression-linked brows, softer skin/light response and natural breathing/presentation gestures. Photographic appearance remains unachieved.
+
 # Latest hand and blouse repair
 
 See [HAND_FIT_RELEASE.md](HAND_FIT_RELEASE.md) for the attached fingernails, corrected wave palm, calmer arm/head posture and smoother sleeve-preserving blouse fit. This changes Studio source and its private local candidate; it does not require a new broker patch.

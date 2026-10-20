@@ -153,3 +153,14 @@ test('wave raises the fingers upright without changing the finger segment length
   assert.ok(direction.y>.95,side+' fingers are not upright');assert.ok(Math.abs(length-position(hand).distanceTo(position(middle)))<1e-6);
  }
 });
+
+test('idle settling keeps both feet planted while the upper body continues moving',async()=>{
+ const {authoredNeutral}=await import('../static/rig.js');const head=rig();head.studioNeutral=authoredNeutral(head.armature);const r=new RigController(head);
+ const feet=['LeftFoot','RightFoot'].map(name=>position(r.bones[name]));let chestMotion=0;
+ for(let i=0;i<1200;i++){
+  r.resetBody(false);r.breathe(1/60);r.update(1/60);
+  ['LeftFoot','RightFoot'].forEach((name,index)=>assert.ok(position(r.bones[name]).distanceTo(feet[index])<1e-7,'idle motion moved a planted foot'));
+  chestMotion=Math.max(chestMotion,r.bones.Spine2.quaternion.angleTo(r.rest.Spine2.q));
+ }
+ assert.ok(chestMotion>.002,'upper body remained frozen');
+});

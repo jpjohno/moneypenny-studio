@@ -10,8 +10,8 @@ test('hair shade is reversible without cumulative tinting or changing the face',
 });
 test('lighting balances the existing reflection without allocating a new map or background',()=>{
  const environment={},scene={environment,environmentIntensity:1,background:null},renderer={toneMappingExposure:1},head={scene,renderer,setLighting(){}};
- setLook(head,'daylight',1);assert.equal(scene.environment,environment);assert.equal(scene.background,null);assert.equal(scene.environmentIntensity,.55);
- setLook(head,'portrait',1);assert.equal(scene.environment,environment);assert.equal(scene.environmentIntensity,.45);
+ setLook(head,'daylight',1);assert.equal(scene.environment,environment);assert.equal(scene.background,null);assert.equal(scene.environmentIntensity,.65);
+ setLook(head,'portrait',1);assert.equal(scene.environment,environment);assert.equal(scene.environmentIntensity,.58);
  setLook(head,'neutral',1);assert.equal(scene.environmentIntensity,.75);assert.equal(scene.background,null);
 });
 test('local presentation preserves skin textures, hair masks and facial shapes',()=>{
@@ -25,9 +25,21 @@ test('local presentation preserves skin textures, hair masks and facial shapes',
  assert.equal(face.material,skin);assert.equal(skin.map,map);assert.equal(skin.normalMap,normal);
  assert.deepEqual(face.morphTargetInfluences,[.4,.7]);assert.equal(map.anisotropy,4);
  assert.equal(hair.map,map);assert.equal(hair.alphaTest,.26);assert.equal(hair.depthWrite,true);assert.equal(hair.alphaToCoverage,true);
- assert.equal(hair.roughness,.55);assert.equal(hair.anisotropy,.45);assert.equal(hair.metalness,0);
+ assert.equal(hair.roughness,.58);assert.equal(hair.anisotropy,.55);assert.equal(hair.metalness,0);
+ assert.equal(strands.castShadow,false);assert.deepEqual(skin.normalScale.toArray(),[.3,.3]);
  assert.equal(skin.specularIntensity,.5);assert.ok(face.castShadow&&face.receiveShadow);
  assert.equal(cornea.castShadow,false);assert.equal(cornea.receiveShadow,false);
  assert.equal(cornea.material.transmission,0,'No full-scene transmission capture is needed for the corneal highlight');
  assert.equal(cornea.material.depthWrite,false);assert.equal(cornea.material.transparent,true);
+});
+test('alpha cutout facial hair cannot cast triangular face shadows',()=>{
+ const root=new THREE.Group();
+ for(const name of ['Adult_Body_Source.eyelashes01','Brow filaments — natural brown']){
+  const mesh=new THREE.Mesh(new THREE.BufferGeometry(),new THREE.MeshStandardMaterial({name,alphaTest:.5}));root.add(mesh);
+ }
+ prepareCharacterMaterials(root,{capabilities:{getMaxAnisotropy:()=>2}});
+ assert.ok(root.children.every(mesh=>!mesh.castShadow));
+ const lashes=root.children[0].material;
+ assert.equal(lashes.transparent,false);assert.equal(lashes.alphaTest,.35);
+ assert.equal(lashes.alphaToCoverage,true);assert.equal(lashes.depthWrite,true);
 });

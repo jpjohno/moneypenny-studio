@@ -88,8 +88,8 @@ function updateSettings() {
   $('movementValue').textContent = movement<.3 ? 'Subtle' : movement>.8 ? 'Expressive' : 'Natural';
   if (head) {
     head.opt.modelMovementFactor = movement;
-    head.opt.avatarIdleHeadMove = movement * .4;
-    head.opt.avatarSpeakingHeadMove = movement * .6;
+    head.opt.avatarIdleHeadMove = movement * .16;
+    head.opt.avatarSpeakingHeadMove = movement * .26;
     setLook(head,$('lightingLook').value,$('lightBrightness').value);
     if(head.studioNeutral&&head.armature)setHairTone(head.armature,$('hairTone').value);
   }
@@ -224,7 +224,7 @@ async function initializeStage() {
       modelPixelRatio:profile.pixelRatioScale,modelFPS:profile.activeFPS,modelMovementFactor:.65,
       lightAmbientIntensity:.65,lightDirectIntensity:2.4,lightDirectColor:'#fff2e6',lightDirectPhi:.8,lightDirectTheta:1.1,
       lightSpotIntensity:1.1,lightSpotColor:'#d9e5ef',lightSpotPhi:.3,lightSpotTheta:4,
-      avatarIdleEyeContact:.75,avatarSpeakingEyeContact:.9,avatarIdleHeadMove:.08,avatarSpeakingHeadMove:.16,avatarIdleHeadMove:.25,avatarSpeakingHeadMove:.4,
+      avatarIdleEyeContact:.8,avatarSpeakingEyeContact:.9,avatarIdleHeadMove:.08,avatarSpeakingHeadMove:.16,
     });
     head.renderer.setClearColor(0x000000,0);head.scene.background=null;
     head.renderer.toneMappingExposure=.85;
@@ -243,7 +243,7 @@ async function initializeStage() {
     let saved=null; try {saved=await asset('avatar');}catch{}
     if(saved) { try{await showAvatar(saved);}catch{notify('The saved character is incompatible. The studio character has been restored.'); await showAvatar();} }
     else if(statusData.character_candidate_ready) {
-      try{await showAvatar(null,{url:'/api/character/default',label:statusData.character_revision==='style-v36'?'Moneypenny · attached nails & softer blouse v36':statusData.character_revision==='style-v30'?'Moneypenny · softened fabric fit':statusData.character_revision==='style-v29'?'Moneypenny · fitted crepe blouse':statusData.character_revision==='style-v28'?'Moneypenny · crepe blouse':statusData.character_revision==='style-v27'?'Moneypenny · tailored fit v27':statusData.character_revision==='style-v26'?'Moneypenny · balanced character v26':statusData.character_revision==='free-surface-reviewed'?'Moneypenny · free character study':statusData.character_revision==='surface-v9'?'Moneypenny · surface study v9':'Moneypenny · local performance candidate'});}
+      try{await showAvatar(null,{url:'/api/character/default',label:statusData.character_revision==='style-v38'?'Moneypenny · clear eyes & natural portrait v38':statusData.character_revision==='style-v30'?'Moneypenny · softened fabric fit':statusData.character_revision==='style-v29'?'Moneypenny · fitted crepe blouse':statusData.character_revision==='style-v28'?'Moneypenny · crepe blouse':statusData.character_revision==='style-v27'?'Moneypenny · tailored fit v27':statusData.character_revision==='style-v26'?'Moneypenny · balanced character v26':statusData.character_revision==='free-surface-reviewed'?'Moneypenny · free character study':statusData.character_revision==='surface-v9'?'Moneypenny · surface study v9':'Moneypenny · local performance candidate'});}
       catch{notify('The local performance character could not load. The studio sample has been restored.');await showAvatar();}
     } else await showAvatar();
     if(!jarvisEmbed){const floor=new THREE.Mesh(new THREE.PlaneGeometry(6,6),new THREE.ShadowMaterial({opacity:.22}));floor.rotation.x=-Math.PI/2;floor.position.y=-.003;floor.receiveShadow=true;head.scene.add(floor);}

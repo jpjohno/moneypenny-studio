@@ -48,3 +48,27 @@ test('ordinary autonomy chooses restrained motion and avoids repeated large gest
   director.autonomousChoice();assert.equal(director.queue[0].skill,'idle');
  }finally{Math.random=random;}
 });
+
+test('ordinary presentations alternate hands and retain a restrained intensity',()=>{
+ const director=new MotionDirector(rig()),random=Math.random;
+ try{
+  Math.random=()=>.3;director.activity=.45;director.persona='Composed assistant';
+  director.autonomousChoice();const first=director.queue[0];
+  assert.equal(first.skill,'present');assert.ok(first.intensity<.25);
+  director.autonomousChoice();assert.equal(director.queue[0].skill,'idle');
+  director.autonomousChoice();assert.equal(director.queue[0].skill,'present');assert.notEqual(director.queue[0].side,first.side);
+ }finally{Math.random=random;}
+});
+
+test('presentation intensity changes actual hand travel rather than only metadata',async()=>{
+ const {RigController,authoredNeutral}=await import('../static/rig.js');
+ const distance=intensity=>{
+  const head=rig();head.studioNeutral=authoredNeutral(head.armature);const r=new RigController(head),director=new MotionDirector(head,()=>{},r);director.autonomous=false;
+  const start=r.bones.LeftHand.getWorldPosition(head.armature.position.clone());
+  director.plan({steps:[{skill:'present',side:'left',duration:4,intensity}]},'persona');
+  for(let i=0;i<30;i++){r.resetBody();director.update(40);r.update(.04);}
+  return r.bones.LeftHand.getWorldPosition(start.clone()).distanceTo(start);
+ };
+ const small=distance(.2),large=distance(.8);
+ assert.ok(small>.005,'small presentation never moved');assert.ok(small<large*.4,`intensity ignored: ${small} versus ${large}`);
+});
