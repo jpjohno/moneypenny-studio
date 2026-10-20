@@ -22,8 +22,9 @@ test('document attachment uses a separate row and leaves a usable question at de
  const browser=await chromium.launch({headless:true,executablePath:'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',args:['--disable-background-networking']});
  try{
   const page=await browser.newPage();
-  const styles=['workspace.css','command-scene.css'].map(name=>fs.readFileSync(path.join(__dirname,'..',name),'utf8')).join('\n');
-  await page.setContent('<style>'+styles+'</style><body data-hud-theme="stark"><section class="assistant-dock" style="position:static;width:min(520px,calc(100vw - 24px));margin:12px;padding:16px"><form id="assistant-form"><textarea id="assistant-input" aria-label="Question"></textarea><div class="actions assistant-document"><small>Selected document: A long document filename for a useful layout check.pdf</small><button type="button">Remove document</button></div><button id="assistant-submit">Ask</button></form></section></body>');
+  const html=fs.readFileSync(path.join(__dirname,'../workspace.html'),'utf8');
+  const styles=[...html.matchAll(/<link rel="stylesheet" href="([^"]+)"/g)].map(m=>fs.readFileSync(path.join(__dirname,'..',path.basename(m[1])),'utf8')).join('\n');
+  await page.setContent('<style>'+styles+'</style><body data-hud-theme="stark"><section class="assistant-dock assistant-overlay" style="position:static;width:min(520px,calc(100vw - 24px));margin:12px;padding:16px"><form id="assistant-form"><label class="sr-only" for="assistant-input">Question</label><textarea id="assistant-input" aria-label="Question"></textarea><button id="assistant-submit">Ask</button></form><div class="actions assistant-document"><small>Selected document: A long document filename for a useful layout check.pdf</small><button type="button">Remove document</button></div></section></body>');
   for(const width of [1280,390]){
    await page.setViewportSize({width,height:800});
    const input=await page.locator('#assistant-input').boundingBox(),chip=await page.locator('.assistant-document').boundingBox(),ask=await page.locator('#assistant-submit').boundingBox();
