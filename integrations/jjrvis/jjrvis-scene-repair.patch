@@ -1,0 +1,89 @@
+diff --git a/workspace.js b/workspace.js
+--- a/workspace.js
++++ b/workspace.js
+@@ -123,2 +123,2 @@
+- const surface=window.JJGlobeSurface?.create(land,{element:reactor,resolution:512,maxFps:12,onReady:()=>{const credit=reactor.querySelector('.globe-credit');if(credit)credit.textContent='Earth · NASA Blue Marble · static imagery · Map © OpenStreetMap';}});
+- const ratio=Math.min(Math.max(window.devicePixelRatio||1,1.6),2);canvas.width=420*ratio;canvas.height=420*ratio;ctx.scale(ratio,ratio);
++ const surface=window.JJGlobeSurface?.create(land,{element:reactor,resolution:256,maxFps:30,onReady:()=>{dirty=true;const credit=reactor.querySelector('.globe-credit');if(credit)credit.textContent='Earth · NASA Blue Marble · static imagery · Map © OpenStreetMap';}});
++ const ratio=Math.min(window.devicePixelRatio||1,1.5);canvas.width=420*ratio;canvas.height=420*ratio;ctx.scale(ratio,ratio);
+@@ -126 +126 @@
+- let exploredPlace=null;let lon=0,lat=20,zoom=1,devices=[],drag=null,last=0,frame,dead=false,selected='',autoFocused=false,mapMode=false,mapZoom=13,hits=[];const rad=Math.PI/180;
++ let exploredPlace=null;let lon=0,lat=20,zoom=1,devices=[],drag=null,last=0,frame,dead=false,selected='',autoFocused=false,mapMode=false,mapZoom=13,hits=[],dirty=true;const rad=Math.PI/180;
+@@ -129 +129 @@
+- const pause=()=>{stage.classList.add('paused');stage.querySelector('[data-motion]').textContent='Resume motion';};
++ const pause=()=>{dirty=true;stage.classList.add('paused');stage.querySelector('[data-motion]').textContent='Resume motion';};
+@@ -132,0 +133,7 @@
++ // Dragging the flat map is an exploration choice, never a device location update.
++ let mapDrag=null,mapWheel=null;
++ map.onpointerdown=e=>{if(e.button||!mapMode)return;const place=chosen();if(!valid(place))return;mapDrag={x:e.clientX,y:e.clientY,place:{...place},zoom:mapZoom};map.setPointerCapture(e.pointerId);};
++ map.onpointermove=e=>{if(!mapDrag)return;const dx=e.clientX-mapDrag.x,dy=e.clientY-mapDrag.y;map.querySelectorAll('img').forEach(img=>img.style.transform=`translate(${dx}px,${dy}px)`);};
++ map.onpointerup=e=>{if(!mapDrag)return;const n=2**mapDrag.zoom,dx=e.clientX-mapDrag.x,dy=e.clientY-mapDrag.y,origin=mapDrag.place;const y=(1-Math.asinh(Math.tan(Math.max(-85,Math.min(85,origin.latitude))*rad))/Math.PI)/2*n-dy/256;exploredPlace={name:'Exploring map',longitude:((origin.longitude-dx/256/n*360+540)%360)-180,latitude:Math.atan(Math.sinh(Math.PI*(1-2*y/n)))/rad,location_state:'place'};selected='explore';mapDrag=null;paintMap();};
++ map.onpointercancel=()=>{mapDrag=null;paintMap();};
++ map.onwheel=e=>{e.preventDefault();clearTimeout(mapWheel);mapWheel=setTimeout(()=>{if(!dead&&mapMode){mapZoom=Math.max(1,Math.min(17,mapZoom+(e.deltaY<0?1:-1)));paintMap();}},80);};
+@@ -134 +141 @@
+- const draw=t=>{if(dead||!stage.isConnected)return;if(t-last>83&&!document.hidden&&!stage.closest('[hidden]')&&!mapMode&&(!surface||surface.isVisible())&&(document.body.dataset.companion||'workspace')==='workspace'){const dt=Math.min(t-last,100);last=t;if(!drag&&!stage.classList.contains('paused')&&!matchMedia('(prefers-reduced-motion: reduce)').matches)lon+=dt*.0013;ctx.clearRect(0,0,420,420);hits=[];const R=166*zoom;
++ const draw=t=>{if(dead||!stage.isConnected)return;if(t-last>=32&&(dirty||drag||!stage.classList.contains('paused'))&&!document.hidden&&!stage.closest('[hidden]')&&!mapMode&&(!surface||surface.isVisible())&&(document.body.dataset.companion||'workspace')==='workspace'){const dt=Math.min(t-last,100);last=t;dirty=false;if(!drag&&!stage.classList.contains('paused')&&!matchMedia('(prefers-reduced-motion: reduce)').matches)lon+=dt*.0013;ctx.clearRect(0,0,420,420);hits=[];const R=166*zoom;
+@@ -145,2 +152,2 @@
+- const setZoom=v=>{if(mapMode){mapZoom=Math.max(3,Math.min(17,mapZoom+(v>zoom?1:-1)));paintMap();}else zoom=Math.max(.8,Math.min(4,v));};
+- canvas.onwheel=e=>{e.preventDefault();setZoom(zoom-e.deltaY*.002);};canvas.onpointerdown=e=>{drag=[e.clientX,e.clientY,lon,lat];canvas.setPointerCapture(e.pointerId);pause();};canvas.onpointermove=e=>{if(drag){lon=drag[2]-(e.clientX-drag[0])*.4;lat=Math.max(-85,Math.min(85,drag[3]+(e.clientY-drag[1])*.3));}};canvas.onpointerup=e=>{if(drag&&Math.hypot(e.clientX-drag[0],e.clientY-drag[1])<6){const box=canvas.getBoundingClientRect(),x=(e.clientX-box.left)/box.width*420,y=(e.clientY-box.top)/box.height*420;const hit=hits.find(h=>Math.hypot(h.x-x,h.y-y)<16);if(hit)focus(hit.id);}drag=null;};canvas.onpointercancel=()=>drag=null;
++ const setZoom=v=>{dirty=true;if(mapMode){mapZoom=Math.max(3,Math.min(17,mapZoom+(v>zoom?1:-1)));paintMap();}else zoom=Math.max(.8,Math.min(4,v));};
++ canvas.onwheel=e=>{e.preventDefault();setZoom(zoom-e.deltaY*.002);};canvas.onpointerdown=e=>{drag=[e.clientX,e.clientY,lon,lat];canvas.setPointerCapture(e.pointerId);pause();};canvas.onpointermove=e=>{if(drag){dirty=true;lon=drag[2]-(e.clientX-drag[0])*.4;lat=Math.max(-85,Math.min(85,drag[3]+(e.clientY-drag[1])*.3));}};canvas.onpointerup=e=>{if(drag&&Math.hypot(e.clientX-drag[0],e.clientY-drag[1])<6){const box=canvas.getBoundingClientRect(),x=(e.clientX-box.left)/box.width*420,y=(e.clientY-box.top)/box.height*420;const hit=hits.find(h=>Math.hypot(h.x-x,h.y-y)<16);if(hit)focus(hit.id);}drag=null;};canvas.onpointercancel=()=>drag=null;
+@@ -149 +156 @@
+- reactor.querySelector('[data-map-toggle]').onclick=e=>{if(!mapMode&&!valid(chosen())){info.textContent='Choose a device with a reported location to open its map.';return;}mapMode=!mapMode;reactor.classList.toggle('map-mode',mapMode);e.currentTarget.textContent=mapMode?'Globe':'Map';paintMap();};
++ reactor.querySelector('[data-map-toggle]').onclick=e=>{if(!mapMode&&!valid(chosen())){exploredPlace={name:'World map',latitude:20,longitude:0,location_state:'place'};selected='explore';mapZoom=3;}dirty=true;mapMode=!mapMode;reactor.classList.toggle('map-mode',mapMode);e.currentTarget.textContent=mapMode?'Globe':'Map';paintMap();};
+@@ -151,2 +158,2 @@
+- reactor.querySelector('[data-world]').onclick=()=>{mapMode=false;reactor.classList.remove('map-mode');reactor.querySelector('[data-map-toggle]').textContent='Map';zoom=1;lat=20;selected='';picker.value='';info.textContent='Drag to explore · choose a device to focus';};
+- frame=requestAnimationFrame(draw);return {getFocus(){const d=chosen();return d&&['live','place'].includes(d.location_state)?d:null;},explore(p){if(!Number.isFinite(p.latitude)||!Number.isFinite(p.longitude))return;exploredPlace={...p,location_state:'place'};selected='explore';lon=p.longitude;lat=p.latitude;zoom=1.6;picker.value='';pause();mapMode=true;reactor.classList.add('map-mode');reactor.querySelector('[data-map-toggle]').textContent='Globe';paintMap();},setDevices(d){devices=d;const previous=picker.value;picker.replaceChildren(new Option('Focus a device…',''));for(const row of devices.filter(d=>d.online||d.location_state==='live')){picker.add(new Option(row.name+' · '+(row.location_state==='live'?'live location':'location unavailable'),row.device_id));}picker.value=previous;const live=devices.find(d=>d.device_id===deviceIdentity().device_id&&d.location_state==='live');if(!autoFocused&&live){autoFocused=true;focus(live.device_id);}if(mapMode)paintMap();const status=stage.querySelector('[data-device-summary]');if(status)status.textContent=devices.filter(d=>d.location_state==='live').length+' current locations · '+devices.filter(d=>d.online).length+' reporting devices';},destroy(){dead=true;cancelAnimationFrame(frame);surface?.destroy();}};
++ reactor.querySelector('[data-world]').onclick=()=>{dirty=true;mapMode=false;reactor.classList.remove('map-mode');reactor.querySelector('[data-map-toggle]').textContent='Map';zoom=1;lat=20;selected='';picker.value='';info.textContent='Drag to explore · choose a device to focus';};
++ frame=requestAnimationFrame(draw);return {getFocus(){const d=chosen();return d&&['live','place'].includes(d.location_state)?d:null;},explore(p){if(!Number.isFinite(p.latitude)||!Number.isFinite(p.longitude))return;exploredPlace={...p,location_state:'place'};selected='explore';lon=p.longitude;lat=p.latitude;zoom=1.6;picker.value='';pause();mapMode=true;reactor.classList.add('map-mode');reactor.querySelector('[data-map-toggle]').textContent='Globe';paintMap();},setDevices(d){dirty=true;devices=d;const previous=picker.value;picker.replaceChildren(new Option('Focus a device…',''));for(const row of devices.filter(d=>d.online||valid(d))){picker.add(new Option(row.name+' · '+(row.location_state==='live'?'live location':valid(row)?'last known location':'location unavailable'),row.device_id));}picker.value=previous;const live=devices.find(d=>d.device_id===deviceIdentity().device_id&&d.location_state==='live');if(!autoFocused&&live){autoFocused=true;focus(live.device_id);}if(mapMode)paintMap();const status=stage.querySelector('[data-device-summary]');if(status)status.textContent=devices.filter(d=>d.location_state==='live').length+' current locations · '+devices.filter(d=>d.online).length+' reporting devices';},destroy(){dead=true;clearTimeout(mapWheel);cancelAnimationFrame(frame);surface?.destroy();}};
+@@ -241 +248 @@
+- atlas.append(world);world.classList.toggle('paused',!window.JJSettings?.preferences().motion||matchMedia('(prefers-reduced-motion: reduce)').matches);commandEarth=mountEarth(world);
++ atlas.append(world);world.classList.add('paused');commandEarth=mountEarth(world);
+@@ -834 +841,3 @@
+-   if(!sessionStorage.getItem('jjrvis-greeted')){
++   if(!sessionStorage.getItem('jjrvis-greeted')&&localStorage.getItem('jjrvis-greeted-day')!==new Date().toLocaleDateString('en-CA')&&!$('#assistant-submit')?.disabled){
++    sessionStorage.setItem('jjrvis-greeted','1');
++    localStorage.setItem('jjrvis-greeted-day',new Date().toLocaleDateString('en-CA'));
+@@ -836 +845 @@
+-    speak(`Hello James. ${name} here. Ready when you are. What shall we tackle first?`,()=>sessionStorage.setItem('jjrvis-greeted','1'));
++    speak(`Hello James. ${name} here. Ready when you are.`);
+diff --git a/jarvis_comm_broker.py b/jarvis_comm_broker.py
+--- a/jarvis_comm_broker.py
++++ b/jarvis_comm_broker.py
+@@ -1029,0 +1030,19 @@
++
++    from workspace_assets import AssetProfiles
++    asset_profiles = AssetProfiles(HERE / '.runtime/asset-profiles.json')
++
++    @app.get('/v1/workspace/assets', dependencies=secure)
++    def workspace_asset_profiles():
++        try:
++            return asset_profiles.list()
++        except (ValueError, OSError):
++            raise HTTPException(503, 'Saved profiles could not be read')
++
++    @app.post('/v1/workspace/assets', dependencies=secure)
++    def workspace_asset_add(value: dict):
++        try:
++            return asset_profiles.add(value)
++        except ValueError as error:
++            raise HTTPException(422, str(error))
++        except OSError:
++            raise HTTPException(503, 'Profile could not be saved')
+diff --git a/infrastructure.py b/infrastructure.py
+--- a/infrastructure.py
++++ b/infrastructure.py
+@@ -179,0 +180,3 @@
++            if not result['markets']:
++                result['state'] = 'waiting_for_ticks'
++                result['detail'] = 'The read-only quote bridge is responding, but no fresh broker ticks have arrived. Check the terminal quote publisher and its connection to this Mac.'
+diff --git a/native_communications.py b/native_communications.py
+--- a/native_communications.py
++++ b/native_communications.py
+@@ -69,2 +69,4 @@
+-        except (OSError, sqlite3.Error):
+-            raise HTTPException(503, 'The Mac-synced source is unavailable. Open its original app and check macOS access.')
++        except (OSError, sqlite3.Error) as error:
++            blocked = isinstance(error, PermissionError) or any(word in str(error).lower() for word in ('not authorized', 'authorization denied', 'unable to open', 'operation not permitted'))
++            detail = 'macOS is blocking this background service from reading the synced source. Review Full Disk Access for the JJRVIS service in System Settings; opening Messages alone does not grant access.' if blocked else 'The Mac-synced source could not be read. Open its original app and retry; no messages were changed.'
++            raise HTTPException(503, detail)

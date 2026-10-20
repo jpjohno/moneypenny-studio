@@ -24,7 +24,7 @@ test('surface centre and inverse projection preserve device longitude/latitude',
  }
  assert.equal(h.api.uvAt(2,0),null);
 });
-test('rasterisation is once, surfaces update at most15fps, unchanged views use cache',()=>{
+test('rasterisation is once, surfaces update at most30fps, unchanged views use cache',()=>{
  const h=harness(),land=[[[0,0],[20,0],[20,20],[0,0]]],surface=h.api.create(land,{textureURL:false,resolution:128,maxFps:60});
  assert.equal(h.calls.polygons,3,'Only one initial wrapped map is rasterised');
  surface.draw(h.ctx,210,210,166,0,20,0);
@@ -33,7 +33,7 @@ test('rasterisation is once, surfaces update at most15fps, unchanged views use c
  surface.draw(h.ctx,210,210,166,2,20,70);
  surface.draw(h.ctx,210,210,166,2,20,1000);
  assert.equal(surface.stats().renderedFrames,2);
- assert.equal(surface.stats().maxFps,15);
+ assert.equal(surface.stats().maxFps,30);
  assert.equal(h.calls.polygons,3,'No land vertices are re-projected while rotating');
  assert.equal(h.calls.draw,4,'Cached sphere remains available after caller clears its canvas');
 });

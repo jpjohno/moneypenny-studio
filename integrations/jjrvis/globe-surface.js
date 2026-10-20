@@ -28,7 +28,7 @@
  }
  function create(land,options={}){
   const size=Math.round(clamp(Number(options.resolution)||320,128,640));
-  const fps=clamp(Number(options.maxFps)||15,1,15),width=1024,height=512;
+  const fps=clamp(Number(options.maxFps)||15,1,30),width=1024,height=512;
   const texture=canvas(width,height),tc=texture.getContext('2d',{willReadFrequently:true});
   const sphere=canvas(size,size),sc=sphere.getContext('2d',{willReadFrequently:true});
   fallbackTexture(tc,width,height,land);

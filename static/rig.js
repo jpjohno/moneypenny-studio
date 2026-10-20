@@ -45,7 +45,7 @@ export function authoredNeutral(scene){
     const sign=side==='Left'?1:-1;
     // The GLB convention is Y up, +Z forward. Leave the clavicles authored;
     // lower the arms with IK instead of guessing local Euler axes.
-    const target=start.clone().add(new THREE.Vector3(sign*.21,-.95,.045).multiplyScalar(length));
+    const target=start.clone().add(new THREE.Vector3(sign*.16,-.97,.065).multiplyScalar(length));
     solveLimb(upper,lower,hand,target,start.clone().add(new THREE.Vector3(sign*.4,-.3,-.2)));
   }
   for(const [name,bone] of Object.entries(bones))rest[name]={q:bone.quaternion.clone(),p:bone.position.clone()};
@@ -76,6 +76,10 @@ export class RigController {
     const breath=Math.sin(this.idleTime*2*Math.PI/4.8);
     chest.scale.copy(this.chestScale);chest.scale.x*=1+.003*breath;chest.scale.z*=1+.004*breath;
     const sway=quiet?0:Math.sin(this.idleTime*.63)*.004;
+    if(!quiet&&this.bones.Hips){
+      this.bones.Hips.position.x+=Math.sin(this.idleTime*.41)*.003;
+      this.bones.Hips.quaternion.multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(0,Math.sin(this.idleTime*.29)*.006,Math.sin(this.idleTime*.41)*.003)));
+    }
     chest.quaternion.multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(.002*breath,sway,.002*Math.sin(this.idleTime*.47))));
   }
   resetBody(neutral=true){

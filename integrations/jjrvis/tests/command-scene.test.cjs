@@ -22,7 +22,7 @@ window.layout=JJSceneLayout.mount(document.querySelector('.presence-hub'),{mount
 JJCompanion.configure({showAssistant(){document.querySelector('#assistant-panel').classList.add('assistant-overlay');return true;},postToPresence(){},stopSpeaking(){}});
 document.querySelector('#launch-companion').onclick=()=>JJCompanion.enter();
 window.briefReads=[];
-window.presenter=JJSceneLayout.mountBriefing(document.querySelector('.presence-hub'),{api:async path=>{briefReads.push(path);if(path.endsWith('news-feeds'))return {items:[{title:'Fixture regional headline',summary:'Fixture source summary',source:'Fixture publisher',category:'local',url:'https://example.com/news',published_at:'2026-10-20T12:00:00Z'},{title:'Fixture second headline',url:'https://example.com/second'}]};if(path.endsWith('trading'))return {state:'unavailable',markets:[]};return {state:'connected',messages:[{subject:'Fixture private message',sender:'Fixture sender',date:'2026-10-20'}]};},navigate:view=>fixtureCalls.push(view)});
+window.presenter=JJSceneLayout.mountBriefing(document.querySelector('.presence-hub'),{api:async path=>{briefReads.push(path);if(path.endsWith('news-feeds'))return {items:[{title:'Fixture regional headline',summary:'Fixture source summary',source:'Fixture publisher',category:'local',url:'https://example.com/news',published_at:'2026-10-20T12:00:00Z'},{title:'Fixture second headline',url:'https://example.com/second'}]};if(path.includes('/mail/message?'))return {body:'Fixture complete email body',id:'fixture'};if(path.endsWith('/native/accounts'))return {accounts:[]};if(path.endsWith('/native/whatsapp'))return {state:'available',messages:[{participant:'Fixture person',text:'Fixture WhatsApp text'}]};if(path.endsWith('trading'))return {state:'unavailable',markets:[]};return {state:'connected',messages:[{id:'fixture',subject:'Fixture private message',sender:'Fixture sender',preview:'Fixture email preview',date:'2026-10-20'}]};},navigate:view=>fixtureCalls.push(view)});
 window.fixtureReady=true;` ;
 async function withFixture(run){
  const {chromium}=require('playwright-core'),browser=await chromium.launch({executablePath:chrome,headless:true,args:['--disable-background-networking']});
@@ -54,7 +54,7 @@ test('production styles keep all palette/viewport layouts and right-side navigat
   if(contrast<4.5)failures.push(label+': telemetry text contrast below 4.5 ('+contrast.toFixed(2)+'; '+metrics.ink+' on '+metrics.surface+')');
   if(metrics.pageWidth>viewport.width+1)failures.push(label+': page horizontal overflow '+metrics.pageWidth);
   if(metrics.navScroll>metrics.navWidth+1)failures.push(label+': navigation horizontal overflow');
-  if(viewport.width>760&&metrics.globe.width<570)failures.push(label+': desktop globe too small '+metrics.globe.width);
+  if(viewport.width>760&&metrics.globe.width<420)failures.push(label+': desktop globe too small '+metrics.globe.width);
   if(metrics.panel.bottom>metrics.scene.bottom-70)failures.push(label+': telemetry exceeds reserved scene area '+Math.round(metrics.panel.height)+'px');
   if(metrics.frame.height<200||metrics.frame.width<180)failures.push(label+': avatar placeholder too small');
   if(!/^\d{2}:\d{2}:\d{2}$/.test(metrics.clockValue))failures.push(label+': clock missing');
@@ -68,12 +68,12 @@ test('production styles keep all palette/viewport layouts and right-side navigat
  }
  assert.deepEqual(errors,[]);assert.deepEqual(requests,[]);assert.deepEqual(failures,[]);
 }));
-test('desktop Earth is larger than the preceding production styles and dark is the initial unsaved choice',{skip:!canRun},async()=>withFixture(async(page)=>{
+test('desktop Earth leaves room for the assistant and dark is the initial unsaved choice',{skip:!canRun},async()=>withFixture(async(page)=>{
  await load(page);assert.equal(await page.locator('html').getAttribute('data-appearance'),'midnight');
  const current=(await page.locator('.globe-reactor canvas').boundingBox()).width;
  await page.locator('link[href="/command-scene.css"]').evaluate(node=>node.disabled=true);
  const previous=(await page.locator('.globe-reactor canvas').boundingBox()).width;
- assert.ok(current>=570,'Current desktop globe is at least 570px');assert.ok(current>previous,'The globe must actually grow beyond the previous styles ('+current+' vs '+previous+')');
+ assert.ok(current>=420&&current<=620,'Earth stays legible without dominating the assistant stage');
 }));
 test('drawer keyboard/focus behavior keeps the same mounted sources, buttons, and avatar DOM',{skip:!canRun},async()=>withFixture(async(page,errors)=>{
  await load(page);
@@ -97,7 +97,7 @@ test('touch controls have usable targets, focus names, and no accidental permiss
   assert.equal(hit.reachable,true,'Phone '+key+' tool must receive a tap: '+JSON.stringify(hit));
   await tool.click();assert.equal(await page.locator('.scene-drawer').isVisible(),true);await page.keyboard.press('Escape');
  }
- await page.locator('[data-command-action="pair"]').click();assert.deepEqual(await page.evaluate(()=>fixtureCalls),['pair']);
+ await page.setViewportSize({width:1280,height:800});await page.locator('[data-command-action="pair"]').click();assert.deepEqual(await page.evaluate(()=>fixtureCalls),['pair']);
  assert.equal(await page.evaluate(()=>permissionRequests),0);
 }));
 test('companion mode still fills desktop/phone and removes the dashboard instruments',{skip:!canRun},async()=>withFixture(async(page,errors)=>{
@@ -144,10 +144,14 @@ test('top-right briefing is lazy, advances items and topics, and preserves the a
  await page.getByRole('button',{name:'Next item →',exact:true}).click();
  await page.getByRole('heading',{name:'Fixture second headline',exact:true}).waitFor();
  await page.getByRole('button',{name:'Next topic',exact:true}).click();
- await page.getByText('The broker quote feed is unavailable. No market prices have been invented.',{exact:true}).waitFor();
+ await page.getByText('The broker quote feed is unavailable. Open Markets to check its connection.',{exact:true}).waitFor();
  await page.getByRole('button',{name:'Next topic',exact:true}).click();
  await page.getByRole('heading',{name:'Fixture private message',exact:true}).waitFor();
- await page.getByRole('button',{name:'Pause cards',exact:true}).click();
+ await page.getByText('Fixture email preview',{exact:true}).waitFor();
+ await page.getByRole('button',{name:'More ↗',exact:true}).click();
+ await page.getByText('Fixture complete email body',{exact:true}).waitFor();
+ await page.getByRole('button',{name:'WhatsApp',exact:true}).click();
+ await page.getByText('Fixture WhatsApp text',{exact:true}).waitFor();
  await page.getByRole('button',{name:'Resume cards',exact:true}).waitFor();
  assert.equal(await page.evaluate(()=>originalFrame===document.querySelector('#moneypenny-presence')),true);
  const metrics=await page.locator('.scene-briefing').evaluate(node=>{const r=node.getBoundingClientRect();return {right:r.right,width:r.width,viewport:innerWidth};});
@@ -155,4 +159,15 @@ test('top-right briefing is lazy, advances items and topics, and preserves the a
  await page.getByRole('button',{name:'Close briefing',exact:true}).click();
  assert.equal(await page.locator('.scene-briefing').isVisible(),false);
  assert.deepEqual(errors,[]);
+}));
+test('atlas controls are not intercepted by the transparent avatar or stage panels',{skip:!canRun},async()=>withFixture(async(page)=>{
+ for(const viewport of [{width:1280,height:800},{width:390,height:844}]){
+  await load(page,viewport);
+  const buttons=page.locator('.globe-controls button,[data-device-focus]');
+  for(let i=0;i<await buttons.count();i++){
+   const button=buttons.nth(i);await button.scrollIntoViewIfNeeded();
+   const result=await button.evaluate(e=>{const r=e.getBoundingClientRect(),top=document.elementFromPoint(r.x+r.width/2,r.y+r.height/2);return {name:e.textContent,hit:e===top||e.contains(top),blocker:top?.className||top?.tagName};});
+   assert.equal(result.hit,true,JSON.stringify({viewport,...result}));
+  }
+ }
 }));

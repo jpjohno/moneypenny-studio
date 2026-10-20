@@ -170,3 +170,74 @@ body[data-hud-theme] .command-scene .owner-chip{display:none}
 .scene-briefing>header,.scene-briefing>nav,.scene-brief-controls,.scene-brief-narration,.scene-brief-progress{flex-shrink:0}
 .scene-brief-card{min-height:0;overflow:auto;flex:1}.scene-brief-card p{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
 @media(max-width:760px){.scene-briefing{position:fixed;top:126px;bottom:74px;right:12px;max-height:none;width:min(350px,calc(100vw - 24px));z-index:50}}
+/* A calm assistant stage; information arrives beside her, never over her face. */
+@media(min-width:761px){
+ body[data-hud-theme] .command-scene .presence-heading h2{font-size:clamp(30px,3vw,43px);line-height:1.15}
+ body[data-hud-theme] .command-scene .moneypenny-presence{left:2%;width:44%;top:105px;bottom:26px}
+ body[data-hud-theme] .command-scene .presence-atlas{left:67%;top:49%;width:clamp(420px,42vw,610px);max-width:58%;transition:opacity .35s ease}
+ body[data-hud-theme] .command-scene.briefing-open .presence-atlas{opacity:.16;pointer-events:none}
+ .scene-briefing{top:82px;right:24px;width:48%;max-width:620px;height:calc(100% - 198px);max-height:none;padding:24px;background:var(--display-surface);backdrop-filter:none}
+ .scene-brief-card{padding:20px 0;min-height:100px}
+ .scene-brief-card h3{font-size:clamp(22px,2.1vw,30px)!important;line-height:1.25}
+ .scene-brief-card p{font-size:15px;line-height:1.7}
+ .briefing-open .scene-tools{visibility:hidden}
+ .briefing-open .command-telemetry{visibility:hidden}
+}
+.scene-briefing nav{flex-wrap:wrap;gap:6px}
+.scene-brief-card p{display:block;-webkit-line-clamp:unset;white-space:pre-wrap}
+.scene-brief-card:not(.brief-expanded) p{display:-webkit-box;-webkit-line-clamp:7;-webkit-box-orient:vertical;overflow:hidden}
+.scene-brief-card.brief-expanded{overscroll-behavior:contain}
+.scene-brief-controls button{min-height:44px!important}
+@media(max-width:760px){.scene-briefing{top:190px;bottom:78px;width:calc(100vw - 32px);right:16px}.scene-brief-card p{font-size:14px}.scene-briefing nav{margin:8px 0}.scene-briefing nav button{padding:6px 8px!important;font-size:11px!important}.scene-brief-narration{margin:8px 0!important}.scene-brief-card h3{font-size:20px!important}}
+.scene-tools{gap:6px}
+.scene-tools button{min-width:0;flex:1}
+.scene-pane-assets article{padding:12px 0;border-bottom:1px solid var(--display-line)}
+.scene-pane-assets article h4{font-size:18px;margin:0 0 8px}.scene-pane-assets article p{font-size:13px;line-height:1.6}
+.scene-pane-assets form{display:grid;grid-template-columns:2fr 1fr;gap:12px;margin-top:20px}.scene-pane-assets form label{display:flex;flex-direction:column;gap:7px;font-size:12px}.scene-pane-assets form button{grid-column:1/-1;min-height:44px}
+@media(min-width:761px){.scene-tools{left:43%;right:24px;bottom:96px}.scene-tools em{display:none}}
+@media(max-width:760px){.scene-tools{gap:4px}.scene-tools button{padding:6px!important}.scene-tools b{font-size:9px!important}.scene-tools i{display:none!important}}
+body[data-hud-theme] .command-scene .presence-atlas .map-mode .globe-map{border-radius:18px!important;cursor:grab;touch-action:none}
+body[data-hud-theme] .command-scene .presence-atlas .map-mode .globe-map:active{cursor:grabbing}
+/* Device details belong in the map drawer; the stage only needs a small clock. */
+body[data-hud-theme] .command-scene .command-device-list,body[data-hud-theme] .command-scene .command-device-more,body[data-hud-theme] .command-scene .command-service-list{display:none!important}
+body[data-hud-theme] .command-scene .command-status-panel{min-height:0!important}
+@media(max-width:760px){
+ body[data-hud-theme] .command-scene .command-telemetry{left:auto!important;right:18px!important;bottom:145px!important;top:auto!important;width:180px!important}
+ body[data-hud-theme] .command-scene .command-status-panel{display:block!important;padding:10px 12px!important;min-height:0!important}
+ body[data-hud-theme] .command-scene .command-panel-heading,body[data-hud-theme] .command-scene .command-device-body,body[data-hud-theme] .command-scene .command-panel-actions{display:none!important}
+ body[data-hud-theme] .command-scene .command-clock{padding:0!important;min-height:0!important}
+ body[data-hud-theme] .command-scene .command-clock-label{display:none!important}
+ body[data-hud-theme] .command-scene .command-local-time{font-size:24px!important}
+ body[data-hud-theme] .command-scene .command-local-date{font-size:9px!important}
+ body[data-hud-theme] .command-scene .command-world-time{display:none!important}
+ body[data-hud-theme] .command-scene:has(.map-mode) .command-telemetry{display:none!important}
+}
+@media(max-width:760px){
+ body[data-hud-theme] .command-scene .presence-atlas{left:50%!important;width:390px!important;max-width:100%!important}
+ body[data-hud-theme] .command-scene .presence-atlas .globe-controls{left:50%!important;bottom:12%!important;flex-wrap:nowrap!important;width:min(330px,calc(100vw - 50px))!important;max-width:none!important;gap:1px!important}
+ body[data-hud-theme] .command-scene .presence-atlas .globe-controls button{min-width:40px!important;min-height:44px!important;font-size:9px!important;padding:5px!important}
+ body[data-hud-theme] .command-scene .presence-atlas select{left:50%!important;bottom:28%!important;width:180px!important;min-height:36px!important}
+ body[data-hud-theme] .command-scene .presence-atlas .globe-info{bottom:7%!important}
+ body[data-hud-theme] .command-scene .presence-atlas .globe-credit{bottom:4%!important}
+}
+/* Transparent iframe pixels must not intercept atlas controls. The companion
+   and full studio remain the places to orbit and edit the character. */
+body[data-companion="workspace"] .command-scene .moneypenny-presence iframe{pointer-events:none!important}
+body[data-companion="open"] .command-scene .moneypenny-presence iframe{pointer-events:auto!important}
+@media(min-width:761px){
+ body[data-hud-theme] .command-scene .presence-atlas .globe-controls{bottom:25%!important}
+ body[data-hud-theme] .command-scene .presence-atlas select{bottom:33%!important}
+ body[data-hud-theme] .command-scene .presence-atlas .globe-info{bottom:21%!important}
+ body[data-hud-theme] .command-scene .presence-atlas .globe-credit{bottom:18%!important}
+}
+/* Reset inherited main-header sizing inside the presenter. */
+.scene-briefing>header{min-height:40px!important;height:auto!important;padding:0!important;flex:0 0 auto!important}
+.scene-briefing>header:after{display:none!important}
+.scene-briefing>nav{min-height:0!important;margin:10px 0!important}
+.scene-brief-narration{margin:8px 0!important}
+@media(min-width:761px){
+ .scene-briefing{height:calc(100% - 160px);padding:18px}
+ .scene-brief-controls{grid-template-columns:repeat(4,minmax(0,1fr))}
+ .scene-brief-controls button{font-size:11px!important;padding:7px!important}
+ .scene-brief-card h3{font-size:clamp(21px,1.8vw,27px)!important}
+}

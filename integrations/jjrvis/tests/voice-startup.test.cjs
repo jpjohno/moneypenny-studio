@@ -68,3 +68,8 @@ test('a saved Stop choice is not overwritten by automatic startup on reload',asy
  const h=harness();h.storage.set('jjrvis-wake-enabled','false');await h.start();
  assert.equal(h.calls.captures,0);assert.deepEqual(h.calls.greetings,[]);assert.equal(h.ctx.startupState.enabled,false);
 });
+
+test('reopening a second workspace on the same day does not repeat the greeting',async()=>{
+ const h=harness();h.storage.set('jjrvis-greeted-day',new Date().toLocaleDateString('en-CA'));await h.start();await tick();
+ assert.equal(h.calls.captures,1);assert.deepEqual(h.calls.greetings,[]);assert.equal(h.calls.wakeStarts,1);
+});

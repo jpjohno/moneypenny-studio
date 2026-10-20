@@ -1,3 +1,7 @@
+# Latest repair
+
+See [SCENE_REPAIR_RELEASE.md](SCENE_REPAIR_RELEASE.md) for the assistant stage, map controls, message bodies, profile drawer and current connection blockers. Apply its patch after the native briefing increment.
+
 # JJRVIS front of house integration
 
 Source snapshot for the JJRVIS workspace already running on James's Mac. This directory is an integration handover, not a standalone server: it depends on the existing JJRVIS package and its separately stored configuration.
