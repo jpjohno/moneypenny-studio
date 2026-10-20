@@ -1,0 +1,17 @@
+{
+  "prepared": "2026-10-20",
+  "apply_after": "jjrvis-command-scene.patch",
+  "before_sha256": {
+    "workspace.js": "368d7376cdf96f151226d96e59084155c075acbfd541905227d506c85209aa50",
+    "workspace.html": "bf17188c04ac2737f72d743052ec9852d644af436de7dd835cd4dfaa18a43cce",
+    "jarvis_comm_broker.py": "fc3c5987b7216e4e3eaf1c79ddae9aa256e595a011d3f54f4b95ed6df9cb60b1"
+  },
+  "after_sha256": {
+    "workspace.js": "a44772903b068ef9dfd7aa8dff706d3f750d828c149a0fd691e6c0bc046d69b9",
+    "workspace.html": "8aa1960b9603bf3cb1fe1971a63430a754177fb9b85d9afdb7de919d48dc939d",
+    "jarvis_comm_broker.py": "a8d487b2eb1c9e3f119199640de2dca0f6a135e56a2ab45e5007729aa3ef2bc0"
+  },
+  "patch": "jjrvis-native-briefing.patch",
+  "patch_sha256": "94faace6904508abd60f5db3bcf48eaf28a4257cddc8d88546e9aabf22923ef8",
+  "exact_patch_application_verified": true
+}

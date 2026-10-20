@@ -214,8 +214,13 @@ async function initializeStage() {
     head.renderer.shadowMap.enabled=profile.shadows;head.renderer.shadowMap.type=THREE.PCFSoftShadowMap;
     head.lightDirect.castShadow=profile.shadows;head.lightDirect.shadow.mapSize.set(profile.shadowSize,profile.shadowSize);head.lightDirect.shadow.bias=-.0002;head.lightDirect.shadow.normalBias=.008;
     Object.assign(head.lightDirect.shadow.camera,{left:-2,right:2,top:2,bottom:-2,near:.05,far:10});
+    $('avatar').dataset.presenceSession=crypto.randomUUID();
     stageActivity=new StageActivity(head,profile,{onChange:state=>{$('avatar').dataset.renderFps=String(state.fps);$('avatar').dataset.rendering=String(state.running);}});
     stageActivity.update({documentVisible:!document.hidden,parentVisible:parentStageVisible});
+    // Orbiting is active work too. Keep full motion cadence through damping.
+    let orbitSettled=null;
+    head.controls.addEventListener('start',()=>{clearTimeout(orbitSettled);stageActivity.update({interacting:true});});
+    head.controls.addEventListener('end',()=>{clearTimeout(orbitSettled);orbitSettled=setTimeout(()=>stageActivity.update({interacting:false}),800);});
     if('IntersectionObserver' in window)new IntersectionObserver(entries=>{const entry=entries[0];if(entry)stageActivity.update({inView:entry.isIntersecting&&entry.intersectionRatio>.01});},{threshold:[0,.01]}).observe($('stage'));
     window.__moneypennyRenderStats=()=>({...stageActivity.status(),frames:renderFrames,audioState:head.audioCtx.state,canvasWidth:head.renderer.domElement.width,canvasHeight:head.renderer.domElement.height,calls:head.renderer.info.render.calls,triangles:head.renderer.info.render.triangles});
     let saved=null; try {saved=await asset('avatar');}catch{}
@@ -236,6 +241,7 @@ async function initializeStage() {
     lips.onvalue=(key,value)=>{const target=head.mtAvatar[key];if(target)Object.assign(target,{newvalue:value,needsUpdate:true});};
     head.opt.update=dt=>{
       renderFrames++;
+      if(renderFrames%30===0)$('avatar').dataset.renderFrames=String(renderFrames);
       stageActivity.update({active:busy||userSpeaking||head.isSpeaking||!!motion?.active||!!motion?.queue.length||!!motionLibrary?.playing||!!rig?.targets.size});
       lips.update(dt);if(!rig)return;
       const seconds=dt/1000;

@@ -49,3 +49,22 @@ test('unavailable, Jarvis-only or missing avatar uses the same fast voice endpoi
 test('matching avatar error releases speech without silently generating a second voice',async()=>{
  const h=harness();h.ctx.speak('Retry with the avatar.');await tick();await h.resolveAudio();const id=h.audioMessages()[0].message.requestId;h.emit('moneypenny-presence-error',id);await tick();assert.equal(h.ctx.state.presence,null);assert.equal(h.ctx.state.utterance,null);assert.match(h.status(),/could not play/);assert.equal(h.audioRequests.length,1);assert.ok(h.ctx.state.wakeStarts>0);
 });
+
+test('ordinary workspace navigation preserves active listening and reply ownership',()=>{
+ let rendered=0,voiceStops=0;
+ const ctx={window:{JJCompanion:{state:()=>({mode:'workspace'})}},document:{body:{dataset:{companionHidden:'false'}}},clearTimeout(){},notify(){},render(){rendered++;},stopVoice(){voiceStops++;},$:()=>null};
+ vm.createContext(ctx);
+ const begin=source.indexOf('function navigate(view)'),end=source.indexOf('\n',begin);
+ vm.runInContext(`let marketRefreshTimer=null,current='overview',pageOffset=0,pageQuery='',voiceReplyRequested=true;let activeRecognition={listening:true},activeUtterance={id:1};${source.slice(begin,end)};navigate('home');globalThis.after={current,voiceReplyRequested,listening:activeRecognition.listening,reply:activeUtterance.id};`,ctx);
+ assert.equal(rendered,1);assert.equal(voiceStops,0);assert.equal(ctx.after.current,'home');assert.equal(ctx.after.listening,true);assert.equal(ctx.after.reply,1);assert.equal(ctx.after.voiceReplyRequested,true);
+});
+
+
+test('native partial speech can interrupt while matching spoken audio is excluded',()=>{
+ const start=source.indexOf('function isVoiceInterruption('),end=source.indexOf('class LocalRecognition',start);
+ const ctx={};vm.createContext(ctx);vm.runInContext(source.slice(start,end),ctx);
+ assert.equal(ctx.isVoiceInterruption('Wait','Here are your headlines.'),true);
+ assert.equal(ctx.isVoiceInterruption('Moneypenny can we talk','Here are your headlines.'),true);
+ assert.equal(ctx.isVoiceInterruption('Here are your headlines','Here are your headlines.'),false);
+ assert.equal(ctx.isVoiceInterruption('um','Here are your headlines.'),false);
+});

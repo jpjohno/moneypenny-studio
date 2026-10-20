@@ -120,3 +120,17 @@ def test_renderer_origin_and_method_rejection_survive_global_boundary(release):
         assert client.get('/presence/?url=http://other.invalid').status_code==400
         assert client.post('/presence/api/speech',headers={'Origin':BASE},json={}).status_code==405
     assert not release.requests
+
+
+def test_mac_preview_is_owner_authenticated_and_never_a_public_download(release,tmp_path):
+    artifact=tmp_path/'native/apple/.build/JJRVIS-Mac-preview.zip'
+    artifact.parent.mkdir(parents=True)
+    artifact.write_bytes(b'synthetic-development-build-fixture')
+    with TestClient(release.app,base_url='http://127.0.0.1:8766') as client:
+        assert client.get('/v1/workspace/mac-app').status_code==401
+        response=client.get('/v1/workspace/mac-app',headers=AUTH)
+        assert response.status_code==200
+        assert response.content==artifact.read_bytes()
+        assert 'no-store' in response.headers['cache-control']
+    with TestClient(release.app,base_url=BASE) as client:
+        assert client.get('/v1/workspace/mac-app',headers=AUTH).status_code==404

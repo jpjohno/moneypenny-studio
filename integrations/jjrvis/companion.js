@@ -17,7 +17,7 @@
  if(!position){const view=viewport();position=clamp({x:view.width-size.width-18,y:view.height-size.height-18});}
  function place(value,persist=false){position=clamp(value);icon.style.left=position.x+'px';icon.style.top=position.y+'px';if(persist)try{localStorage.setItem(key,JSON.stringify(position));}catch{}return {...position};}
  function setInert(open){
-  if(open){for(const element of document.querySelectorAll('body > aside, main > :not(#content), #content > :not(.presence-hub), body > .assistant-launch')){if(!inertBefore.has(element))inertBefore.set(element,element.inert);element.inert=true;}}
+  if(open){for(const element of document.querySelectorAll('body > aside, main > :not(#content), #content > :not(.presence-hub):not(.persistent-overview), body > .assistant-launch')){if(!inertBefore.has(element))inertBefore.set(element,element.inert);element.inert=true;}}
   else{for(const [element,previous] of inertBefore)element.inert=previous;inertBefore.clear();}
  }
  function change(next,isHidden=false){
@@ -29,7 +29,7 @@
  function enter(){
   if(typeof configuration.showAssistant!=='function')return false;
   if(configuration.showAssistant()===false)return false;
-  if(!document.querySelector('.presence-hub')&&configuration.navigate)configuration.navigate('overview');
+  if((!document.querySelector('.presence-hub')||document.querySelector('.presence-hub').closest('[hidden]'))&&configuration.navigate)configuration.navigate('overview');
   if(!document.querySelector('.presence-hub'))return false;
   if(mode==='workspace'&&!hidden&&!document.activeElement?.closest('.jj-companion-toolbar,.jj-companion-icon,.jj-companion-restore'))lastFocus=document.activeElement;
   change('open');status.textContent='Moneypenny companion opened. Escape returns to the dashboard.';

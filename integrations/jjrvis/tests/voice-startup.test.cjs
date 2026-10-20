@@ -62,3 +62,9 @@ test('Stop as the first interaction cancels the permission affordance',async()=>
  const h=harness({permission:'prompt'});await h.start();await h.gesture('stop');h.ctx.startupState.stop();await h.gesture();
  assert.equal(h.calls.captures,0);assert.equal(h.calls.enable.hidden,true);assert.equal(h.listeners.size,0);
 });
+
+
+test('a saved Stop choice is not overwritten by automatic startup on reload',async()=>{
+ const h=harness();h.storage.set('jjrvis-wake-enabled','false');await h.start();
+ assert.equal(h.calls.captures,0);assert.deepEqual(h.calls.greetings,[]);assert.equal(h.ctx.startupState.enabled,false);
+});

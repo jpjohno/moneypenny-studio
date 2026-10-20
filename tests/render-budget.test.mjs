@@ -31,3 +31,12 @@ test('the default frame canceller retains the browser global receiver',()=>{
   assert.equal(cancelled,42);assert.equal(head.isRunning,false);
  }finally{globalThis.cancelAnimationFrame=previous;}
 });
+
+test('camera interaction stays at active cadence independently of speech and idle motion',()=>{
+ const head={opt:{},armature:{},isRunning:true};
+ const activity=new StageActivity(head,renderProfile());
+ assert.equal(activity.status().fps,15);
+ activity.update({interacting:true});activity.update({active:false});
+ assert.equal(activity.status().fps,30);
+ activity.update({interacting:false});assert.equal(activity.status().fps,15);
+});

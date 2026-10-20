@@ -7,13 +7,13 @@ export function renderProfile({pixelRatio=1,narrow=false,embedded=false}={}){
 
 export class StageActivity {
   constructor(head,profile,{cancelFrame=frame=>globalThis.cancelAnimationFrame(frame),onChange=()=>{}}={}){
-    Object.assign(this,{head,profile,cancelFrame,onChange,documentVisible:true,parentVisible:true,inView:true,active:false});
+    Object.assign(this,{head,profile,cancelFrame,onChange,documentVisible:true,parentVisible:true,inView:true,active:false,interacting:false});
     this.update();
   }
   update(state={}){
-    for(const key of ['documentVisible','parentVisible','inView','active'])if(key in state)this[key]=!!state[key];
+    for(const key of ['documentVisible','parentVisible','inView','active','interacting'])if(key in state)this[key]=!!state[key];
     const running=this.documentVisible&&this.parentVisible&&this.inView;
-    const fps=this.active?this.profile.activeFPS:this.profile.idleFPS;
+    const fps=(this.active||this.interacting)?this.profile.activeFPS:this.profile.idleFPS;
     this.head.opt.modelFPS=fps;this.head.animFrameDur=1000/fps;
     if(!running){
       // TalkingHead.stop() also suspends the AudioContext. Stop only its RAF so

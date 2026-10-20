@@ -1,0 +1,62 @@
+{
+  "verified": "2026-10-20",
+  "mac_app": {
+    "standalone_native_window_seen": true,
+    "installed_on_owner_mac": true,
+    "signing": "Apple Development",
+    "notarized": false,
+    "distribution_membership": "awaiting_account_holder_sign_in",
+    "native_updater": "not_implemented",
+    "interface_updates": "current service code on launch"
+  },
+  "iphone": {
+    "xcode_simulator_build": "passed",
+    "native_device_install": "not_performed",
+    "face_id_hardware_test": "not_performed",
+    "app_store_release": "not_published",
+    "home_screen_web_app": "existing_pairing_flow_preserved"
+  },
+  "voice": {
+    "model_smoke_first_delta_seconds": 1.87,
+    "real_acoustic_barge_in": "unverified",
+    "native_on_device_bridge": "compiled; permission and device acceptance required",
+    "saved_stop_preference_regression": "passed"
+  },
+  "renderer": {
+    "same_live_session_before_after_navigation": true,
+    "fixture_navigation_round_trips": 12,
+    "photographic_realism": false,
+    "body_assets_changed": false
+  },
+  "briefing": {
+    "actual_regional_news_seen": true,
+    "mail_previews": "user_requested_only; no message body or send",
+    "market_data": "read_only; unavailable stays labelled",
+    "auto_advance_seconds": 9,
+    "narration": "opt_in"
+  },
+  "music": {
+    "bluos_node_live_status_read": true,
+    "playback_or_volume_changed": false,
+    "tidal_source_active": false,
+    "tidal_account_linked_by_agent": false
+  },
+  "payments": {
+    "subscriptions": "not_connected",
+    "owner_payments": "not_connected",
+    "charges_made": false
+  },
+  "checks": {
+    "broker_python": 413,
+    "focused_browser_and_voice": 24,
+    "studio_javascript": 53
+  },
+  "private_material_excluded": [
+    "credentials",
+    "signing keys",
+    "build products",
+    "runtime data",
+    "screenshots",
+    "private broker full source"
+  ]
+}

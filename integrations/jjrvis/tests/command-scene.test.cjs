@@ -21,7 +21,9 @@ window.sourceNodes=Object.fromEntries(['brief','weather','devices'].map(key=>[ke
 window.layout=JJSceneLayout.mount(document.querySelector('.presence-hub'),{mount(key,pane){mounted.push(key);pane.append(sourceNodes[key]);}});
 JJCompanion.configure({showAssistant(){document.querySelector('#assistant-panel').classList.add('assistant-overlay');return true;},postToPresence(){},stopSpeaking(){}});
 document.querySelector('#launch-companion').onclick=()=>JJCompanion.enter();
-window.fixtureReady=true;`;
+window.briefReads=[];
+window.presenter=JJSceneLayout.mountBriefing(document.querySelector('.presence-hub'),{api:async path=>{briefReads.push(path);if(path.endsWith('news-feeds'))return {items:[{title:'Fixture regional headline',summary:'Fixture source summary',source:'Fixture publisher',category:'local',url:'https://example.com/news',published_at:'2026-10-20T12:00:00Z'},{title:'Fixture second headline',url:'https://example.com/second'}]};if(path.endsWith('trading'))return {state:'unavailable',markets:[]};return {state:'connected',messages:[{subject:'Fixture private message',sender:'Fixture sender',date:'2026-10-20'}]};},navigate:view=>fixtureCalls.push(view)});
+window.fixtureReady=true;` ;
 async function withFixture(run){
  const {chromium}=require('playwright-core'),browser=await chromium.launch({executablePath:chrome,headless:true,args:['--disable-background-networking']});
  const page=await browser.newPage({viewport:{width:1280,height:800}}),errors=[],requests=[];
@@ -108,4 +110,49 @@ test('companion mode still fills desktop/phone and removes the dashboard instrum
   await page.keyboard.press('Escape');assert.equal(await page.locator('body').getAttribute('data-companion'),'workspace');
  }
  assert.deepEqual(errors,[]);assert.deepEqual(failures,[]);
+}));
+
+test('workspace pages keep the same loaded iframe document through navigation',{skip:!canRun},async()=>withFixture(async(page,errors)=>{
+ await load(page);
+ const workspace=fs.readFileSync(path.join(root,'workspace.js'),'utf8');
+ const helper=workspace.slice(workspace.indexOf("const contentRoot = $('#content');"),workspace.indexOf("window.addEventListener('jjrvis-news-brief'"));
+ await page.evaluate(helper=>{
+  const root=document.querySelector('#content');root.replaceChildren();
+  (0,eval)("const $=s=>document.querySelector(s);"+helper+"window.pages={select:selectWorkspacePage,clear:clearWorkspacePages};");
+  pages.select(true);
+  const frame=document.createElement('iframe');frame.id='retained-avatar';frame.src='about:blank';document.querySelector('.persistent-overview').append(frame);
+ },helper);
+ await page.locator('#retained-avatar').waitFor();
+ const result=await page.evaluate(()=>{
+  const frame=document.querySelector('#retained-avatar'),documentBefore=frame.contentDocument;let removals=0;
+  const observer=new MutationObserver(records=>{for(const record of records)for(const node of record.removedNodes)if(node===frame||node.contains?.(frame))removals++;});observer.observe(document.querySelector('#content'),{childList:true,subtree:true});
+  for(let i=0;i<12;i++){pages.select(false);document.querySelector('.persistent-workspace').textContent='Other workspace '+i;pages.select(true);}
+  const sameDocument=frame.contentDocument===documentBefore,connected=frame.isConnected,visible=!frame.closest('[hidden]');
+  const pending=observer.takeRecords();observer.disconnect();
+  for(const record of pending)for(const node of record.removedNodes)if(node===frame||node.contains?.(frame))removals++;
+  pages.clear();return {sameDocument,connected,visible,removals,cleared:!document.querySelector('#retained-avatar')};
+ });
+ assert.deepEqual(result,{sameDocument:true,connected:true,visible:true,removals:0,cleared:true});assert.deepEqual(errors,[]);
+}));
+
+
+test('top-right briefing is lazy, advances items and topics, and preserves the avatar',{skip:!canRun},async()=>withFixture(async(page,errors)=>{
+ await load(page);assert.deepEqual(await page.evaluate(()=>briefReads),[]);
+ await page.getByRole('button',{name:'✦ Brief me',exact:true}).click();
+ await page.getByRole('heading',{name:'Fixture regional headline',exact:true}).waitFor();
+ assert.deepEqual(await page.evaluate(()=>briefReads),['/v1/workspace/news-feeds']);
+ await page.getByRole('button',{name:'Next item →',exact:true}).click();
+ await page.getByRole('heading',{name:'Fixture second headline',exact:true}).waitFor();
+ await page.getByRole('button',{name:'Next topic',exact:true}).click();
+ await page.getByText('The broker quote feed is unavailable. No market prices have been invented.',{exact:true}).waitFor();
+ await page.getByRole('button',{name:'Next topic',exact:true}).click();
+ await page.getByRole('heading',{name:'Fixture private message',exact:true}).waitFor();
+ await page.getByRole('button',{name:'Pause cards',exact:true}).click();
+ await page.getByRole('button',{name:'Resume cards',exact:true}).waitFor();
+ assert.equal(await page.evaluate(()=>originalFrame===document.querySelector('#moneypenny-presence')),true);
+ const metrics=await page.locator('.scene-briefing').evaluate(node=>{const r=node.getBoundingClientRect();return {right:r.right,width:r.width,viewport:innerWidth};});
+ assert.ok(metrics.right<=metrics.viewport&&metrics.width>=300);
+ await page.getByRole('button',{name:'Close briefing',exact:true}).click();
+ assert.equal(await page.locator('.scene-briefing').isVisible(),false);
+ assert.deepEqual(errors,[]);
 }));
