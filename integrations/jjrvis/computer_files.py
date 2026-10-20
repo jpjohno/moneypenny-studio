@@ -1,6 +1,7 @@
 """Fresh, owner-only Mac document search; explicit read and open actions."""
 import hashlib,io,json,os,stat,subprocess,time,zipfile
 from pathlib import Path
+from datetime import datetime,timezone
 from xml.etree import ElementTree as ET
 from fastapi import HTTPException,Request
 from fastapi.responses import Response
@@ -109,7 +110,8 @@ class ComputerFiles:
     def context(self,key):
         preview=self.preview(key)
         if not preview.get('text') or preview['format'] not in {'text','pdf'}:raise HTTPException(415,'This document needs its original application or a text export for AI reading')
-        return {**preview,'path':str(self.path(key)),'mode':'selected_local_read_only'}
+        path=self.path(key)
+        return {**preview,'path':str(path),'modified_at':datetime.fromtimestamp(path.stat().st_mtime,timezone.utc).isoformat(),'mode':'selected_local_read_only'}
     def open(self,key):
         path=self.path(key)
         self.runner(['/usr/bin/open',str(path)],check=True,timeout=8,capture_output=True)

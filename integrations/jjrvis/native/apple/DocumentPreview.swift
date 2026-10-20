@@ -11,7 +11,7 @@ if args.count == 1 {
     for index in 0..<min(document.pageCount, 200) {
         if text.count >= 60_000 { truncated = true; break }
         if let words = document.page(at: index)?.string {
-            text += "\nPage \(index + 1)\n" + String(words.prefix(60_000 - text.count))
+            text += String(words.prefix(60_000 - text.count)) + "\n\n"
         }
     }
     let value: [String: Any] = ["pages": document.pageCount, "text": String(text.prefix(60_000)), "truncated": truncated || document.pageCount > 200]

@@ -69,7 +69,7 @@ def test_selected_office_document_context_is_available_even_when_old_index_is_te
     s=service(tmp_path);p=tmp_path/'Selected.docx'
     with zipfile.ZipFile(p,'w')as z:z.writestr('word/document.xml','<document><p>Selected project notes</p></document>')
     key=s.register(p)['id'];owner=SimpleNamespace(workspace=SimpleNamespace(inventory={'files':[{'path':str(p)}]}),computer_files=s)
-    result=Core.read_file(owner,key);assert result['text']=='Selected project notes';assert result['mode']=='selected_local_read_only'
+    result=Core.read_file(owner,key);assert result['text']=='Selected project notes';assert result['mode']=='selected_local_read_only';assert result['modified_at'].endswith('+00:00')
 
 
 def test_pdf_pages_use_bounded_native_renderer_and_keep_owner_boundary(tmp_path):
