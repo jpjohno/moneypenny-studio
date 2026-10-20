@@ -130,6 +130,13 @@ final class BrowserBridge: NSObject, WKNavigationDelegate, WKUIDelegate, WKScrip
     func webView(_ webView: WKWebView, createWebViewWith configuration: WKWebViewConfiguration, for navigationAction: WKNavigationAction, windowFeatures: WKWindowFeatures) -> WKWebView? {
         if let url=navigationAction.request.url, ["https", "http", "mailto", "tel"].contains(url.scheme ?? "") { openExternal(url) }; return nil
     }
+    func webView(_ webView: WKWebView, requestMediaCapturePermissionFor origin: WKSecurityOrigin, initiatedByFrame frame: WKFrameInfo, type: WKMediaCaptureType, decisionHandler: @escaping (WKPermissionDecision) -> Void) {
+        let local = origin.protocol == "http" && ["127.0.0.1", "localhost"].contains(origin.host) && origin.port == 8766
+        let remote = origin.protocol == "https" && origin.host == "app.jjrvis.com" && [0, 443].contains(origin.port)
+        guard frame.isMainFrame, trusted(frame.request.url), local || remote else { decisionHandler(.deny); return }
+        // A deliberate capture request still goes through the system's prompt.
+        decisionHandler(.prompt)
+    }
     private func openExternal(_ url: URL) {
         #if os(macOS)
         NSWorkspace.shared.open(url)

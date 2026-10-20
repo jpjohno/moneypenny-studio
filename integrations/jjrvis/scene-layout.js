@@ -9,7 +9,7 @@
   decoration.innerHTML='<div class="scene-grid"></div><i class="scene-orbit scene-orbit-one"></i><i class="scene-orbit scene-orbit-two"></i><i class="scene-orbit scene-orbit-three"></i><span class="scene-cross scene-cross-one">＋</span><span class="scene-cross scene-cross-two">＋</span>';
   scene.prepend(decoration);
   const rail=doc.createElement('nav');rail.className='scene-tools';rail.setAttribute('aria-label','Overview panels');
-  const names={brief:['01','Your day','Tasks & headlines'],weather:['02','Weather & sky','Forecast & sunset'],devices:['03','Device map','Reported connections'],assets:['04','Your circle','People, pets & vehicles']};
+  const names={brief:['01','Your day','Tasks & headlines'],weather:['02','Weather & sky','Forecast & sunset'],devices:['03','Map & journeys','Explore & plan a route'],assets:['04','Your circle','People, pets & vehicles']};
   for(const [key,[number,label,note]] of Object.entries(names)){
    const button=doc.createElement('button');button.type='button';button.dataset.sceneOpen=key;button.setAttribute('aria-expanded','false');button.setAttribute('aria-controls','scene-panel-'+key);
    button.innerHTML='<small>'+number+'</small><span><b>'+label+'</b><em>'+note+'</em></span><i aria-hidden="true">↗</i>';rail.append(button);
@@ -93,7 +93,7 @@
    for(const b of panel.querySelectorAll('[data-brief-topic]'))b.setAttribute('aria-pressed',String(b.dataset.briefTopic===topics[topic]));
    progress.textContent=(topic+1)+' / '+topics.length+' topics · '+(index+1)+' / '+cards.length+' items · '+(card.unavailable?'Needs attention':card.scope||'Connected source');
    body.classList.remove('brief-enter');void body.offsetWidth;body.classList.add('brief-enter');
-   if(panel.querySelector('input').checked&&!card.unavailable&&!options.voiceBusy?.()){spoken=true;options.speak?.(card.title+'. '+(card.private?'':card.detail.slice(0,320)));}
+   if(panel.querySelector('input').checked&&!card.unavailable&&!options.voiceBusy?.()){spoken=true;options.speak?.(card.title+'. '+card.detail.slice(0,320));}
    schedule();
   }
   async function readMail(signal){
@@ -120,7 +120,8 @@
   function finish(){pause();progress.textContent='You’re up to date with this briefing. What would you like to explore?';}
   function next(){if(index+1<cards.length){index++;render();}else if(topic<topics.length-1)load(topic+1);else finish();}
   function close(focus=true){clear();++epoch;controller?.abort();panel.hidden=true;launch.setAttribute('aria-expanded','false');hub.classList.remove('briefing-open');if(spoken){options.stopNarration?.();spoken=false;}if(focus)launch.focus({preventScroll:true});}
-  launch.onclick=()=>{if(!panel.hidden){close();return;}paused=false;pauseButton.textContent='Pause cards';panel.hidden=false;hub.classList.add('briefing-open');launch.setAttribute('aria-expanded','true');load(0);panel.querySelector('[data-brief-close]').focus({preventScroll:true});};
+  function open(kind='news',read=false){options.onOpen?.();paused=false;pauseButton.textContent='Pause cards';panel.hidden=false;panel.querySelector('input').checked=read;hub.classList.add('briefing-open');launch.setAttribute('aria-expanded','true');load(Math.max(0,topics.indexOf(kind)));panel.querySelector('[data-brief-close]').focus({preventScroll:true});}
+  launch.onclick=()=>{if(!panel.hidden)close();else open();};
   panel.querySelector('[data-brief-close]').onclick=()=>close();
   pauseButton.onclick=()=>{if(paused){paused=false;pauseButton.textContent='Pause cards';render();}else pause();};
   panel.querySelector('[data-brief-next]').onclick=next;
@@ -143,7 +144,7 @@
   for(const button of panel.querySelectorAll('[data-brief-topic]'))button.onclick=()=>load(topics.indexOf(button.dataset.briefTopic));
   const activity=()=>{if(!visible())pause();else if(cards.length&&!body.querySelector('h3'))render();};const escape=e=>{if(e.key==='Escape'&&!panel.hidden&&!doc.querySelector('dialog[open]')){e.preventDefault();close();}};
   doc.addEventListener('visibilitychange',activity);root.addEventListener('jjrvis-companion-changed',activity);doc.addEventListener('keydown',escape);
-  return {pause,close,destroy(){dead=true;close(false);doc.removeEventListener('visibilitychange',activity);root.removeEventListener('jjrvis-companion-changed',activity);doc.removeEventListener('keydown',escape);launch.remove();panel.remove();}};
+  return {open,pause,close,destroy(){dead=true;close(false);doc.removeEventListener('visibilitychange',activity);root.removeEventListener('jjrvis-companion-changed',activity);doc.removeEventListener('keydown',escape);launch.remove();panel.remove();}};
  }
  root.JJSceneLayout={mount,mountBriefing};
  if(typeof module!=='undefined'&&module.exports)module.exports={briefingCards};

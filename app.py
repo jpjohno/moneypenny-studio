@@ -15,6 +15,7 @@ from speech import Voice, voice_config
 from listening import Listening
 from motion import generate_plan, validate_plan, SKILLS
 import reminders
+import appearance_settings
 import personas
 import motion_assets
 import threading
@@ -24,6 +25,7 @@ OLLAMA = os.environ.get("MONEYPENNY_OLLAMA_URL", "http://127.0.0.1:11434").rstri
 LOCAL_CHARACTER = ROOT / ".runtime/character-workshop/Moneypenny-Performance-Candidate-v6.glb"
 SURFACE_CHARACTER = ROOT / ".runtime/character-workshop/Moneypenny-Performance-Candidate-v9.glb"
 STYLED_CHARACTER = ROOT / ".runtime/character-workshop/Moneypenny-Style-v26.glb"
+REFRESHED_CHARACTER = ROOT / ".runtime/character-workshop/Moneypenny-Style-v29.glb"
 FITTED_CHARACTER = ROOT / ".runtime/character-workshop/Moneypenny-Style-v27.glb"
 FREE_SURFACE_CHARACTER = ROOT / ".runtime/character-workshop/Moneypenny-Free-Surface-Reviewed.glb"
 app = Flask(__name__)
@@ -49,7 +51,7 @@ def valid_local_character(path):
 
 def local_character_path():
     """Prefer the reviewed surface revision, retaining the previous working rig."""
-    return next((path for path in (FITTED_CHARACTER, STYLED_CHARACTER, FREE_SURFACE_CHARACTER, SURFACE_CHARACTER, LOCAL_CHARACTER)
+    return next((path for path in (REFRESHED_CHARACTER, FITTED_CHARACTER, STYLED_CHARACTER, FREE_SURFACE_CHARACTER, SURFACE_CHARACTER, LOCAL_CHARACTER)
                  if valid_local_character(path)), None)
 
 
@@ -222,6 +224,16 @@ def onnx_assets(filename):
     return send_from_directory(ROOT/'node_modules/onnxruntime-web/dist',filename)
 
 
+@app.get('/api/appearance')
+def appearance_read():
+    return jsonify(appearance_settings.read())
+
+
+@app.post('/api/appearance')
+def appearance_save():
+    return jsonify(appearance_settings.save(body()))
+
+
 @app.get('/api/character/default')
 def default_character():
     candidate = local_character_path()
@@ -250,7 +262,7 @@ def status():
                    listening_engine='Whisper base.en' if listening.available() else 'Vosk',
                    avatar_ready=candidate or (ROOT / "static/avatars/mpfb.glb").is_file(),
                    character_candidate_ready=candidate,
-                   character_revision="style-v27" if character_path == FITTED_CHARACTER else "style-v26" if character_path == STYLED_CHARACTER else "free-surface-reviewed" if character_path == FREE_SURFACE_CHARACTER else "surface-v9" if character_path == SURFACE_CHARACTER else "performance-v6" if candidate else None,
+                   character_revision="style-v29" if character_path == REFRESHED_CHARACTER else "style-v27" if character_path == FITTED_CHARACTER else "style-v26" if character_path == STYLED_CHARACTER else "free-surface-reviewed" if character_path == FREE_SURFACE_CHARACTER else "surface-v9" if character_path == SURFACE_CHARACTER else "performance-v6" if candidate else None,
                    character_source="local-performance-candidate" if candidate else "bundled-cc0-sample")
 
 

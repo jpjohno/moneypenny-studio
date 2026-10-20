@@ -1,7 +1,7 @@
 /* Owner connections centre. No credentials, permissions or device activation on opening. */
 (function (root) {
   'use strict';
-  const sections=[['internet','Internet'],['mac','This Mac'],['iphone','iPhone & devices'],['mail','Email accounts'],['icloud','iCloud & photos'],['media','Camera & microphone'],['ai','AI services']];
+  const sections=[['start','Add a connection'],['internet','Internet'],['mac','This Mac'],['iphone','iPhone & devices'],['mail','Email accounts'],['icloud','iCloud & photos'],['media','Camera & microphone'],['ai','AI services']];
   const labels={ready:'Connected',connected:'Connected',ready_to_pair:'Ready to pair',action_needed:'Setup needed',sign_in_needed:'Sign-in needed',available:'Available on request',not_connected:'Not connected',not_implemented:'Not supported here',unsupported:'Not supported here',unavailable:'Unavailable',check_needed:'Check needed',configured_unverified:'Configured · unchecked',credential_required:'Sign-in needed',model_missing:'Model needed'};
   const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const amount=value=>Number.isSafeInteger(value)&&value>=0?value.toLocaleString('en-GB'):null;
@@ -12,6 +12,7 @@
     const iCloud=(data.accounts||[]).find(account=>account.provider==='icloud');
     const iCloudState=['ready','connected'].includes(iCloud?.state)?'ready':iCloud?.reason==='sign_in_needed'?'sign_in_needed':iCloud?.state||(data.checked_at?'not_connected':'unavailable');
     return {
+      start:[['Email & messages','available','Connect a mailbox, review Mac access and choose the conversations available to your assistant.',{id:'mail',label:'Choose an account'}],['iPhone & other devices','available','Pair a device with your private workspace. Choose its permissions on that device.',{id:'pair',label:'Pair a device'}],['Microphone & camera','available','Check access before starting a conversation. Nothing records until you choose the check.',{id:'media',label:'Check device access'}],['Home & vehicles','available','Review your existing home and BMW connections. Saved profiles do not grant device control.',{id:'view-home',label:'Open home & devices'}],['Music & speakers','available','Review BluOS and the TIDAL connection options on your network.',{id:'view-music',label:'Open music'}],['AI & voice','available','Choose the local model and voice, or review configured cloud options.',{id:'ai',label:'Choose AI & voice'}]],
       internet:[['Your JJRVIS workspace',data.checked_at?'ready':'unavailable',data.checked_at?'This browser has reached your private workspace.':'The workspace connection has not been checked.'],['Private internet link',phone.https_verified?'ready':phone.state||'unavailable',phone.https_verified?'The secure web app address is reachable. Your Mac must stay awake and connected.':'The secure web app address could not be verified.'],['Public web search','available','Ask JJRVIS to search online for current public pages. Results are checked when you search; this overview does not run a search.',{id:'search',label:'Search & usage'}],['Signed-in websites','not_connected','Public search does not sign into your other websites. Supported accounts connect separately through their provider.']],
       mac:[['Apple Mail on this Mac',mail.state||'unavailable',amount(mail.count)!==null?`${amount(mail.count)} locally stored mail records are readable. This does not prove current cloud sync.`:mail.detail||'Local mail access has not been verified.'],['Messages on this Mac',messages.state||'unavailable',amount(messages.count)!==null?`${amount(messages.count)} locally stored messages are readable. Nothing is sent or marked read.`:messages.detail||'Open Messages and check macOS access.'],['Other folders',browser.folder?'available':'action_needed',browser.folder?'Select a folder for this browser visit. Persistent file indexing needs a separate connection.':'Folder selection is not supported by this browser here. You can open iCloud Drive and choose files to share.',{id:browser.folder?'folder':'drive',label:browser.folder?'Choose a folder':'Open iCloud Drive'}]],
       iphone:[['JJRVIS on your iPhone',browser.standalone?'ready':phone.state||'unavailable',browser.standalone?'JJRVIS is open in an installed app window on this device.':phone.detail||'Pair from your Mac, then add JJRVIS to the Home Screen in Safari.',{id:'pair',label:'Pair a device'}],['Native iPhone controls','unsupported','This web app does not have general control of your phone, calls, other apps or background sensors.']],
@@ -70,6 +71,8 @@
   function act(id){
     if(id==='pair'){close();if(options.pair)options.pair();else doc().querySelector('#pair-phone')?.click();}
     else if(id==='mail')select('mail');
+    else if(id==='media')select('media');
+    else if(id==='view-home'||id==='view-music'){close();options.navigate?.(id.slice(5));}
     else if(id==='ai')settings('voice');
     else if(id==='search')settings('usage');
     else if(id==='folder')chooseFolder();

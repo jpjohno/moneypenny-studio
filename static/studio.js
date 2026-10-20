@@ -33,7 +33,7 @@ const presets = {
   companion: 'You are Moneypenny, a friendly adult British conversation companion. Be curious, thoughtful and warm. Listen carefully, remember what has been said within this conversation and ask natural follow-up questions. Use gentle humour and a relaxed manner.',
   playful: 'You are Moneypenny, an adult British woman with a confident, witty and subtly flirtatious personality. Use warm smiles, gentle teasing and clever wordplay when welcome. Keep flirtation non-explicit and responsive. Shift to a clear, considerate manner when the topic calls for it. Speak like a natural conversation.',
 };
-const settingIds = ['personaName','personaPreset','systemPrompt','movement','mood','wardrobe','footwear','hairTone','lightingLook','lightBrightness','autonomy','aiMotion','activity','behaviourPrompt','modelSelect','speed','mouthTiming','temperature','maxTokens','autoSpeak'];
+const settingIds = ['personaName','personaPreset','systemPrompt','movement','mood','wardrobe','footwear','blouseColor','hairTone','lightingLook','lightBrightness','autonomy','aiMotion','activity','behaviourPrompt','modelSelect','speed','mouthTiming','temperature','maxTokens','autoSpeak'];
 let head, lips, analyser, visualizer, avatarReady = false, lipReady = false;
 let generation = 0, controller = null, busy = false, currentSource = null, speechEnded = null;
 let history = [], statusData = {}, avatarURL = null, portraitURL = null, recordingPending = false;
@@ -94,6 +94,7 @@ function updateSettings() {
   }
   if(statusData.models?.length)$('connectionNote').textContent=`${$('modelSelect').value} · ${statusData.voice_ready?'British voice connected':'voice needs setup'}`;
   wardrobe?.set($('wardrobe').value,$('footwear').value);
+  wardrobe?.setPalette($('blouseColor').value);
   if(motion){motion.autonomous=$('autonomy').checked;motion.activity=Number($('activity').value);motion.persona=$('behaviourPrompt').value+' '+$('systemPrompt').value;}
   saveSettings();
 }
@@ -197,8 +198,21 @@ async function showAvatar(file=null, localCharacter=null) {
     setState('Character unavailable',''); throw e;
   } finally { setBusy(busy); }
 }
+const appearanceIds=['blouseColor','hairTone','lightingLook','lightBrightness'];
+let appearanceSnapshot='',appearanceSaveTimer=null;
+async function syncAppearance(){
+ try{
+  const next=await(await api('/api/appearance')).json(),key=JSON.stringify(next);if(key===appearanceSnapshot)return;appearanceSnapshot=key;
+  for(const id of appearanceIds)if(typeof next[id]==='string')$(id).value=next[id];
+  if(head){setLook(head,$('lightingLook').value,$('lightBrightness').value);setHairTone(head.armature,$('hairTone').value);wardrobe?.setPalette($('blouseColor').value);}
+ }catch{/* Keep the current appearance when the connection is unavailable. */}
+}
+function saveAppearance(){
+ if(jarvisEmbed)return;clearTimeout(appearanceSaveTimer);appearanceSaveTimer=setTimeout(async()=>{try{const next=Object.fromEntries(appearanceIds.map(id=>[id,$(id).value]));await api('/api/appearance',next);appearanceSnapshot=JSON.stringify(next);}catch{notify('This appearance change could not be saved. Your current preview remains available.');}},400);
+}
 async function initializeStage() {
   try {
+    await syncAppearance();
     const profile=renderProfile({pixelRatio:devicePixelRatio,narrow:matchMedia('(max-width:760px)').matches,embedded:jarvisEmbed});
     head=new TalkingHead($('avatar'),{
       lipsyncModules:[],lipsyncLang:'en',cameraView:'upper',cameraY:.6,cameraRotateEnable:true,cameraZoomEnable:false,
@@ -226,7 +240,7 @@ async function initializeStage() {
     let saved=null; try {saved=await asset('avatar');}catch{}
     if(saved) { try{await showAvatar(saved);}catch{notify('The saved character is incompatible. The studio character has been restored.'); await showAvatar();} }
     else if(statusData.character_candidate_ready) {
-      try{await showAvatar(null,{url:'/api/character/default',label:statusData.character_revision==='style-v27'?'Moneypenny · tailored fit v27':statusData.character_revision==='style-v26'?'Moneypenny · balanced character v26':statusData.character_revision==='free-surface-reviewed'?'Moneypenny · free character study':statusData.character_revision==='surface-v9'?'Moneypenny · surface study v9':'Moneypenny · local performance candidate'});}
+      try{await showAvatar(null,{url:'/api/character/default',label:statusData.character_revision==='style-v29'?'Moneypenny · fitted crepe blouse':statusData.character_revision==='style-v28'?'Moneypenny · crepe blouse':statusData.character_revision==='style-v27'?'Moneypenny · tailored fit v27':statusData.character_revision==='style-v26'?'Moneypenny · balanced character v26':statusData.character_revision==='free-surface-reviewed'?'Moneypenny · free character study':statusData.character_revision==='surface-v9'?'Moneypenny · surface study v9':'Moneypenny · local performance candidate'});}
       catch{notify('The local performance character could not load. The studio sample has been restored.');await showAvatar();}
     } else await showAvatar();
     if(!jarvisEmbed){const floor=new THREE.Mesh(new THREE.PlaneGeometry(6,6),new THREE.ShadowMaterial({opacity:.22}));floor.rotation.x=-Math.PI/2;floor.position.y=-.003;floor.receiveShadow=true;head.scene.add(floor);}
@@ -551,7 +565,7 @@ $('previewVoice').onclick=async()=>{
   try{head.setMood('happy');motion?.stop();if(head.studioNeutral)motion.plan({steps:[{skill:'wave',duration:4,intensity:.7}]});else try{await motionLibrary?.play('studio-wave');}catch{}await playSpeech(`Hello, I'm ${$('personaName').value||'Moneypenny'}. A familiar voice, a little personality, and a moment to think together. What shall we start with?`,token);}
   catch(e){if(token===generation)notify(e.message);}finally{if(token===generation)setBusy(false);}
 };
-for(const id of settingIds)$(id).addEventListener('input',()=>{if(id==='systemPrompt')$('personaPreset').value='custom';if(['systemPrompt','personaName','modelSelect','personaPreset'].includes(id))tools?.markDirty();updateSettings();});
+for(const id of settingIds)$(id).addEventListener('input',()=>{if(id==='systemPrompt')$('personaPreset').value='custom';if(['systemPrompt','personaName','modelSelect','personaPreset'].includes(id))tools?.markDirty();updateSettings();if(appearanceIds.includes(id))saveAppearance();});
 $('personaPreset').addEventListener('change',()=>{if(presets[$('personaPreset').value])$('systemPrompt').value=presets[$('personaPreset').value];updateSettings();});
 $('avatarUpload').onchange=async e=>{
   const file=e.target.files[0];if(!file)return;
@@ -641,3 +655,5 @@ async function initialize() {
   updateLiveControls();pollReminders();
 }
 initialize();
+
+if(jarvisEmbed){document.addEventListener('visibilitychange',()=>{if(!document.hidden)syncAppearance();});setInterval(()=>{if(!document.hidden)syncAppearance();},15000);}

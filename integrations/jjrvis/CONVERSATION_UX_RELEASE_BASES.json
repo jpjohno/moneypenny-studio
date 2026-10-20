@@ -1,0 +1,15 @@
+{
+  "prepared": "2026-10-20",
+  "apply_after": "jjrvis-scene-repair.patch",
+  "patch": "jjrvis-conversation-ux.patch",
+  "before_sha256": {
+    "workspace.js": "a83bde0e0c8143b749a52b8d77507fd93dbfc22a3d2135dfb18568cbb42b7444",
+    "presence_proxy.py": "fba62d2d4aed0477e9b8a1461ddc8d5fbc01d9028bffe4b7f3d6c2b4b7a40feb"
+  },
+  "after_sha256": {
+    "workspace.js": "fed6eba9f58966e92e932cb33c38e1276252bba6b85a6761d45fe9b59f88062b",
+    "presence_proxy.py": "29b1a7d62de411027e604b892b83e5369368572b3debdcf409d3e3138f9f9da8"
+  },
+  "patch_sha256": "20e97fa1f2d4f96d707e1af22f48a9f038b2050e60a45761a076ed5e1d181211",
+  "exact_patch_application_verified": true
+}

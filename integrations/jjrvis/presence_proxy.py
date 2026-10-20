@@ -41,7 +41,7 @@ def _safe_path(path: str) -> bool:
         return False
     if not path:
         return True
-    if path in {'api/status', 'api/character/default', 'api/motion/library'}:
+    if path in {'api/status', 'api/appearance', 'api/character/default', 'api/motion/library'}:
         return True
     if re.fullmatch(r'api/motion/assets/[A-Za-z0-9_-]{1,100}(?:\.(?:glb|gltf|json))?', path):
         return True
@@ -171,7 +171,7 @@ def _headers(upstream: httpx.Response, path: str) -> dict:
     content_type = upstream.headers.get('content-type', '').strip()
     if not content_type or len(content_type) > 160:
         raise ValueError('Missing render content type')
-    expected = 'text/html' if not path else 'application/json' if path in {'api/status','api/motion/library'} else None
+    expected = 'text/html' if not path else 'application/json' if path in {'api/status','api/appearance','api/motion/library'} else None
     if expected and content_type.split(';')[0].strip() != expected:
         raise ValueError('Unexpected render content type')
     if path and content_type.split(';')[0].strip() in {'text/html','application/xhtml+xml'}:

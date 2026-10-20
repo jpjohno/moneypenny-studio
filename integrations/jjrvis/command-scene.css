@@ -241,3 +241,33 @@ body[data-companion="open"] .command-scene .moneypenny-presence iframe{pointer-e
  .scene-brief-controls button{font-size:11px!important;padding:7px!important}
  .scene-brief-card h3{font-size:clamp(21px,1.8vw,27px)!important}
 }
+.stage-voice-status{font-size:11px!important;line-height:1.5!important;color:var(--display-muted);letter-spacing:0!important;max-width:210px;pointer-events:none}
+.stage-voice-status[data-state=listening]{color:#8ee5bf}.stage-voice-status[data-state=blocked]{color:#f2c28c}
+body[data-hud-theme] .command-scene .presence-scene-caption{flex-wrap:wrap!important;max-width:650px}
+body[data-hud-theme] .command-scene .presence-scene-caption>[hidden]{display:none!important}
+body[data-hud-theme] .command-scene .scene-pane .drawer-map-host{position:relative!important;inset:auto!important;left:auto!important;top:auto!important;transform:none!important;width:min(480px,100%)!important;max-width:100%!important;margin:0 auto!important;opacity:1!important}
+body[data-hud-theme] .command-scene .drawer-map-host .globe-map{border-radius:14px!important;inset:5% 5% 30%!important;width:90%!important;height:65%!important;aspect-ratio:auto!important}
+body[data-hud-theme] .command-scene .drawer-map-host .globe-controls{bottom:14%!important;left:50%!important;width:max-content!important;max-width:100%!important;flex-wrap:wrap!important;gap:3px!important}
+body[data-hud-theme] .command-scene .drawer-map-host select{bottom:3%!important;left:50%!important;width:220px!important;min-height:36px!important}
+body[data-hud-theme] .command-scene .drawer-map-host .globe-info{bottom:24%!important;left:6%!important;right:6%!important;font-size:10px!important;padding:6px!important;background:var(--display-surface)}
+body[data-hud-theme] .command-scene .drawer-map-host .globe-topline,body[data-hud-theme] .command-scene .drawer-map-host .globe-credit{display:none!important}
+.scene-pane-devices .map-drawer-intro{font-size:13px;line-height:1.6;margin:0 0 12px}
+.scene-pane-devices .journey-form{display:grid!important;grid-template-columns:1fr 1fr!important;gap:12px!important;padding:14px 0!important;background:none!important;border:0!important;margin:0!important}
+.scene-pane-devices .journey-form label{display:flex;flex-direction:column;gap:6px;font-size:12px}.scene-pane-devices .journey-form button{grid-column:1/-1;min-height:44px!important}
+@media(max-width:760px){.stage-voice-status{max-width:100%;flex-basis:100%;text-align:right;font-size:9px!important}body[data-hud-theme] .command-scene .presence-scene-caption{bottom:8px!important}.scene-pane-devices .journey-form{grid-template-columns:1fr!important}}
+body[data-hud-theme] .command-scene .presence-scene-caption .stage-voice-status{display:block!important;visibility:visible!important;opacity:1!important;white-space:normal!important}
+.scene-drawer{background:var(--display-surface)!important;backdrop-filter:none!important}
+.scene-drawer>header{min-height:52px!important;height:auto!important;padding:12px 16px!important;margin:0!important}
+.scene-drawer>header:after{display:none!important}.scene-drawer>header h3{font-size:21px!important;margin:4px 0!important}
+.journey-disclosure{margin:10px 0!important;border:1px solid var(--display-line);border-radius:10px;padding:10px}
+.journey-disclosure>summary{min-height:28px;cursor:pointer;font-size:13px}
+body[data-hud-theme] .command-scene .scene-pane .drawer-map-host{width:min(400px,100%)!important}
+@media(max-width:760px){body[data-hud-theme] .command-scene .scene-pane .drawer-map-host{width:min(320px,100%)!important}}
+/* A flat map must retain its surface when the globe canvas is hidden. */
+body[data-hud-theme] .command-scene .command-world-stage .globe-reactor{aspect-ratio:1/1!important;height:auto!important}
+/* Keep the microphone label above the phone action row, never over its panels. */
+@media(max-width:760px){
+ body[data-hud-theme] .command-scene .presence-scene-caption{flex-wrap:nowrap!important}
+ body[data-hud-theme] .command-scene .presence-scene-caption .stage-voice-status{position:absolute;right:0;bottom:49px;max-width:100%;flex-basis:auto;text-align:right}
+ body[data-hud-theme] .command-scene .scene-tools{bottom:84px!important}
+}

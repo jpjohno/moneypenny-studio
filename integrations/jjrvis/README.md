@@ -1,3 +1,7 @@
+# Latest conversation update
+
+See [CONVERSATION_UX_RELEASE.md](CONVERSATION_UX_RELEASE.md) for explicit microphone startup, map and connection UX, shared clothing palettes and the installed native media-permission update. Apply after the scene repair increment.
+
 # Latest repair
 
 See [SCENE_REPAIR_RELEASE.md](SCENE_REPAIR_RELEASE.md) for the assistant stage, map controls, message bodies, profile drawer and current connection blockers. Apply its patch after the native briefing increment.

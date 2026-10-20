@@ -1,0 +1,19 @@
+{
+  "date": "2026-10-20",
+  "implemented": true,
+  "native_app_built_signed_installed": true,
+  "native_microphone_hardware_verified": false,
+  "native_blocker": "Owner Touch ID or Mac password unlock required",
+  "browser_microphone_verified": true,
+  "browser_capture_stopped": true,
+  "broker_suite_passed": 415,
+  "focused_proxy_suite_passed": 35,
+  "browser_voice_suite_passed": 39,
+  "final_layout_suite_passed": 10,
+  "studio_python_passed": 65,
+  "studio_python_skipped": 2,
+  "photographic_realism_verified": false,
+  "public_distribution_ready": false,
+  "runtime_character_in_git": false,
+  "browser_conversation_start_and_stop_verified": true
+}

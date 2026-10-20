@@ -3,7 +3,7 @@
 const test=require('node:test'),assert=require('node:assert/strict');
 const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const source=fs.readFileSync(path.join(__dirname,'..','workspace.js'),'utf8');
-const voiceStart=source.indexOf('function voiceState('),voiceEnd=source.indexOf('\nasync function junomo(',voiceStart);
+const voiceStart=source.indexOf('function updateStageVoice('),voiceEnd=source.indexOf('\nasync function junomo(',voiceStart);
 const bridgeStart=source.indexOf("window.addEventListener('message',event=>{"),bridgeEnd=source.indexOf("\ndocument.addEventListener('keydown'",bridgeStart);
 assert.ok(voiceStart>0&&voiceEnd>voiceStart&&bridgeStart>0&&bridgeEnd>bridgeStart);
 const tick=()=>new Promise(setImmediate);
@@ -20,7 +20,7 @@ function harness({ready=true,framePresent=true,name='Moneypenny',presenceMode='t
   $,AbortController,AbortSignal,DOMException,clearTimeout(){},setTimeout(){return 1;},notify(){},localStorage:{setItem(){}},selectedAssistantIdentity(){return {name};},URL,Audio:TestAudio,
   fetch(url,options){if(url==='/v1/workspace/voice/stop'){stops.push(url);return Promise.resolve({ok:true});}if(url==='/v1/workspace/voice/audio')return new Promise((resolve,reject)=>audioRequests.push({resolve,reject,options}));throw new Error('Unexpected request: '+url);}
  };
- vm.createContext(ctx);vm.runInContext(`let cloudAudio=null,activeUtterance=null,activeRecognition=null,speechController=null,presenceSpeech=null,presenceSpeechSequence=0,streamingSpeech=null;let speechEchoUntil=0,wakeArmedUntil=0,wakeRestart=null,wakePaused=false,wakeEnabled=true,wakeMicStream=null,wakeStarts=0;const wakeStarter=()=>wakeStarts++;${source.slice(voiceStart,voiceEnd)}\n${source.slice(bridgeStart,bridgeEnd)}\nglobalThis.state={get utterance(){return activeUtterance;},get presence(){return presenceSpeech;},get wakeStarts(){return wakeStarts;},get speech(){return streamingSpeech;}};`,ctx);
+ vm.createContext(ctx);vm.runInContext(`let conversationInvite=false;let cloudAudio=null,activeUtterance=null,activeRecognition=null,speechController=null,presenceSpeech=null,presenceSpeechSequence=0,streamingSpeech=null;let speechEchoUntil=0,wakeArmedUntil=0,wakeRestart=null,wakePaused=false,wakeEnabled=true,wakeMicStream=null,wakeStarts=0;const wakeStarter=()=>wakeStarts++;${source.slice(voiceStart,voiceEnd)}\n${source.slice(bridgeStart,bridgeEnd)}\nglobalThis.state={get utterance(){return activeUtterance;},get presence(){return presenceSpeech;},get wakeStarts(){return wakeStarts;},get speech(){return streamingSpeech;}};`,ctx);
  const emit=(type,requestId,data={},extras={})=>events.get('message')({origin:frameOrigin,source:frameWindow,data:{type,requestId,...data},...extras});
  const resolveAudio=async(index=0)=>{audioRequests[index].resolve({ok:true,headers:{get:()=> 'local-kokoro'},blob:async()=>new Blob([new Uint8Array([1,2,3])],{type:'audio/wav'})});await tick();};
  return {ctx,emit,messages,audioRequests,stops,frameWindow,presenceState,audio,resolveAudio,audioMessages:()=>messages.filter(row=>row.message.type==='jjrvis-audio'),status:()=>$('#voice-status').textContent};

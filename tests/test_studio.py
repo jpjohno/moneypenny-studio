@@ -15,6 +15,8 @@ HEADERS = {'X-Studio-Client': 'moneypenny'}
 
 @pytest.fixture
 def client(monkeypatch, tmp_path):
+    monkeypatch.setattr(studio.appearance_settings, 'PATH', tmp_path / 'appearance.json')
+    monkeypatch.setattr(studio, 'REFRESHED_CHARACTER', tmp_path / 'missing-refresh.glb')
     monkeypatch.setattr(studio, 'FITTED_CHARACTER', tmp_path / 'missing-fit.glb')
     monkeypatch.setattr(studio, 'FREE_SURFACE_CHARACTER', tmp_path / 'missing-free.glb')
     monkeypatch.setattr(studio, 'STYLED_CHARACTER', tmp_path / 'missing-style.glb')
@@ -246,3 +248,12 @@ def test_quick_presence_status_does_not_wait_for_ollama(client, monkeypatch):
     assert 'avatar_ready' in response.json and 'character_revision' in response.json
     assert response.json['models_checked'] is False
     get.assert_not_called()
+
+
+def test_shared_appearance_is_allowlisted_and_saved_without_account_data(client):
+    assert client.get('/api/appearance').json['blouseColor']=='petrol'
+    response=client.post('/api/appearance',headers=HEADERS,json={'blouseColor':'navy','hairTone':'brunette','lightBrightness':'0.9'})
+    assert response.status_code==200
+    assert client.get('/api/appearance').json['blouseColor']=='navy'
+    assert client.post('/api/appearance',headers=HEADERS,json={'token':'not-supported'}).status_code==400
+    assert client.post('/api/appearance',json={'blouseColor':'ivory'}).status_code==403

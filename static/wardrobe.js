@@ -66,6 +66,11 @@ export class Wardrobe {
     this.shoes.forEach(mesh=>{mesh.visible=mesh.userData.footwear===footwear;mesh.material.color.set(footwear==='trainers'?'#dcd8cb':'#1c2024');});
     this.current=outfit;return true;
   }
+  setPalette(name='petrol'){
+    const colors={petrol:'#355f69',navy:'#26384e',ivory:'#e0d9ca',plum:'#65465f'};
+    const color=colors[name]||colors.petrol;
+    this.head.armature.traverse(node=>{if(!node.isMesh)return;for(const material of [node.material].flat())if(material?.color&&/blouse/i.test(material.name||'')){material.color.set(color);material.roughness=.9;material.metalness=0;material.envMapIntensity=.3;if(material.isMeshPhysicalMaterial){material.sheen=.12;material.sheenColor.set(color);material.sheenRoughness=.9;material.specularIntensity=.2;material.clearcoat=0;}material.needsUpdate=true;}});
+  }
   garments(){return [...this.layers.filter(mesh=>!mesh.userData.footwear),...this.tagged].map(mesh=>({id:mesh.name,name:mesh.userData.wardrobeLabel||mesh.name.replace(/^Studio_/,'').replaceAll('_',' '),visible:mesh.visible}));}
   setGarment(id,visible){const mesh=[...this.layers,...this.tagged].find(item=>item.name===id);if(!mesh)throw new Error('This character has no matching garment.');mesh.visible=!!visible;return true;}
   dispose(){for(const mesh of new Set([...this.layers,...this.shoes])){mesh.removeFromParent();mesh.geometry.dispose();mesh.material.dispose();}}

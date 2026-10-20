@@ -226,3 +226,17 @@ def test_canonical_document_redirect_keeps_relative_urls_under_authenticated_pre
         assert result.status_code==307 and result.headers['location']=='/presence/?embed=jarvis'
         assert client.get('/presence?embed=other',headers=AUTH,follow_redirects=False).status_code==400
     assert calls==[]
+
+
+def test_shared_appearance_is_read_only_and_owner_only():
+    calls=[]
+    def handler(request):
+        calls.append(request)
+        assert request.url.path == '/api/appearance'
+        return response(b'{"blouseColor":"petrol"}', 'application/json')
+    app,_=make_app(handler)
+    with TestClient(app,base_url=BASE) as client:
+        assert client.get('/presence/api/appearance').status_code == 401
+        assert client.get('/presence/api/appearance',headers=AUTH).json() == {'blouseColor':'petrol'}
+        assert client.post('/presence/api/appearance',headers=AUTH,json={'blouseColor':'navy'}).status_code == 405
+    assert len(calls)==1
