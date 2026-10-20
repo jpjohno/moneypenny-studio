@@ -1,3 +1,7 @@
+# Latest expression and glass-panel update
+
+See [WARM_GLASS_RELEASE.md](WARM_GLASS_RELEASE.md) for the rounder clothed drape, restrained smile and idle motion, and translucent animated briefing. Copy the matching view/proxy files after the movement recovery increment.
+
 # Latest movement and visual briefing update
 
 See [MOTION_RECOVERY_RELEASE.md](MOTION_RECOVERY_RELEASE.md) for restored overview rotation, acknowledged movement commands, illustrated headlines, reduced character asset size and the smoother v32 clothed fit. Apply after the workspace polish increment. Photographic appearance and arbitrary physical/application autonomy remain unachieved.

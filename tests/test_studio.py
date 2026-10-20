@@ -272,7 +272,7 @@ def test_latest_character_and_previous_comparison_are_distinct(client, monkeypat
     monkeypatch.setattr(studio, 'NATURAL_CHARACTER', latest)
     monkeypatch.setattr(studio, 'REFRESHED_CHARACTER', previous)
     monkeypatch.setattr(studio.requests, 'get', Mock(side_effect=requests.ConnectionError()))
-    assert client.get('/api/status').json['character_revision'] == 'style-v32'
+    assert client.get('/api/status').json['character_revision'] == 'style-v33'
     assert client.get('/api/character/default').data == latest.read_bytes()
     assert client.get('/api/character/default?look=previous').data == previous.read_bytes()
     assert client.get('/api/character/default?look=../../private').status_code == 400

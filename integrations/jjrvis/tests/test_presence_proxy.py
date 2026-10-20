@@ -81,7 +81,7 @@ def test_every_asset_needs_owner_auth_and_preview_cookie_is_not_owner():
         return response(b'asset')
     app,_=make_app(handler)
     with TestClient(app,base_url=BASE) as client:
-        for path in ('/presence/','/presence/static/studio.js','/presence/api/character/default'):
+        for path in ('/presence/','/presence/static/studio.js','/presence/static/persona-expression.js','/presence/api/character/default'):
             assert client.get(path).status_code==401
             assert client.get(path,headers={'Cookie':'jjrvis_preview=not-owner'}).status_code==401
     assert calls==[]
@@ -240,3 +240,19 @@ def test_shared_appearance_is_read_only_and_owner_only():
         assert client.get('/presence/api/appearance',headers=AUTH).json() == {'blouseColor':'petrol'}
         assert client.post('/presence/api/appearance',headers=AUTH,json={'blouseColor':'navy'}).status_code == 405
     assert len(calls)==1
+
+
+def test_expression_module_is_a_fixed_owner_only_asset():
+    calls=[]
+    def handler(request):
+        calls.append(str(request.url))
+        assert 'authorization' not in request.headers
+        return response(b'export const fixture=true;')
+    app,_=make_app(handler)
+    with TestClient(app, base_url=BASE) as client:
+        assert client.get('/presence/static/persona-expression.js').status_code==401
+        result=client.get('/presence/static/persona-expression.js',headers=AUTH)
+        assert result.status_code==200
+        assert result.content==b'export const fixture=true;'
+        assert client.get('/presence/static/unknown-expression.js',headers=AUTH).status_code==404
+    assert calls==['http://127.0.0.1:8090/static/persona-expression.js']

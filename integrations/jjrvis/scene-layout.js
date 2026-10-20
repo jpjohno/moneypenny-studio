@@ -80,9 +80,13 @@
   panel.innerHTML='<header><span>YOUR BRIEFING</span><button type="button" data-brief-close aria-label="Close briefing">×</button></header><nav aria-label="Briefing topics"><button type="button" data-brief-topic="news">News</button><button type="button" data-brief-topic="markets">Markets</button><button type="button" data-brief-topic="mail">Email</button><button type="button" data-brief-topic="messages">Messages</button><button type="button" data-brief-topic="whatsapp">WhatsApp</button></nav><div class="scene-brief-card" aria-live="polite" aria-atomic="true"></div><div class="scene-brief-controls"><button type="button" data-brief-pause>Pause cards</button><button type="button" data-brief-next>Next item →</button><button type="button" data-brief-next-topic>Next topic</button><button type="button" data-brief-more>More ↗</button></div><label class="scene-brief-narration"><input type="checkbox" data-brief-narration> Read card summaries aloud</label><small class="scene-brief-progress" role="status"></small>';
   scene.append(launch,panel);
   const topics=['news','markets','mail','messages','whatsapp'],paths={news:'/v1/workspace/news-feeds',markets:'/v1/workspace/trading',mail:'/v1/workspace/mail',messages:'/v1/workspace/native/messages',whatsapp:'/v1/workspace/native/whatsapp'},cache=new Map();
-  let topic=0,index=0,cards=[],paused=false,timer=null,controller=null,epoch=0,dead=false,spoken=false,topicOnly=false;
+  let topic=0,index=0,cards=[],paused=false,timer=null,controller=null,epoch=0,dead=false,spoken=false,topicOnly=false,panelAnimation=null,cardAnimation=null;
   const body=panel.querySelector('.scene-brief-card'),progress=panel.querySelector('[role=status]'),pauseButton=panel.querySelector('[data-brief-pause]');
+  function motionAllowed(){return doc.documentElement.dataset.displayMotion!=='false'&&!root.matchMedia?.('(prefers-reduced-motion: reduce)').matches;}
+  function animate(element,frames,duration){return motionAllowed()&&typeof element.animate==='function'?element.animate(frames,{duration,easing:'cubic-bezier(.2,.7,.2,1)'}):null;}
   function clear(){root.clearTimeout(timer);timer=null;}
+  function cancelCard(){cardAnimation?.cancel();cardAnimation=null;}
+
   function pause(){paused=true;clear();pauseButton.textContent='Resume cards';}
   function visible(){return !dead&&!panel.hidden&&!doc.hidden&&!hub.closest('[hidden]')&&(doc.body.dataset.companion||'workspace')==='workspace';}
   function schedule(){clear();if(paused||!visible())return;timer=root.setTimeout(()=>{if(!visible()){pause();return;}if(options.voiceBusy?.()){schedule();return;}next();},9000);}
@@ -90,7 +94,7 @@
    if(!visible())return;const card=cards[index];if(!card)return;
    if(spoken){options.stopNarration?.();spoken=false;}
    body.classList.remove('brief-expanded');body.replaceChildren();const label=doc.createElement('small'),title=doc.createElement('h3'),detail=doc.createElement('p'),source=doc.createElement('small');
-   label.textContent=card.regional?'REGIONAL NEWS':topics[topic].toUpperCase();title.textContent=card.title;detail.textContent=card.detail;source.textContent=card.source;if(card.image){const image=doc.createElement('img');image.className='scene-brief-image';image.src=card.image;image.alt='';image.decoding='async';image.referrerPolicy='no-referrer';image.onerror=()=>image.remove();body.append(image);}body.append(label,title,detail,source);options.onCard?.({kind:card.kind,unavailable:!!card.unavailable});
+   label.textContent=card.regional?'REGIONAL NEWS':topics[topic].toUpperCase();title.textContent=card.title;detail.textContent=card.detail;source.textContent=card.source;body.append(label,title);if(card.image){const image=doc.createElement('img');image.className='scene-brief-image';image.src=card.image;image.alt='';image.decoding='async';image.referrerPolicy='no-referrer';image.onerror=()=>image.remove();body.append(image);}body.append(detail,source);options.onCard?.({kind:card.kind,unavailable:!!card.unavailable});
    for(const b of panel.querySelectorAll('[data-brief-topic]'))b.setAttribute('aria-pressed',String(b.dataset.briefTopic===topics[topic]));
    progress.textContent=(topic+1)+' / '+topics.length+' topics · '+(index+1)+' / '+cards.length+' items · '+(card.unavailable?'Needs attention':card.scope||'Connected source');
    body.classList.remove('brief-enter');void body.offsetWidth;body.classList.add('brief-enter');
@@ -110,7 +114,7 @@
    return {state:messages.length||live.state==='connected'?'connected':'unavailable',messages,detail:'No registered inbox could be read. Check Connections and Mac access.'};
   }
   async function load(nextTopic){
-   clear();controller?.abort();controller=new AbortController();const readController=controller,own=++epoch;topic=nextTopic;index=0;cards=[];body.textContent='Bringing the next item into view…';progress.textContent='Reading the connected source…';
+   clear();cancelCard();controller?.abort();controller=new AbortController();const readController=controller,own=++epoch;topic=nextTopic;index=0;cards=[];body.textContent='Bringing the next item into view…';progress.textContent='Reading the connected source…';
    const kind=topics[topic],cached=cache.get(kind);if(cached){cards=cached;render();return;}
    const timeout=root.setTimeout(()=>readController.abort(),10000);
    try{const data=kind==='mail'?await readMail(readController.signal):await options.api(paths[kind],undefined,{signal:readController.signal});if(own!==epoch||dead)return;cards=briefingCards(kind,data);cache.set(kind,cards);}
@@ -118,10 +122,21 @@
    finally{root.clearTimeout(timeout);}
    if(own===epoch)render();
   }
-  function finish(){pause();progress.textContent='You’re up to date with this briefing. What would you like to explore?';}
-  function next(){if(index+1<cards.length){index++;render();}else if(!topicOnly&&topic<topics.length-1)load(topic+1);else finish();}
-  function close(focus=true){clear();++epoch;controller?.abort();panel.hidden=true;launch.setAttribute('aria-expanded','false');hub.classList.remove('briefing-open');if(spoken){options.stopNarration?.();spoken=false;}if(focus)launch.focus({preventScroll:true});}
-  function open(kind='news',read=false,onlyThisTopic=false){topicOnly=onlyThisTopic;options.onOpen?.();paused=false;pauseButton.textContent='Pause cards';panel.hidden=false;panel.querySelector('input').checked=read;hub.classList.add('briefing-open');launch.setAttribute('aria-expanded','true');load(Math.max(0,topics.indexOf(kind)));panel.querySelector('[data-brief-close]').focus({preventScroll:true});}
+  function finish(){pause();progress.textContent='You’re up to date with this briefing. What would you like to explore?';if(topicOnly)close(false);}
+  function next(){
+   if(cardAnimation||!visible())return;clear();const own=epoch;
+   const advance=()=>{if(own!==epoch||!visible())return;if(index+1<cards.length){index++;render();}else if(!topicOnly&&topic<topics.length-1)load(topic+1);else finish();};
+   cardAnimation=animate(body,[{opacity:1,transform:'translate3d(0,0,0)'},{opacity:0,transform:'translate3d(-22px,-4px,0)'}],170);
+   if(cardAnimation){const current=cardAnimation;current.finished.then(()=>{if(cardAnimation!==current)return;cardAnimation=null;advance();}).catch(()=>{});}else advance();
+  }
+  function close(focus=true){
+   clear();cancelCard();const own=++epoch;controller?.abort();panelAnimation?.cancel();panel.inert=true;
+   launch.setAttribute('aria-expanded','false');hub.classList.remove('briefing-open');if(spoken){options.stopNarration?.();spoken=false;}if(focus)launch.focus({preventScroll:true});
+   const done=()=>{if(own===epoch){panel.hidden=true;panel.inert=false;panelAnimation=null;}};
+   panelAnimation=animate(panel,[{opacity:1,transform:'translate3d(0,0,0) scale(1)'},{opacity:0,transform:'translate3d(35px,12px,0) scale(.95)'}],240);
+   if(panelAnimation)panelAnimation.finished.then(done).catch(()=>{});else done();
+  }
+  function open(kind='news',read=false,onlyThisTopic=false){panelAnimation?.cancel();cancelCard();panelAnimation=null;panel.inert=false;topicOnly=onlyThisTopic;options.onOpen?.();paused=false;pauseButton.textContent='Pause cards';panel.hidden=false;panel.querySelector('input').checked=read;hub.classList.add('briefing-open');launch.setAttribute('aria-expanded','true');panelAnimation=animate(panel,[{opacity:0,transform:'translate3d(38px,12px,0) scale(.95)'},{opacity:1,transform:'translate3d(0,0,0) scale(1)'}],420);load(Math.max(0,topics.indexOf(kind)));panel.querySelector('[data-brief-close]').focus({preventScroll:true});}
   launch.onclick=()=>{if(!panel.hidden)close();else open();};
   panel.querySelector('[data-brief-close]').onclick=()=>{options.onDismiss?.();close();};
   pauseButton.onclick=()=>{if(paused){paused=false;pauseButton.textContent='Pause cards';render();}else pause();};

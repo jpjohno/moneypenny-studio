@@ -39,3 +39,12 @@ test('reset placement restores a completed turn and clears pending motion',()=>{
  assert.ok(head.armature.quaternion.angleTo(director.rootRotation)<1e-6);
  assert.ok(head.armature.position.distanceTo(director.origin)<1e-6);
 });
+
+test('ordinary autonomy chooses restrained motion and avoids repeated large gestures',()=>{
+ const director=new MotionDirector(rig()),random=Math.random;
+ try{
+  Math.random=()=>.99;director.activity=.45;director.persona='Composed assistant';
+  director.autonomousChoice();assert.equal(director.queue[0].skill,'turn');assert.ok(director.queue[0].intensity<.25);
+  director.autonomousChoice();assert.equal(director.queue[0].skill,'idle');
+ }finally{Math.random=random;}
+});

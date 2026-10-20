@@ -301,3 +301,18 @@ body[data-companion="workspace"] .command-scene .moneypenny-presence{z-index:aut
 body[data-companion="workspace"] .command-scene .moneypenny-presence iframe{z-index:3}
 body[data-companion="workspace"] .command-scene .presence-footer{z-index:15}
 body[data-companion="workspace"] .command-scene[data-interaction="character"] .moneypenny-presence iframe{z-index:8}
+
+/* Lightweight translucent briefing: compositor transforms, no live blur pass. */
+body[data-hud-theme] .command-scene .scene-briefing{
+ background:linear-gradient(125deg,color-mix(in srgb,var(--display-surface) 86%,transparent),color-mix(in srgb,var(--display-surface) 72%,transparent));
+ border:1px solid color-mix(in srgb,var(--display-accent) 42%,transparent);
+ box-shadow:inset 0 1px 0 #c4f8ff24,0 18px 44px #0005;backdrop-filter:none;
+ transform-origin:85% 25%;isolation:isolate;
+}
+body[data-hud-theme] .command-scene.briefing-open .presence-atlas{opacity:.68}
+.scene-briefing header{border-bottom:1px solid var(--display-line)!important;padding-bottom:12px!important}
+.scene-brief-image{height:110px;opacity:.94;border:1px solid #b6eeff25}
+.scene-brief-card.brief-enter{animation:brief-arrive .42s cubic-bezier(.2,.7,.2,1) both}
+.scene-briefing [aria-pressed=true]{box-shadow:inset 0 -2px 0 var(--display-accent)!important}
+@media(prefers-reduced-motion:reduce){.scene-brief-card.brief-enter{animation:none}}
+html[data-display-motion=false] .scene-brief-card.brief-enter{animation:none}

@@ -75,12 +75,19 @@ export class RigController {
     // Slow, continuous respiration; never restart a breath at a turn boundary.
     const breath=Math.sin(this.idleTime*2*Math.PI/4.8);
     chest.scale.copy(this.chestScale);chest.scale.x*=1+.003*breath;chest.scale.z*=1+.004*breath;
-    const sway=quiet?0:Math.sin(this.idleTime*.63)*.004;
-    if(!quiet&&this.bones.Hips){
-      this.bones.Hips.position.x+=Math.sin(this.idleTime*.41)*.003;
-      this.bones.Hips.quaternion.multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(0,Math.sin(this.idleTime*.29)*.006,Math.sin(this.idleTime*.41)*.003)));
+    // Ease the quiet/active boundary instead of snapping an idle offset off.
+    this.idleBlend=(this.idleBlend??0)+((quiet?0:1)-(this.idleBlend??0))*(1-Math.exp(-Math.max(0,dt)/.6));
+    const blend=this.idleBlend,t=this.idleTime;
+    const sway=blend*(Math.sin(t*.43)*.004+Math.sin(t*.19+.7)*.002);
+    // Counter-rotation through the torso gives small weight shifts without
+    // translating the pelvis and sliding both planted feet across the floor.
+    if(this.bones.Hips)this.bones.Hips.quaternion.multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(0,blend*Math.sin(t*.29)*.004,sway*.45)));
+    chest.quaternion.multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(.002*breath,sway,-sway*.7)));
+    for(const [side,phase] of [['Left',0],['Right',1.7]]){
+      const arm=this.bones[side+'Arm'],forearm=this.bones[side+'ForeArm'];
+      if(arm)arm.quaternion.multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(blend*Math.sin(t*.53+phase)*.009,0,0)));
+      if(forearm)forearm.quaternion.multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(blend*(.006+.004*Math.sin(t*.37+phase)),0,0)));
     }
-    chest.quaternion.multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(.002*breath,sway,.002*Math.sin(this.idleTime*.47))));
   }
   resetBody(neutral=true){
     if(neutral||this.head.studioNeutral||this.settling>0)for(const name of this.bodyNames){this.bones[name].quaternion.copy(this.rest[name].q);this.bones[name].position.copy(this.rest[name].p);}

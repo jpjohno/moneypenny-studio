@@ -1,0 +1,26 @@
+{
+  "apply_after": "jjrvis-motion-recovery.patch",
+  "method": "copy_matching_source_files",
+  "files": {
+    "scene-layout.js": {
+      "before": "7895c33ad1af7c8dc7e3d01d002a5a18a1cafb9fd6ffed8743695bf23fe86e7f",
+      "after": "9ffb01e7ec8f2334ec503aa57643b9eb15865dc031bedc34d0afcc53aa11b1d7"
+    },
+    "command-scene.css": {
+      "before": "521215167993902248f071d36efd7d4ae588da2491d239d40d0904179d008a49",
+      "after": "e952b05f258896c600eb678a7b4157bb9f6814adebc6466e813d6352809b44f5"
+    },
+    "presence_proxy.py": {
+      "before": "29b1a7d62de411027e604b892b83e5369368572b3debdcf409d3e3138f9f9da8",
+      "after": "85d7f8397f9f65ea981e2949dc5b5009a68981d9d87b05979acf15cd81c05031"
+    },
+    "tests/command-scene.test.cjs": {
+      "before": "34f356b4618bb99de53b1e70f3667a84d31f42b2f08bbb1ddabbf1197416af0b",
+      "after": "8932c4ccb8efb145bd8234a1f8eab2f002b5eb719bdd0d21af303f6e6d3f2f4a"
+    },
+    "tests/test_presence_proxy.py": {
+      "before": "f96b0d2dc34b7ca0321692a1fdcbb7d9b75fd52635d05d38eb8148956dea2115",
+      "after": "e0fe76b5d7051fafbd9c5715f765eb06b753ff00b5121b8d280d3560866ab3e5"
+    }
+  }
+}

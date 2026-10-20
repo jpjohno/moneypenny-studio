@@ -157,6 +157,7 @@ test('top-right briefing is lazy, advances items and topics, and preserves the a
  const metrics=await page.locator('.scene-briefing').evaluate(node=>{const r=node.getBoundingClientRect();return {right:r.right,width:r.width,viewport:innerWidth};});
  assert.ok(metrics.right<=metrics.viewport&&metrics.width>=300);
  await page.getByRole('button',{name:'Close briefing',exact:true}).click();
+ await page.locator('.scene-briefing').waitFor({state:'hidden'});
  assert.equal(await page.locator('.scene-briefing').isVisible(),false);
  assert.deepEqual(errors,[]);
 }));
@@ -189,5 +190,19 @@ test('explicit presentation can choose a topic without narrating private text by
  await page.getByText('Fixture WhatsApp text',{exact:true}).waitFor();
  assert.equal(await page.locator('.scene-briefing input[type=checkbox]').isChecked(),true);
  assert.equal(await page.evaluate(()=>originalFrame===document.querySelector('#moneypenny-presence')),true);
+ assert.deepEqual(errors,[]);
+}));
+
+
+test('briefing exit can be cancelled by reopening and reduced motion closes immediately',{skip:!canRun},async()=>withFixture(async(page,errors)=>{
+ await load(page,{width:1440,height:1000});
+ await page.evaluate(()=>{presenter.open('news');presenter.close(false);presenter.open('news');});
+ await page.getByRole('heading',{name:'Fixture regional headline'}).waitFor();
+ await page.waitForTimeout(500);
+ assert.equal(await page.locator('.scene-briefing').isVisible(),true);
+ assert.equal(await page.locator('.scene-briefing').evaluate(n=>n.inert),false);
+ await page.emulateMedia({reducedMotion:'reduce'});
+ await page.getByRole('button',{name:'Close briefing',exact:true}).click();
+ assert.equal(await page.locator('.scene-briefing').isVisible(),false);
  assert.deepEqual(errors,[]);
 }));

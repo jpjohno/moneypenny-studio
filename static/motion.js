@@ -70,9 +70,11 @@ export class MotionDirector {
   }
   autonomousChoice() {
     const playful=/play|dance|jig|lively|expressive|energetic/i.test(this.persona);
-    const choices=playful&&this.activity>.65?['dance','jig','turn','stretch','walk']:['stretch','idle','turn','idle'];
-    const skill=choices[Math.floor(Math.random()*choices.length)];
-    this.queue=[{skill,duration:skill==='idle'?3:5+Math.random()*3,intensity:.25+this.activity*.5,source:'persona'}];
+    const choices=playful&&this.activity>.65?['dance','jig','turn','stretch','walk']:['idle','idle','stretch','idle','turn'];
+    let skill=choices[Math.floor(Math.random()*choices.length)];
+    if(skill===this.lastAutonomousSkill&&skill!=='idle')skill='idle';
+    this.lastAutonomousSkill=skill;
+    this.queue=[{skill,duration:skill==='idle'?3:5+Math.random()*3,intensity:playful&&this.activity>.65?.25+this.activity*.4:.12+this.activity*.2,source:'persona'}];
   }
   applyHeading(heading){
     const root=this.head.armature,yaw=new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0),heading);
