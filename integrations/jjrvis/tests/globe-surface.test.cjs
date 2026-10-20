@@ -60,3 +60,15 @@ test('bundled NASA image metadata matches the original small historical source',
  assert.ok(data.length<300000);assert.match(metadata.source,/^https:\/\/eoimages\.gsfc\.nasa\.gov\//);
  assert.match(metadata.description,/not a live satellite or weather feed/);assert.match(metadata.conditions,/Do not imply NASA endorsement/);
 });
+
+test('accelerated globe matches geographic texture centres and caches a paused view',{skip:Number(process.versions.node.split('.')[0])<20},async()=>{
+ const {chromium}=require('playwright-core'),http=require('node:http');
+ const server=http.createServer((req,res)=>{if(req.url==='/globe-earth.jpg'){res.setHeader('Content-Type','image/jpeg');res.end(fs.readFileSync(path.join(__dirname,'../globe-earth.jpg')));}else if(req.url==='/globe-surface.js'){res.setHeader('Content-Type','text/javascript');res.end(source);}else res.end('<html><body><canvas id="review" width="420" height="420"></canvas><script src="/globe-surface.js"></script></body></html>');});
+ await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));let browser;
+ try{browser=await chromium.launch({executablePath:'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',headless:true});const page=await browser.newPage();await page.goto('http://127.0.0.1:'+server.address().port);
+ const result=await page.evaluate(async()=>{const ctx=document.querySelector('canvas').getContext('2d'),tc=document.createElement('canvas');tc.width=1024;tc.height=512;const tx=tc.getContext('2d'),pixels=tx.createImageData(1024,512);for(let y=0;y<512;y++)for(let x=0;x<1024;x++){const n=(y*1024+x)*4;pixels.data.set([x/1023*255,y/511*255,80,255],n);}tx.putImageData(pixels,0,0);const url=URL.createObjectURL(await new Promise(resolve=>tc.toBlob(resolve))),surface=JJGlobeSurface.create([],{textureURL:url,detailResolution:768,maxFps:30});await surface.ready;const results=[];
+ for(const [yaw,pitch,t]of [[0,0,0],[-75,50,100],[120,-20,200]]){surface.draw(ctx,210,210,166,yaw,pitch,t);const actual=[...ctx.getImageData(210,210,1,1).data],uv=JJGlobeSurface.uvAt(0,0,yaw,pitch),expected=[...tx.getImageData(Math.floor(uv.u*tc.width),Math.floor(uv.v*tc.height),1,1).data];results.push({actual,expected});}
+ const count=surface.stats().renderedFrames;surface.draw(ctx,210,210,166,120,-20,1000);const cached=surface.stats().renderedFrames===count,stats=surface.stats();surface.destroy();return {stats,results,cached};});
+ assert.equal(result.stats.renderer,'webgl');assert.equal(result.stats.resolution,768);assert.equal(result.cached,true);for(const sample of result.results){assert.equal(sample.actual[3],255);for(let i=0;i<3;i++)assert.ok(Math.abs(sample.actual[i]-sample.expected[i]*.93)<5,JSON.stringify(sample));}
+ }finally{await browser?.close();await new Promise(resolve=>server.close(resolve));}
+});

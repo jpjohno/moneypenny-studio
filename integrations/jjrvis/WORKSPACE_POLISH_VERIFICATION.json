@@ -1,0 +1,21 @@
+{
+  "date": "2026-10-20",
+  "state": "implemented_local_verified",
+  "backend_tests": 428,
+  "browser_render_voice_layout_tests": 37,
+  "new_computer_file_tests": 10,
+  "patch_application": "byte_exact_verified",
+  "live_UI": [
+    "fresh_Mac_search",
+    "Markdown_preview",
+    "selected_document_prepared_for_Ask",
+    "synthetic_PDF_page_visible",
+    "sharper_GPU_Earth"
+  ],
+  "original_app_open": "fixed_arguments_mock_test_only",
+  "private_document_model_submission": false,
+  "new_spoken_acceptance": false,
+  "photographic_realism": false,
+  "unrestricted_autonomy": false,
+  "commercial_ready": false
+}

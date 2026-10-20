@@ -1,0 +1,19 @@
+{
+  "apply_after": "jjrvis-capture-rate.patch",
+  "zero_context": true,
+  "byte_exact_application_verified": true,
+  "files": {
+    "workspace.js": {
+      "before": "e613d441b8fb1375c7e6821d0cf4a897107379973686d38dc93b9bd0600fa779",
+      "after": "74f52ed3ae82e0a1e4de4e9ddb3fe1917a7742422ebf38bf76cb2b719f498919"
+    },
+    "jarvis_comm_broker.py": {
+      "before": "ac718ddd12243bdbe72d5ca1312cfe587fe7dde7326a213debc390370997e3c8",
+      "after": "074965e2782056eb7a451cd4afa082dcddf0a1f399125065fc46bf487414d08c"
+    },
+    "jjrvis_core.py": {
+      "before": "471e81c14fd2dc29936acda30fa21383f417f3f76487f0c343197571530ebf14",
+      "after": "0b7de2133de138947d474eaa37e82d0d254aa21e82bd14a1bc0f6357254e29aa"
+    }
+  }
+}

@@ -1,3 +1,7 @@
+# Latest file and world update
+
+See [WORKSPACE_POLISH_RELEASE.md](WORKSPACE_POLISH_RELEASE.md) for fresh Mac search, PDF/Office previews, selected-document questions, explicit app launchers and the sharper GPU globe. Apply after the capture-rate increment. Photographic character and unrestricted autonomy remain unachieved.
+
 # Latest Mac capture repair
 
 See [CAPTURE_RATE_RELEASE.md](CAPTURE_RATE_RELEASE.md) for actual-rate PCM conversion, the successful spoken-map test, configured versus offline transcription and current limits.
