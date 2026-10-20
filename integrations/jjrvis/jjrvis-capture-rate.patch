@@ -1,0 +1,42 @@
+diff --git a/workspace.js b/workspace.js
+--- a/workspace.js
++++ b/workspace.js
+@@ -508,0 +509,6 @@
++// AudioContext may retain the hardware rate in WebKit. Keep PCM at the
++// decoder's actual 16 kHz contract, with phase preserved across callbacks.
++function pcmResampler(inputRate,targetRate=16000){
++ let phase=0,sum=0,count=0;
++ return input=>{const output=[];for(const sample of input){sum+=sample;count++;phase+=targetRate;if(phase>=inputRate){const value=Math.max(-32768,Math.min(32767,(sum/count)*32768));while(phase>=inputRate){output.push(value);phase-=inputRate;}sum=0;count=0;}}return new Int16Array(output);};
++}
+@@ -517,0 +524 @@
++   this.resample=pcmResampler(localAudioContext.sampleRate||16000);
+@@ -523,2 +530,2 @@
+-    const input=event.inputBuffer.getChannelData(0),pcm=new Int16Array(input.length);let power=0;
+-    for(let i=0;i<input.length;i++){power+=input[i]*input[i];pcm[i]=Math.max(-32768,Math.min(32767,input[i]*32768));}
++    const input=event.inputBuffer.getChannelData(0),pcm=this.resample(input);let power=0;
++    for(let i=0;i<input.length;i++)power+=input[i]*input[i];
+@@ -546 +553 @@
+-   if(this.running&&data.text){const results=[];results[this.resultIndex]=Object.assign([{transcript:data.text}],{isFinal:true});this.onresult?.({resultIndex:this.resultIndex++,results});}
++   if(this.running&&data.text){const results=[];results[this.resultIndex]=Object.assign([{transcript:data.text}],{isFinal:true});this.onresult?.({resultIndex:this.resultIndex++,results});}else if(this.running)this.onnomatch?.({});
+@@ -752 +759,3 @@
+-let nativeSpeechAvailable=nativeApple&&typeof window.SpeechRecognition==='function';
++// The Mac capture path uses the same bounded configured decoder as the verified browser.
++// Keep Apple's bridge available for future explicit selection, not silent fallback.
++let nativeSpeechAvailable=false;
+@@ -987 +996 @@
+-  wakeStarter=async()=>{if(stopped||!$('#login')?.hidden||!wakeEnabled||wakePaused||activeRecognition||document.hidden)return;clearTimeout(wakeRestart);try{const r=new Recognition();activeRecognition=r;r.wakeMode=true;r.lang='en-GB';r.interimResults=true;r.continuous=true;r.maxAlternatives=1;r.onstart=()=>{if(conversationInvite){conversationInvite=false;speak('What would you like to work on?');return;}wake.textContent=wakeArmedUntil>Date.now()?'◉ Yes, James?':'◉ Listening';wake.classList.add('voice-active');voiceState(wakeArmedUntil>Date.now()?'Listening for your question…':'Microphone ready — say “Moneypenny” or “Jarvis”…');};r.onresult=e=>{for(let i=e.resultIndex||0;i<e.results.length;i++){if(!e.results[i].isFinal){const partial=e.results[i]?.[0]?.transcript||'';if(r.nativeSpeech&&activeUtterance&&isVoiceInterruption(partial,activeUtterance.spokenText||''))interruptReply();else if(partial&&!activeUtterance)voiceState('Hearing: '+partial.slice(0,160));continue;}const heard=e.results[i]?.[0]?.transcript?.trim()||'';if(!heard)continue;if(isVoiceStopCommand(heard)){stopAllVoice();wakeArmedUntil=0;return;}if(activeUtterance||Date.now()<speechEchoUntil)continue;r.heardAny=true;wakeFailures=0;const match=heard.match(/\b(?:hey\s+)?(?:jarvis|jjrvis|money\s*penny)\b[\s,:-]*(.*)/i);let question='';if(match){question=match[1].trim();if(!question){wakeArmedUntil=Date.now()+15000;wake.textContent='◉ Yes, James?';voiceState('Yes, James? I’m listening for your question…');continue;}}else if(wakeArmedUntil>Date.now()){question=heard;}else continue;if(!question)continue;$('#assistant-input').value=question;r.submitOnEnd=true;wakePaused=true;wakeArmedUntil=Date.now()+45000;voiceState('Got it. Asking JJRVIS…');try{r.stop();}catch{}}};r.onerror=e=>{if(r.nativeSpeech&&e.error==='service-not-allowed'){nativeSpeechAvailable=false;r.heardAny=true;r.lastError=null;voiceState('On-device English speech is unavailable. Using your configured transcription service.');return;}r.lastError=e.error;};r.onend=()=>{if(activeRecognition!==r)return;activeRecognition=null;if(r.submitOnEnd){voiceReplyRequested=true;form.requestSubmit();return;}if(!wakeEnabled||wakePaused)return;
++  wakeStarter=async()=>{if(stopped||!$('#login')?.hidden||!wakeEnabled||wakePaused||activeRecognition||document.hidden)return;clearTimeout(wakeRestart);try{const r=new Recognition();activeRecognition=r;r.wakeMode=true;r.onnomatch=()=>voiceState('Sound received, but no words recognised. Please try again.');r.lang='en-GB';r.interimResults=true;r.continuous=true;r.maxAlternatives=1;r.onstart=()=>{if(conversationInvite){conversationInvite=false;speak('What would you like to work on?');return;}wake.textContent=wakeArmedUntil>Date.now()?'◉ Yes, James?':'◉ Listening';wake.classList.add('voice-active');voiceState(wakeArmedUntil>Date.now()?'Listening for your question…':'Microphone ready — say “Moneypenny” or “Jarvis”…');};r.onresult=e=>{for(let i=e.resultIndex||0;i<e.results.length;i++){if(!e.results[i].isFinal){const partial=e.results[i]?.[0]?.transcript||'';if(r.nativeSpeech&&activeUtterance&&isVoiceInterruption(partial,activeUtterance.spokenText||''))interruptReply();else if(partial&&!activeUtterance)voiceState('Hearing: '+partial.slice(0,160));continue;}const heard=e.results[i]?.[0]?.transcript?.trim()||'';if(!heard)continue;if(isVoiceStopCommand(heard)){stopAllVoice();wakeArmedUntil=0;return;}if(activeUtterance||Date.now()<speechEchoUntil)continue;r.heardAny=true;wakeFailures=0;voiceState('Heard: '+heard.slice(0,160));const match=heard.match(/\b(?:hey\s+)?(?:jarvis|jjrvis|money\s*penny)\b[\s,:-]*(.*)/i);let question='';if(match){question=match[1].trim();if(!question){wakeArmedUntil=Date.now()+15000;wake.textContent='◉ Yes, James?';voiceState('Yes, James? I’m listening for your question…');continue;}}else if(wakeArmedUntil>Date.now()){question=heard;}else continue;if(!question)continue;$('#assistant-input').value=question;r.submitOnEnd=true;wakePaused=true;wakeArmedUntil=Date.now()+45000;voiceState('Got it. Asking JJRVIS…');try{r.stop();}catch{}}};r.onerror=e=>{if(r.nativeSpeech&&e.error==='service-not-allowed'){nativeSpeechAvailable=false;r.heardAny=true;r.lastError=null;voiceState('On-device English speech is unavailable. Using your configured transcription service.');return;}r.lastError=e.error;};r.onend=()=>{if(activeRecognition!==r)return;activeRecognition=null;if(r.submitOnEnd){voiceReplyRequested=true;form.requestSubmit();return;}if(!wakeEnabled||wakePaused)return;
+diff --git a/jarvis_comm_broker.py b/jarvis_comm_broker.py
+--- a/jarvis_comm_broker.py
++++ b/jarvis_comm_broker.py
+@@ -1350,0 +1351,4 @@
++        engine = request.query_params.get("engine", "configured")
++        if engine not in {"configured", "local"}:
++            raise HTTPException(400, "Unsupported speech engine")
++        use_cloud = engine == "configured" and cloud_ai.enabled()
+@@ -1359 +1363 @@
+-            text = await cloud_ai.transcribe(bytes(pcm)) if cloud_ai.enabled() else await asyncio.to_thread(transcribe, bytes(pcm))
++            text = await cloud_ai.transcribe(bytes(pcm)) if use_cloud else await asyncio.to_thread(transcribe, bytes(pcm))
+@@ -1362 +1366 @@
+-        return {"text": text, "engine": "openai-transcribe" if cloud_ai.enabled() else "vosk-local"}
++        return {"text": text, "engine": "openai-transcribe" if use_cloud else "vosk-local"}

@@ -1,0 +1,4 @@
+const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm'),path=require('node:path');
+const src=fs.readFileSync(path.join(__dirname,'../workspace.js'),'utf8'),ctx={};vm.createContext(ctx);vm.runInContext(src.slice(src.indexOf('function pcmResampler('),src.indexOf('class LocalRecognition {')),ctx);
+for(const rate of [16000,24000,44100,48000,96000])test(`hardware ${rate} Hz yields exactly one second of 16 kHz PCM across callback boundaries`,()=>{const convert=ctx.pcmResampler(rate);let count=0;for(let i=0;i<rate;i+=4096){const pcm=convert(new Float32Array(Math.min(4096,rate-i)).fill(.25));count+=pcm.length;assert.ok([...pcm].every(x=>x===8192));}assert.equal(count,16000);});
+test('capture conversion saturates PCM rather than wrapping loud samples',()=>{assert.deepEqual(Array.from(ctx.pcmResampler(16000)(new Float32Array([2,-2]))),[32767,-32768]);});

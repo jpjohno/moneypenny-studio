@@ -1,3 +1,7 @@
+# Latest Mac capture repair
+
+See [CAPTURE_RATE_RELEASE.md](CAPTURE_RATE_RELEASE.md) for actual-rate PCM conversion, the successful spoken-map test, configured versus offline transcription and current limits.
+
 # Latest phrase repair
 
 See [VOICE_PHRASE_REPAIR.md](VOICE_PHRASE_REPAIR.md) for the failed spoken-command diagnosis, phrase completion correction, real native input levels and v30 fabric repair. The repeated real spoken test remains pending.

@@ -209,3 +209,24 @@ async def test_shutdown_stops_legacy_player_and_removes_private_audio(isolated, 
     assert isolated.state.say_process is None
     assert not any(path.exists() for path in paths)
     assert not isolated.state.voice_cleanup_tasks
+
+@pytest.mark.anyio
+async def test_explicit_offline_transcription_cannot_fall_through_to_cloud(isolated, monkeypatch):
+    import local_speech
+    monkeypatch.setattr(local_speech, 'transcribe', lambda pcm: 'offline fixture words')
+    async def forbidden(*args, **kwargs):
+        pytest.fail('Explicit local speech must never call the cloud')
+    monkeypatch.setattr(cloud_ai, 'transcribe', forbidden)
+    async with client(isolated) as request:
+        result = await request.post('/v1/workspace/voice/transcribe?engine=local',content=b'\0\0'*1600,headers={'Content-Type':'application/octet-stream'})
+        assert result.status_code == 200
+        assert result.json() == {'text':'offline fixture words','engine':'vosk-local'}
+        assert (await request.post('/v1/workspace/voice/transcribe?engine=unknown',content=b'\0\0',headers={'Content-Type':'application/octet-stream'})).status_code == 400
+
+@pytest.mark.anyio
+async def test_configured_transcription_retains_the_selected_provider(isolated, monkeypatch):
+    async def synthetic(pcm):return 'configured fixture words'
+    monkeypatch.setattr(cloud_ai, 'transcribe', synthetic)
+    async with client(isolated) as request:
+        result = await request.post('/v1/workspace/voice/transcribe',content=b'\0\0'*1600,headers={'Content-Type':'application/octet-stream'})
+        assert result.json() == {'text':'configured fixture words','engine':'openai-transcribe'}
