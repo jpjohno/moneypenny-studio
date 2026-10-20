@@ -27,3 +27,15 @@ test('free text can request a composed whole-body sequence',()=>{
  assert.ok(plan.steps.some(x=>x.skill==='reach'));assert.ok(plan.steps.some(x=>x.skill==='jig'));assert.ok(plan.steps.some(x=>x.skill==='bow'));
  assert.deepEqual(plan.steps.map(x=>x.skill),['jig','reach','bow']);
 });
+
+test('reset placement restores a completed turn and clears pending motion',()=>{
+ const head=rig(),director=new MotionDirector(head);director.autonomous=false;
+ director.plan({steps:[{skill:'turn',duration:2,intensity:1}]});
+ for(let i=0;i<60;i++)director.update(40);
+ assert.ok(Math.abs(director.heading)>1);
+ director.resetPlacement();director.update(40);
+ assert.equal(director.heading,0);assert.equal(director.currentHeading,0);
+ assert.equal(director.active,null);assert.equal(director.queue.length,0);
+ assert.ok(head.armature.quaternion.angleTo(director.rootRotation)<1e-6);
+ assert.ok(head.armature.position.distanceTo(director.origin)<1e-6);
+});

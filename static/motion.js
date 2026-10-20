@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 
-export const MOTION_SKILLS=['reach','wave','jig','dance','walk','turn','stretch','bow','sit','kneel','lie_back','splits','supported_step','bend_forward','idle','custom'];
+export const MOTION_SKILLS=['reach','wave','jig','dance','walk','turn','stretch','bow','sit','kneel','lie_back','splits','supported_step','bend_forward','idle','custom','present'];
 const ease=x=>x*x*(3-2*x);
 const clamp=(x,a,b)=>Math.min(b,Math.max(a,x));
 
@@ -17,6 +17,7 @@ export class MotionDirector {
     this.onChoosePlan=null;this.planning=false;this.heading=0;this.currentHeading=0;
   }
   stop(){this.queue=[];if(this.active){this.active.release=this.clock;this.active.frozenHeading=this.currentHeading;this.heading=this.currentHeading;}this.nextDecision=this.clock+5;}
+  resetPlacement(){this.queue=[];this.active=null;this.heading=0;this.currentHeading=0;this.head.armature.quaternion.copy(this.rootRotation);this.head.armature.position.copy(this.origin);this.nextDecision=this.clock+5;}
   plan(plan,source='instruction') {
     if(!plan?.steps?.length)return false;
     if(['conversation','persona'].includes(source)&&[this.active,...this.queue].some(step=>step&&!['conversation','persona'].includes(step.source)))return false;
@@ -119,7 +120,7 @@ export class MotionDirector {
       case 'kneel':break;
       case 'lie_back':break;
       case 'splits':break;
-      case 'supported_step':case 'bend_forward':case 'wave':break;
+      case 'supported_step':case 'bend_forward':case 'wave':case 'present':break;
       case 'reach':break;
       case 'custom': {
         const frames=a.frames||[];
@@ -132,7 +133,7 @@ export class MotionDirector {
     const q=this.rootRotation.clone().multiply(new THREE.Quaternion().setFromEuler(root));
     this.head.armature.quaternion.copy(this.rootRotation).slerp(q,w);
     this.head.armature.position.copy(this.origin).addScaledVector(offset,w);
-    if(this.rig&&['splits','sit','kneel','lie_back','supported_step','bend_forward','wave'].includes(a.skill))this.rig.poseSkill(a.skill,w,a.side,t);
+    if(this.rig&&['splits','sit','kneel','lie_back','supported_step','bend_forward','wave','present'].includes(a.skill))this.rig.poseSkill(a.skill,w,a.side,t);
     if(this.rig&&this.head.studioNeutral&&a.skill==='stretch')this.rig.poseSkill('stretch',w*k);
     if(a.skill==='reach')this.reach(a.target,a.side,w);
     const directTurn=a.skill==='turn'&&!['persona','conversation'].includes(a.source);
@@ -152,7 +153,7 @@ export function movementFromText(value) {
   const step=lower.match(/\b(?:(?:put|place|rest|raise|lift)\s+(?:(?:your|her|my|one|the)\s+)?(?:(left|right)\s+)?(?:foot|leg)|one\s+(?:foot|leg))\s+(?:up\s+)?on\s+(?:(?:the|a|toilet|closed)\s+)*(?:seat|step|stool|lid)\b/);
   if(step)found.push({at:step.index,step:{skill:'supported_step',side:step[1]||'right',duration:duration?clamp(Number(duration[1]),1,20):8,intensity:1}});
   for(const match of lower.matchAll(/(?:touch|rest|place|put|reach)[^.?!]{0,45}?(shoulder|belly button|belly|navel|head|chin|chest|hip|knee|ear|nose)/g))found.push({at:match.index,step:{skill:'reach',target:/belly|navel/.test(match[1])?'belly':match[1],side:match[0].includes('left hand')?'left':'right',duration:duration?clamp(Number(duration[1]),1,20):5}});
-  for(const [pattern,skill] of [[/\bjig\b/,'jig'],[/\bdanc(?:e|ing)\b/,'dance'],[/\bsplits\b/,'splits'],[/lie.*back|lying.*back/,'lie_back'],[/\bkneel/,'kneel'],[/\bsit\b/,'sit'],[/\bstretch/,'stretch'],[/\bwalk/,'walk'],[/turn around|\bspin\b/,'turn'],[/\bbow\b/,'bow']]){
+  for(const [pattern,skill] of [[/\bwave\b/,'wave'],[/\bjig\b/,'jig'],[/\bdanc(?:e|ing)\b/,'dance'],[/\bsplits\b/,'splits'],[/lie.*back|lying.*back/,'lie_back'],[/\bkneel/,'kneel'],[/\bsit\b/,'sit'],[/\bstretch/,'stretch'],[/\bwalk/,'walk'],[/turn around|\bspin\b/,'turn'],[/\bbow\b/,'bow']]){
     const match=lower.match(pattern);if(match&&!(skill==='dance'&&found.some(x=>x.step.skill==='jig')))found.push({at:match.index,step:{skill,duration:duration?clamp(Number(duration[1]),1,20):['jig','dance','walk'].includes(skill)?10:6,intensity:.8}});
   }
   return found.length?{steps:found.sort((a,b)=>a.at-b.at).slice(0,8).map(x=>x.step)}:null;

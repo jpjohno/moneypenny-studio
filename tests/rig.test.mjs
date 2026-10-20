@@ -129,3 +129,16 @@ test('local wave lifts one hand without imposing a generic pose on both shoulder
  assert.ok(position(r.bones.LeftHand).distanceTo(left)<1e-6);
  ['LeftShoulder','RightShoulder'].forEach((n,i)=>assert.deepEqual(r.bones[n].quaternion.toArray(),shoulders[i].toArray()));
 });
+
+
+test('presentation gesture moves the hand while preserving limb lengths and resets cleanly',()=>{
+ const r=new RigController(rig()),names=['LeftArm','LeftForeArm','LeftHand'];
+ const original=names.map(n=>position(r.bones[n]));
+ const lengths=[original[0].distanceTo(original[1]),original[1].distanceTo(original[2])];
+ r.poseSkill('present',1,'left');
+ const moved=names.map(n=>position(r.bones[n]));
+ assert.ok(moved[2].distanceTo(original[2])>.05);
+ assert.ok(Math.abs(moved[0].distanceTo(moved[1])-lengths[0])<1e-6);
+ assert.ok(Math.abs(moved[1].distanceTo(moved[2])-lengths[1])<1e-6);
+ r.resetBody();assert.ok(position(r.bones.LeftHand).distanceTo(original[2])<1e-6);
+});

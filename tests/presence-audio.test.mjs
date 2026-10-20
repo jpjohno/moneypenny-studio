@@ -36,3 +36,15 @@ test('oversized or unordered audio cannot start another decoder',async()=>{
  const h=harness();await h.controller.play({requestId:'reply',sequence:0,first:true,audio:new ArrayBuffer(6_000_045)});
  await h.phrase('unknown',1,false);assert.equal(h.decoded.length,0);
 });
+
+
+test('phrase edge ramps are bounded and do not overlap for short audio',async()=>{
+ const {connectSpeechSource}=await import('../static/presence-audio.js');
+ for(const duration of [.002,.1,3]){
+  const events=[],gain={gain:{setValueAtTime:(v,t)=>events.push([v,t]),linearRampToValueAtTime:(v,t)=>events.push([v,t])},connect(){}};
+  const source={buffer:{duration},connect(node){assert.equal(node,gain);}};
+  connectSpeechSource({currentTime:5,createGain:()=>gain},source,{});
+  assert.deepEqual(events.map(x=>x[0]),[0,1,1,0]);assert.equal(events[0][1],5);assert.equal(events.at(-1)[1],5+duration);
+  assert.ok(events.every((e,i)=>!i||e[1]>=events[i-1][1]));
+ }
+});

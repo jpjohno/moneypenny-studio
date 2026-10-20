@@ -59,7 +59,7 @@
    const rows=Array.isArray(data.items)?data.items:[],seen=new Set();
    const selected=rows.filter(item=>{if(!item.title||seen.has(item.url))return false;seen.add(item.url);return true;});
    selected.sort((a,b)=>(b.category==='local')-(a.category==='local'));
-   return selected.slice(0,5).map(item=>({kind,title:String(item.title),detail:String(item.summary||'Open the source for the full report.'),source:String(item.source||'Publisher')+' · '+time(item.published_at),view:'news',url:item.url,regional:item.category==='local'})).concat(selected.length?[]:fallback('No connected headlines were returned. Open News & TV to check the feeds.'));
+   return selected.slice(0,5).map(item=>({kind,title:String(item.title),detail:String(item.summary||'Open the source for the full report.'),source:String(item.source||'Publisher')+' · '+time(item.published_at),view:'news',url:item.url,image:newsImage(item.image),regional:item.category==='local'})).concat(selected.length?[]:fallback('No connected headlines were returned. Open News & TV to check the feeds.'));
   }
   if(kind==='markets'){
    const rows=(Array.isArray(data.markets)?data.markets:[]).slice(0,3);
@@ -72,6 +72,7 @@
   }
   return fallback('Source unavailable.');
  }
+ function newsImage(value){try{const url=new URL(value);return url.protocol==='https:'&&!url.username&&!url.password&&['ichef.bbci.co.uk','e3.365dm.com','i.guim.co.uk','s.france24.com','a57.foxnews.com','static.foxnews.com'].includes(url.hostname)?url.href:'';}catch{return '';}}
  function mountBriefing(hub,options={}){
   const doc=hub.ownerDocument,scene=hub.querySelector('.presence-scene');
   const launch=doc.createElement('button');launch.type='button';launch.className='scene-brief-launch';launch.textContent='✦ Brief me';launch.setAttribute('aria-expanded','false');
@@ -79,7 +80,7 @@
   panel.innerHTML='<header><span>YOUR BRIEFING</span><button type="button" data-brief-close aria-label="Close briefing">×</button></header><nav aria-label="Briefing topics"><button type="button" data-brief-topic="news">News</button><button type="button" data-brief-topic="markets">Markets</button><button type="button" data-brief-topic="mail">Email</button><button type="button" data-brief-topic="messages">Messages</button><button type="button" data-brief-topic="whatsapp">WhatsApp</button></nav><div class="scene-brief-card" aria-live="polite" aria-atomic="true"></div><div class="scene-brief-controls"><button type="button" data-brief-pause>Pause cards</button><button type="button" data-brief-next>Next item →</button><button type="button" data-brief-next-topic>Next topic</button><button type="button" data-brief-more>More ↗</button></div><label class="scene-brief-narration"><input type="checkbox" data-brief-narration> Read card summaries aloud</label><small class="scene-brief-progress" role="status"></small>';
   scene.append(launch,panel);
   const topics=['news','markets','mail','messages','whatsapp'],paths={news:'/v1/workspace/news-feeds',markets:'/v1/workspace/trading',mail:'/v1/workspace/mail',messages:'/v1/workspace/native/messages',whatsapp:'/v1/workspace/native/whatsapp'},cache=new Map();
-  let topic=0,index=0,cards=[],paused=false,timer=null,controller=null,epoch=0,dead=false,spoken=false;
+  let topic=0,index=0,cards=[],paused=false,timer=null,controller=null,epoch=0,dead=false,spoken=false,topicOnly=false;
   const body=panel.querySelector('.scene-brief-card'),progress=panel.querySelector('[role=status]'),pauseButton=panel.querySelector('[data-brief-pause]');
   function clear(){root.clearTimeout(timer);timer=null;}
   function pause(){paused=true;clear();pauseButton.textContent='Resume cards';}
@@ -89,7 +90,7 @@
    if(!visible())return;const card=cards[index];if(!card)return;
    if(spoken){options.stopNarration?.();spoken=false;}
    body.classList.remove('brief-expanded');body.replaceChildren();const label=doc.createElement('small'),title=doc.createElement('h3'),detail=doc.createElement('p'),source=doc.createElement('small');
-   label.textContent=card.regional?'REGIONAL NEWS':topics[topic].toUpperCase();title.textContent=card.title;detail.textContent=card.detail;source.textContent=card.source;body.append(label,title,detail,source);
+   label.textContent=card.regional?'REGIONAL NEWS':topics[topic].toUpperCase();title.textContent=card.title;detail.textContent=card.detail;source.textContent=card.source;if(card.image){const image=doc.createElement('img');image.className='scene-brief-image';image.src=card.image;image.alt='';image.decoding='async';image.referrerPolicy='no-referrer';image.onerror=()=>image.remove();body.append(image);}body.append(label,title,detail,source);options.onCard?.({kind:card.kind,unavailable:!!card.unavailable});
    for(const b of panel.querySelectorAll('[data-brief-topic]'))b.setAttribute('aria-pressed',String(b.dataset.briefTopic===topics[topic]));
    progress.textContent=(topic+1)+' / '+topics.length+' topics · '+(index+1)+' / '+cards.length+' items · '+(card.unavailable?'Needs attention':card.scope||'Connected source');
    body.classList.remove('brief-enter');void body.offsetWidth;body.classList.add('brief-enter');
@@ -118,11 +119,11 @@
    if(own===epoch)render();
   }
   function finish(){pause();progress.textContent='You’re up to date with this briefing. What would you like to explore?';}
-  function next(){if(index+1<cards.length){index++;render();}else if(topic<topics.length-1)load(topic+1);else finish();}
+  function next(){if(index+1<cards.length){index++;render();}else if(!topicOnly&&topic<topics.length-1)load(topic+1);else finish();}
   function close(focus=true){clear();++epoch;controller?.abort();panel.hidden=true;launch.setAttribute('aria-expanded','false');hub.classList.remove('briefing-open');if(spoken){options.stopNarration?.();spoken=false;}if(focus)launch.focus({preventScroll:true});}
-  function open(kind='news',read=false){options.onOpen?.();paused=false;pauseButton.textContent='Pause cards';panel.hidden=false;panel.querySelector('input').checked=read;hub.classList.add('briefing-open');launch.setAttribute('aria-expanded','true');load(Math.max(0,topics.indexOf(kind)));panel.querySelector('[data-brief-close]').focus({preventScroll:true});}
+  function open(kind='news',read=false,onlyThisTopic=false){topicOnly=onlyThisTopic;options.onOpen?.();paused=false;pauseButton.textContent='Pause cards';panel.hidden=false;panel.querySelector('input').checked=read;hub.classList.add('briefing-open');launch.setAttribute('aria-expanded','true');load(Math.max(0,topics.indexOf(kind)));panel.querySelector('[data-brief-close]').focus({preventScroll:true});}
   launch.onclick=()=>{if(!panel.hidden)close();else open();};
-  panel.querySelector('[data-brief-close]').onclick=()=>close();
+  panel.querySelector('[data-brief-close]').onclick=()=>{options.onDismiss?.();close();};
   pauseButton.onclick=()=>{if(paused){paused=false;pauseButton.textContent='Pause cards';render();}else pause();};
   panel.querySelector('[data-brief-next]').onclick=next;
   panel.querySelector('[data-brief-next-topic]').onclick=()=>topic<topics.length-1?load(topic+1):finish();
@@ -141,7 +142,7 @@
    close(false);options.navigate?.(card.view);
   };
   panel.querySelector('input').onchange=()=>{if(panel.querySelector('input').checked)render();else if(spoken){options.stopNarration?.();spoken=false;}};
-  for(const button of panel.querySelectorAll('[data-brief-topic]'))button.onclick=()=>load(topics.indexOf(button.dataset.briefTopic));
+  for(const button of panel.querySelectorAll('[data-brief-topic]'))button.onclick=()=>{topicOnly=false;load(topics.indexOf(button.dataset.briefTopic));};
   const activity=()=>{if(!visible())pause();else if(cards.length&&!body.querySelector('h3'))render();};const escape=e=>{if(e.key==='Escape'&&!panel.hidden&&!doc.querySelector('dialog[open]')){e.preventDefault();close();}};
   doc.addEventListener('visibilitychange',activity);root.addEventListener('jjrvis-companion-changed',activity);doc.addEventListener('keydown',escape);
   return {open,pause,close,destroy(){dead=true;close(false);doc.removeEventListener('visibilitychange',activity);root.removeEventListener('jjrvis-companion-changed',activity);doc.removeEventListener('keydown',escape);launch.remove();panel.remove();}};

@@ -25,6 +25,7 @@ OLLAMA = os.environ.get("MONEYPENNY_OLLAMA_URL", "http://127.0.0.1:11434").rstri
 LOCAL_CHARACTER = ROOT / ".runtime/character-workshop/Moneypenny-Performance-Candidate-v6.glb"
 SURFACE_CHARACTER = ROOT / ".runtime/character-workshop/Moneypenny-Performance-Candidate-v9.glb"
 STYLED_CHARACTER = ROOT / ".runtime/character-workshop/Moneypenny-Style-v26.glb"
+NATURAL_CHARACTER = ROOT / ".runtime/character-workshop/Moneypenny-Style-v32.glb"
 REFRESHED_CHARACTER = ROOT / ".runtime/character-workshop/Moneypenny-Style-v30.glb"
 FITTED_CHARACTER = ROOT / ".runtime/character-workshop/Moneypenny-Style-v27.glb"
 FREE_SURFACE_CHARACTER = ROOT / ".runtime/character-workshop/Moneypenny-Free-Surface-Reviewed.glb"
@@ -51,7 +52,7 @@ def valid_local_character(path):
 
 def local_character_path():
     """Prefer the reviewed surface revision, retaining the previous working rig."""
-    return next((path for path in (REFRESHED_CHARACTER, FITTED_CHARACTER, STYLED_CHARACTER, FREE_SURFACE_CHARACTER, SURFACE_CHARACTER, LOCAL_CHARACTER)
+    return next((path for path in (NATURAL_CHARACTER, REFRESHED_CHARACTER, FITTED_CHARACTER, STYLED_CHARACTER, FREE_SURFACE_CHARACTER, SURFACE_CHARACTER, LOCAL_CHARACTER)
                  if valid_local_character(path)), None)
 
 
@@ -236,7 +237,9 @@ def appearance_save():
 
 @app.get('/api/character/default')
 def default_character():
-    candidate = local_character_path()
+    look=request.args.get('look','latest')
+    if look not in {'latest','previous'}:return jsonify(error='Choose latest or previous'),400
+    candidate = local_character_path() if look=='latest' else next((p for p in (REFRESHED_CHARACTER,FITTED_CHARACTER,STYLED_CHARACTER) if valid_local_character(p)),None)
     if candidate is None:
         return jsonify(error="The local performance character is unavailable."), 404
     return send_file(candidate, mimetype="model/gltf-binary", conditional=True)
@@ -262,7 +265,7 @@ def status():
                    listening_engine='Whisper base.en' if listening.available() else 'Vosk',
                    avatar_ready=candidate or (ROOT / "static/avatars/mpfb.glb").is_file(),
                    character_candidate_ready=candidate,
-                   character_revision="style-v30" if character_path == REFRESHED_CHARACTER else "style-v27" if character_path == FITTED_CHARACTER else "style-v26" if character_path == STYLED_CHARACTER else "free-surface-reviewed" if character_path == FREE_SURFACE_CHARACTER else "surface-v9" if character_path == SURFACE_CHARACTER else "performance-v6" if candidate else None,
+                   character_revision="style-v32" if character_path == NATURAL_CHARACTER else "style-v30" if character_path == REFRESHED_CHARACTER else "style-v27" if character_path == FITTED_CHARACTER else "style-v26" if character_path == STYLED_CHARACTER else "free-surface-reviewed" if character_path == FREE_SURFACE_CHARACTER else "surface-v9" if character_path == SURFACE_CHARACTER else "performance-v6" if candidate else None,
                    character_source="local-performance-candidate" if candidate else "bundled-cc0-sample")
 
 

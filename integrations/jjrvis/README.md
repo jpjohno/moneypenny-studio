@@ -1,3 +1,7 @@
+# Latest movement and visual briefing update
+
+See [MOTION_RECOVERY_RELEASE.md](MOTION_RECOVERY_RELEASE.md) for restored overview rotation, acknowledged movement commands, illustrated headlines, reduced character asset size and the smoother v32 clothed fit. Apply after the workspace polish increment. Photographic appearance and arbitrary physical/application autonomy remain unachieved.
+
 # Latest file and world update
 
 See [WORKSPACE_POLISH_RELEASE.md](WORKSPACE_POLISH_RELEASE.md) for fresh Mac search, PDF/Office previews, selected-document questions, explicit app launchers and the sharper GPU globe. Apply after the capture-rate increment. Photographic character and unrestricted autonomy remain unachieved.

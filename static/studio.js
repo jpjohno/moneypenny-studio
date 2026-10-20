@@ -17,7 +17,7 @@ import { actionOnly, movementAcknowledgement, wardrobeCommand } from './action-c
 import { chooseModel } from './model-choice.js';
 import { renderProfile,StageActivity } from './render-budget.js';
 import { studioFetch as fetch,studioURL,parentOrigins,STUDIO_BASE } from './studio-paths.js';
-import {PresenceAudio} from './presence-audio.js';
+import {PresenceAudio,connectSpeechSource} from './presence-audio.js';
 
 const $ = id => document.getElementById(id);
 const jarvisEmbed=new URLSearchParams(location.search).get('embed')==='jarvis';
@@ -25,7 +25,7 @@ const proxiedPresence=jarvisEmbed&&STUDIO_BASE==='/presence/';
 const jarvisOrigins=parentOrigins();
 const defaultParentOrigin=jarvisOrigins.includes(location.origin)?location.origin:jarvisOrigins[0];
 let jarvisParentOrigin=(()=>{try{const origin=new URL(document.referrer).origin;return jarvisOrigins.includes(origin)?origin:defaultParentOrigin;}catch{return defaultParentOrigin;}})();
-function postPresence(type,detail={}){if(jarvisEmbed&&parent!==window)parent.postMessage({type,...detail},jarvisParentOrigin);}
+function postPresence(type,detail={}){if(jarvisEmbed&&parent!==window)parent.postMessage({type,characterRevision:activeCharacterRevision,...detail},jarvisParentOrigin);}
 const owner = crypto.randomUUID();
 const presets = {
   moneypenny: 'You are Moneypenny, an adult British assistant. You are sharp-witted, warm, perceptive and quietly confident, with a knowing smile and a little playful teasing. Be practical when help is needed and genuinely interested in the conversation. Speak naturally and briefly. Use subtle physical expressions when appropriate.',
@@ -35,7 +35,7 @@ const presets = {
 };
 const settingIds = ['personaName','personaPreset','systemPrompt','movement','mood','wardrobe','footwear','blouseColor','hairTone','lightingLook','lightBrightness','autonomy','aiMotion','activity','behaviourPrompt','modelSelect','speed','mouthTiming','temperature','maxTokens','autoSpeak'];
 let head, lips, analyser, visualizer, avatarReady = false, lipReady = false;
-let generation = 0, controller = null, busy = false, currentSource = null, speechEnded = null;
+let generation = 0, controller = null, busy = false, currentSource = null, currentEnvelope=null, speechEnded = null;
 let history = [], statusData = {}, avatarURL = null, portraitURL = null, recordingPending = false;
 let studioOutfit = [],disposeAppearance=null;
 let actionTimers=[];
@@ -45,7 +45,7 @@ let quietUntil=Number(localStorage.getItem('moneypenny-quiet-until')||0),reminde
 let turnStarted=0,firstVoiceAt=0;
 let rig=null,rigView=null,motionLibrary=null,tools=null,poseCorrectives=null,seatSupport=null;
 let stageActivity=null,parentStageVisible=true,renderFrames=0;
-let presenceAudio=null;
+let presenceAudio=null,activeCharacterRevision=null,previousLook=false;
 const recorder = new Recorder();
 
 function notify(message='') { $('notice').textContent = message; $('notice').hidden = !message; }
@@ -160,7 +160,7 @@ async function showAvatar(file=null, localCharacter=null) {
     poseCorrectives=new PoseCorrectives(head.armature);
     seatSupport=new SeatSupport(head.scene,rig);
     try{motionLibrary.mapping=JSON.parse(localStorage.getItem('moneypenny-bone-map')||'{}');}catch{}
-    motion=new MotionDirector(head,value=>{$('motionState').textContent=value;},rig);
+    motion=new MotionDirector(head,value=>{$('motionState').textContent=value;postPresence('moneypenny-motion-state',{state:value});},rig);
     tools?.refreshMotions().catch(error=>notify(error.message));
     motion.onChoosePlan=async()=>{
       if(busy||userSpeaking||document.hidden||!$('autonomy').checked)return;
@@ -187,6 +187,7 @@ async function showAvatar(file=null, localCharacter=null) {
     const fitted=!!file||!!localCharacter;
     $('wardrobe').disabled=fitted;$('footwear').disabled=fitted;
     $('avatarLabel').textContent=file ? `Your character · ${file.name||'imported GLB'}` : localCharacter?.label||'Studio character · CC0 sample';
+    activeCharacterRevision=file?'imported':localCharacter?(localCharacter.url.includes('previous')?'style-v30':statusData.character_revision):'sample';
     avatarReady=true; $('stageLoader').hidden=true; frameCharacter('upper');
     stageActivity?.update();
     document.querySelectorAll('[data-view]').forEach(x=>x.classList.toggle('selected',x.dataset.view==='upper'));
@@ -233,14 +234,14 @@ async function initializeStage() {
     stageActivity.update({documentVisible:!document.hidden,parentVisible:parentStageVisible});
     // Orbiting is active work too. Keep full motion cadence through damping.
     let orbitSettled=null;
-    head.controls.addEventListener('start',()=>{clearTimeout(orbitSettled);stageActivity.update({interacting:true});});
+    head.controls.addEventListener('start',()=>{clearTimeout(orbitSettled);stageActivity.update({interacting:true,inView:true,parentVisible:true,documentVisible:!document.hidden});});
     head.controls.addEventListener('end',()=>{clearTimeout(orbitSettled);orbitSettled=setTimeout(()=>stageActivity.update({interacting:false}),800);});
     if('IntersectionObserver' in window)new IntersectionObserver(entries=>{const entry=entries[0];if(entry)stageActivity.update({inView:entry.isIntersecting&&entry.intersectionRatio>.01});},{threshold:[0,.01]}).observe($('stage'));
     window.__moneypennyRenderStats=()=>({...stageActivity.status(),frames:renderFrames,audioState:head.audioCtx.state,canvasWidth:head.renderer.domElement.width,canvasHeight:head.renderer.domElement.height,calls:head.renderer.info.render.calls,triangles:head.renderer.info.render.triangles});
     let saved=null; try {saved=await asset('avatar');}catch{}
     if(saved) { try{await showAvatar(saved);}catch{notify('The saved character is incompatible. The studio character has been restored.'); await showAvatar();} }
     else if(statusData.character_candidate_ready) {
-      try{await showAvatar(null,{url:'/api/character/default',label:statusData.character_revision==='style-v30'?'Moneypenny · softened fabric fit':statusData.character_revision==='style-v29'?'Moneypenny · fitted crepe blouse':statusData.character_revision==='style-v28'?'Moneypenny · crepe blouse':statusData.character_revision==='style-v27'?'Moneypenny · tailored fit v27':statusData.character_revision==='style-v26'?'Moneypenny · balanced character v26':statusData.character_revision==='free-surface-reviewed'?'Moneypenny · free character study':statusData.character_revision==='surface-v9'?'Moneypenny · surface study v9':'Moneypenny · local performance candidate'});}
+      try{await showAvatar(null,{url:'/api/character/default',label:statusData.character_revision==='style-v32'?'Moneypenny · natural look & smoother fit v32':statusData.character_revision==='style-v30'?'Moneypenny · softened fabric fit':statusData.character_revision==='style-v29'?'Moneypenny · fitted crepe blouse':statusData.character_revision==='style-v28'?'Moneypenny · crepe blouse':statusData.character_revision==='style-v27'?'Moneypenny · tailored fit v27':statusData.character_revision==='style-v26'?'Moneypenny · balanced character v26':statusData.character_revision==='free-surface-reviewed'?'Moneypenny · free character study':statusData.character_revision==='surface-v9'?'Moneypenny · surface study v9':'Moneypenny · local performance candidate'});}
       catch{notify('The local performance character could not load. The studio sample has been restored.');await showAvatar();}
     } else await showAvatar();
     if(!jarvisEmbed){const floor=new THREE.Mesh(new THREE.PlaneGeometry(6,6),new THREE.ShadowMaterial({opacity:.22}));floor.rotation.x=-Math.PI/2;floor.position.y=-.003;floor.receiveShadow=true;head.scene.add(floor);}
@@ -293,6 +294,7 @@ async function stopAll(clearNotice=true,cancelLocalVoice=true) {
   if(activeReply){activeReply.body.textContent=activeReply.body.textContent==='…'?'Reply stopped.':`${activeReply.body.textContent}\n\n[Stopped]`;activeReply=null;}
   recorder.cancel(); recordingPending=false; $('record').classList.remove('recording'); $('recordLabel').textContent='Record note';
   if(currentSource) {currentSource.onended=null;try{currentSource.stop();}catch{} currentSource.disconnect();currentSource=null;}
+  currentEnvelope?.disconnect();currentEnvelope=null;
   speechEnded?.(); speechEnded=null;
   head?.stopSpeaking();if(head)head.isSpeaking=false;head?.stopGesture(150); lips?.resetAll();
   if(visualizer)cancelAnimationFrame(visualizer);
@@ -340,7 +342,7 @@ async function playPrepared(audio, token, performance={}) {
   // guessing at phonemes. A short audio delay compensates for processing time.
   await new Promise(resolve=>{
     const source=head.audioCtx.createBufferSource(); source.buffer=audio;
-    source.connect(head.audioSpeechGainNode); currentSource=source; speechEnded=resolve;
+    const envelope=connectSpeechSource(head.audioCtx,source,head.audioSpeechGainNode); currentSource=source;currentEnvelope=envelope; speechEnded=resolve;
     head.isSpeaking=true; head.lookAtCamera(2000);
     const values=new Uint8Array(analyser.frequencyBinCount);
     function draw(){
@@ -350,7 +352,7 @@ async function playPrepared(audio, token, performance={}) {
     }
     if(!jarvisEmbed&&!document.hidden)draw();
     source.onended=()=>{
-      source.disconnect(); if(currentSource===source)currentSource=null;
+      source.disconnect();envelope.disconnect();if(currentEnvelope===envelope)currentEnvelope=null; if(currentSource===source)currentSource=null;
       head.isSpeaking=false; speechEnded=null; cancelAnimationFrame(visualizer);
       // Let the delayed audio and mouth closure drain before reporting idle.
       resolve();
@@ -574,7 +576,8 @@ $('avatarUpload').onchange=async e=>{
   catch(error){notify(error.message);try{await showAvatar();}catch{}}
   e.target.value='';
 };
-$('resetAvatar').onclick=async()=>{await stopAll();try{await asset('avatar',null);await showAvatar();}catch(e){notify(e.message);}};
+$('resetAvatar').onclick=async()=>{await stopAll();try{await asset('avatar',null);await showAvatar(null,statusData.character_candidate_ready?{url:'/api/character/default',label:'Latest studio character · '+statusData.character_revision}:null);}catch(e){notify(e.message);}};
+$('compareCharacter').onclick=async()=>{try{await stopAll();previousLook=!previousLook;await showAvatar(null,{url:'/api/character/default?look='+(previousLook?'previous':'latest'),label:previousLook?'Previous look · v30':'Latest natural look · v31'});$('compareCharacter').textContent=previousLook?'Use latest look':'Compare previous look';}catch(error){notify(error.message);}};
 $('portraitUpload').onchange=e=>{
   const file=e.target.files[0];if(!file)return;
   if(file.size>10*1024*1024){notify('Use a portrait smaller than 10 MB.');return;}
@@ -613,6 +616,26 @@ if(jarvisEmbed){
     if(message.type==='jjrvis-stop'){const brokerAudio=presenceAudio.id!==null;presenceAudio.cancel();await stopAll(false,!brokerAudio);return;}
     if(message.type==='jjrvis-audio'){await presenceAudio.play(message);return;}
     if(message.type==='jjrvis-audio-end'){await presenceAudio.end(message);return;}
+    if(message.type==='jjrvis-perform'){
+      const ack=(ok,detail)=>postPresence('moneypenny-presence-motion',{requestId:message.requestId,ok,detail});
+      if(!avatarReady||!motion){ack(false,'The 3D character is still preparing.');return;}
+      const text=typeof message.text==='string'?message.text.trim().slice(0,160):'';
+      if(text==='full body'||text==='portrait'||text==='reset view'){
+        if(text==='reset view'){motionLibrary?.stop();motion.resetPlacement();}
+        frameCharacter(text==='full body'?'full':'upper');head.setView(text==='full body'?'full':'upper',{cameraRotateY:0,cameraRotateX:0,cameraY:text==='full body'?0:jarvisEmbed?.78:.6,cameraDistance:text==='full body'?0:jarvisEmbed?.25:0});ack(true,'View updated. Drag Moneypenny to rotate.');return;
+      }
+      if(text==='stop moving'||text==='relax'){
+        motionLibrary?.stop();motion.stop();motion.autonomous=false;ack(true,'Movement paused.');return;
+      }
+      if(text==='move naturally'){
+        motion.autonomous=true;motion.nextDecision=motion.clock+1;ack(true,'Natural idle movement enabled.');return;
+      }
+      const plan=text==='present'?{steps:[{skill:'present',side:'left',duration:3,intensity:.5}]}:movementFromText(text);
+      if(!plan){ack(false,'That movement is not in the current library. Add a compatible animation in Studio.');return;}
+      if(text==='present'&&(motion.active||motionLibrary?.playing)){ack(true,'Current movement retained.');return;}
+      motionLibrary?.stop();rig?.clear();motion.plan(plan,text==='present'?'conversation':'instruction');
+      if(text!=='present')frameCharacter('full',plan);stageActivity?.update({active:true,inView:true,parentVisible:true,documentVisible:!document.hidden});ack(true,text==='present'?'Presenting the next card.':'Movement queued.');return;
+    }
     if(message.type==='jjrvis-wave'&&avatarReady){motion?.stop();motionLibrary?.stop();head.setMood('happy');motion?.plan({steps:[{skill:'wave',duration:4,intensity:.65}]});return;}
     if(message.type!=='jjrvis-speak'||typeof message.text!=='string'||!message.text.trim())return;
     if(proxiedPresence){postPresence('moneypenny-presence-error',{requestId:message.requestId,message:'Voice is supplied by the connected workspace.'});return;}

@@ -31,3 +31,12 @@ export class PresenceAudio {
     }
   }
 }
+
+// Short edge ramps prevent discontinuities when independently prepared phrases meet.
+export function connectSpeechSource(context,source,destination){
+  const envelope=context.createGain(),now=context.currentTime,duration=source.buffer.duration;
+  const fade=Math.min(.004,Math.max(0,duration)/2);
+  envelope.gain.setValueAtTime(0,now);envelope.gain.linearRampToValueAtTime(1,now+fade);
+  envelope.gain.setValueAtTime(1,now+Math.max(fade,duration-fade));envelope.gain.linearRampToValueAtTime(0,now+duration);
+  source.connect(envelope);envelope.connect(destination);return envelope;
+}

@@ -220,9 +220,9 @@ body[data-hud-theme] .command-scene .command-status-panel{min-height:0!important
  body[data-hud-theme] .command-scene .presence-atlas .globe-info{bottom:7%!important}
  body[data-hud-theme] .command-scene .presence-atlas .globe-credit{bottom:4%!important}
 }
-/* Transparent iframe pixels must not intercept atlas controls. The companion
-   and full studio remain the places to orbit and edit the character. */
-body[data-companion="workspace"] .command-scene .moneypenny-presence iframe{pointer-events:none!important}
+/* Keep character dragging available in the overview. Explicit Rotate person
+   mode lifts it above the atlas; globe controls retain their own hit targets. */
+body[data-companion="workspace"] .command-scene .moneypenny-presence iframe{pointer-events:auto!important;touch-action:none}
 body[data-companion="open"] .command-scene .moneypenny-presence iframe{pointer-events:auto!important}
 @media(min-width:761px){
  body[data-hud-theme] .command-scene .presence-atlas .globe-controls{bottom:25%!important}
@@ -283,3 +283,21 @@ body[data-hud-theme] .command-scene .command-world-stage .globe-reactor{aspect-r
 .assistant-dock>.assistant-document{display:flex;align-items:center;gap:10px;min-width:0;margin:0;flex:none}
 .assistant-dock>.assistant-document small{min-width:0;line-height:1.4;font-size:11px}
 .assistant-dock>.assistant-document button{flex:none;width:auto;align-self:center;padding:7px 10px;min-height:34px}
+
+.presence-movement-menu{position:relative}.presence-movement-menu summary{cursor:pointer;min-height:38px;padding:10px;border:1px solid var(--display-line);border-radius:9px;font-size:12px;list-style:none;background:var(--display-surface)}
+.presence-movement-menu>div{position:absolute;bottom:calc(100% + 8px);left:0;display:grid;grid-template-columns:1fr 1fr;gap:5px;width:255px;padding:10px;border:1px solid var(--display-line);border-radius:12px;background:var(--display-surface);box-shadow:0 15px 40px #0007;z-index:45}
+.presence-movement-menu:not([open])>div{display:none}.presence-movement-menu button{min-height:40px!important}
+[data-motion-feedback]{display:block;flex-basis:100%;font-size:10px;line-height:1.4;opacity:.8}
+.scene-brief-image{width:100%;height:145px;object-fit:cover;border-radius:10px;margin:5px 0 10px}.scene-brief-image[hidden]{display:none}
+
+/* World controls remain reachable; explicit character rotation takes the foreground. */
+body[data-hud-theme] .command-scene .presence-atlas{z-index:4;pointer-events:none}
+body[data-hud-theme] .command-scene .presence-atlas :is(canvas,.globe-map,.globe-controls,select){pointer-events:auto}
+body[data-hud-theme] .command-scene .presence-atlas canvas{clip-path:circle(50% at 50% 50%)}
+body[data-hud-theme] .command-scene[data-interaction="character"] .moneypenny-presence{z-index:8}
+body[data-hud-theme] .command-scene[data-interaction="character"] .presence-atlas{pointer-events:none}
+body[data-hud-theme] .command-scene[data-interaction="character"] .presence-atlas *{pointer-events:none!important}
+body[data-companion="workspace"] .command-scene .moneypenny-presence{z-index:auto}
+body[data-companion="workspace"] .command-scene .moneypenny-presence iframe{z-index:3}
+body[data-companion="workspace"] .command-scene .presence-footer{z-index:15}
+body[data-companion="workspace"] .command-scene[data-interaction="character"] .moneypenny-presence iframe{z-index:8}

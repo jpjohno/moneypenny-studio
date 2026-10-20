@@ -21,3 +21,8 @@ test('private cards show supplied text and keep body reads tied to their registe
   assert.equal(card.detail,'Real stored text');assert.equal(card.private,true);assert.equal(card.bodyPath,'');
  }
 });
+
+test('briefing images accept only publisher image hosts, never private or executable URLs',()=>{
+ const cards=briefingCards('news',{items:[{title:'Fixture headline',url:'https://example.com/one',image:'https://ichef.bbci.co.uk/news/fixture.jpg'},{title:'Blocked local',url:'https://example.com/two',image:'http://127.0.0.1/private'},{title:'Blocked credentials',url:'https://example.com/three',image:'https://user:password@ichef.bbci.co.uk/x'}]});
+ assert.match(cards[0].image,/^https:\/\/ichef/);assert.equal(cards[1].image,'');assert.equal(cards[2].image,'');
+});

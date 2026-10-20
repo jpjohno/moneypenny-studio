@@ -16,6 +16,7 @@ HEADERS = {'X-Studio-Client': 'moneypenny'}
 @pytest.fixture
 def client(monkeypatch, tmp_path):
     monkeypatch.setattr(studio.appearance_settings, 'PATH', tmp_path / 'appearance.json')
+    monkeypatch.setattr(studio, 'NATURAL_CHARACTER', tmp_path / 'missing-natural.glb')
     monkeypatch.setattr(studio, 'REFRESHED_CHARACTER', tmp_path / 'missing-refresh.glb')
     monkeypatch.setattr(studio, 'FITTED_CHARACTER', tmp_path / 'missing-fit.glb')
     monkeypatch.setattr(studio, 'FREE_SURFACE_CHARACTER', tmp_path / 'missing-free.glb')
@@ -257,3 +258,21 @@ def test_shared_appearance_is_allowlisted_and_saved_without_account_data(client)
     assert client.get('/api/appearance').json['blouseColor']=='navy'
     assert client.post('/api/appearance',headers=HEADERS,json={'token':'not-supported'}).status_code==400
     assert client.post('/api/appearance',json={'blouseColor':'ivory'}).status_code==403
+
+
+def test_latest_character_and_previous_comparison_are_distinct(client, monkeypatch, tmp_path):
+    def glb(name, marker):
+        payload = json.dumps({'asset': {'version': '2.0'}, 'extras': marker}).encode()
+        payload += b' ' * ((-len(payload)) % 4)
+        path = tmp_path / name
+        path.write_bytes(b'glTF' + struct.pack('<IIII', 2, 20 + len(payload), len(payload), 0x4e4f534a) + payload)
+        return path
+    latest = glb('latest.glb', 'new')
+    previous = glb('previous.glb', 'old')
+    monkeypatch.setattr(studio, 'NATURAL_CHARACTER', latest)
+    monkeypatch.setattr(studio, 'REFRESHED_CHARACTER', previous)
+    monkeypatch.setattr(studio.requests, 'get', Mock(side_effect=requests.ConnectionError()))
+    assert client.get('/api/status').json['character_revision'] == 'style-v32'
+    assert client.get('/api/character/default').data == latest.read_bytes()
+    assert client.get('/api/character/default?look=previous').data == previous.read_bytes()
+    assert client.get('/api/character/default?look=../../private').status_code == 400
