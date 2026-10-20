@@ -25,7 +25,7 @@ OLLAMA = os.environ.get("MONEYPENNY_OLLAMA_URL", "http://127.0.0.1:11434").rstri
 LOCAL_CHARACTER = ROOT / ".runtime/character-workshop/Moneypenny-Performance-Candidate-v6.glb"
 SURFACE_CHARACTER = ROOT / ".runtime/character-workshop/Moneypenny-Performance-Candidate-v9.glb"
 STYLED_CHARACTER = ROOT / ".runtime/character-workshop/Moneypenny-Style-v26.glb"
-REFRESHED_CHARACTER = ROOT / ".runtime/character-workshop/Moneypenny-Style-v29.glb"
+REFRESHED_CHARACTER = ROOT / ".runtime/character-workshop/Moneypenny-Style-v30.glb"
 FITTED_CHARACTER = ROOT / ".runtime/character-workshop/Moneypenny-Style-v27.glb"
 FREE_SURFACE_CHARACTER = ROOT / ".runtime/character-workshop/Moneypenny-Free-Surface-Reviewed.glb"
 app = Flask(__name__)
@@ -262,7 +262,7 @@ def status():
                    listening_engine='Whisper base.en' if listening.available() else 'Vosk',
                    avatar_ready=candidate or (ROOT / "static/avatars/mpfb.glb").is_file(),
                    character_candidate_ready=candidate,
-                   character_revision="style-v29" if character_path == REFRESHED_CHARACTER else "style-v27" if character_path == FITTED_CHARACTER else "style-v26" if character_path == STYLED_CHARACTER else "free-surface-reviewed" if character_path == FREE_SURFACE_CHARACTER else "surface-v9" if character_path == SURFACE_CHARACTER else "performance-v6" if candidate else None,
+                   character_revision="style-v30" if character_path == REFRESHED_CHARACTER else "style-v27" if character_path == FITTED_CHARACTER else "style-v26" if character_path == STYLED_CHARACTER else "free-surface-reviewed" if character_path == FREE_SURFACE_CHARACTER else "surface-v9" if character_path == SURFACE_CHARACTER else "performance-v6" if candidate else None,
                    character_source="local-performance-candidate" if candidate else "bundled-cc0-sample")
 
 

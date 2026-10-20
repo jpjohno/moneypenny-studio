@@ -184,7 +184,17 @@ final class BrowserBridge: NSObject, WKNavigationDelegate, WKUIDelegate, WKScrip
             try? input.setVoiceProcessingEnabled(true)
             let format=input.outputFormat(forBus:0)
             guard format.sampleRate > 0 else { throw NSError(domain:"JJRVIS",code:1) }
-            input.installTap(onBus:0,bufferSize:1024,format:format) { buffer,_ in request.append(buffer) };tapInstalled=true
+            var lastMeter=0.0
+            input.installTap(onBus:0,bufferSize:1024,format:format) { buffer,_ in
+                request.append(buffer)
+                let now=Date.timeIntervalSinceReferenceDate
+                if now-lastMeter > 0.15, buffer.frameLength > 0, let samples=buffer.floatChannelData?[0] {
+                    lastMeter=now;var power:Float=0
+                    for i in 0..<Int(buffer.frameLength) { power += samples[i]*samples[i] }
+                    let level=min(100,Int((sqrt(power/Float(buffer.frameLength))*1200).rounded()))
+                    DispatchQueue.main.async { guard own == self.speechEpoch, self.activeID == id else { return };self.emit(["id":id,"type":"level","value":level]) }
+                }
+            };tapInstalled=true
             engine.prepare();try engine.start();emit(["id":id,"type":"start"])
             recognition=recognizer.recognitionTask(with:request) { result,error in
                 DispatchQueue.main.async {
@@ -206,15 +216,23 @@ final class BrowserBridge: NSObject, WKNavigationDelegate, WKUIDelegate, WKScrip
       const sessions=new Map();let sequence=0;
       try{if(localStorage.getItem('jjrvis-wake-enabled')===null){localStorage.setItem('jjrvis-wake-enabled','false');localStorage.setItem('jjrvis-wake-persistent-v3','1');}}catch{}
       class NativeRecognition {
-        constructor(){this.id=++sequence;this.lang='en-GB';this.continuous=true;this.interimResults=true;this.running=false;sessions.set(this.id,this);}
-        start(){if(this.running)throw new DOMException('Already listening','InvalidStateError');this.running=true;sessions.set(this.id,this);window.webkit.messageHandlers.jjrvisSpeech.postMessage({id:this.id,command:'start'});}
-        stop(){window.webkit.messageHandlers.jjrvisSpeech.postMessage({id:this.id,command:'stop'});}
-        abort(){window.webkit.messageHandlers.jjrvisSpeech.postMessage({id:this.id,command:'abort'});}
+        constructor(){this.id=++sequence;this.lang='en-GB';this.continuous=true;this.interimResults=true;this.running=false;this.partial='';this.phraseTimer=null;this.finalDelivered=false;sessions.set(this.id,this);}
+        start(){if(this.running)throw new DOMException('Already listening','InvalidStateError');this.running=true;this.partial='';this.finalDelivered=false;sessions.set(this.id,this);window.webkit.messageHandlers.jjrvisSpeech.postMessage({id:this.id,command:'start'});}
+        clearPhrase(){clearTimeout(this.phraseTimer);this.phraseTimer=null;}
+        finishPhrase(){this.clearPhrase();if(!this.running||this.finalDelivered||!this.partial.trim())return;this.finalDelivered=true;const result={0:{transcript:this.partial,confidence:1},length:1,isFinal:true};this.onresult?.({resultIndex:0,results:[result]});}
+        stop(){this.finishPhrase();window.webkit.messageHandlers.jjrvisSpeech.postMessage({id:this.id,command:'stop'});}
+        abort(){this.clearPhrase();this.partial='';this.finalDelivered=true;window.webkit.messageHandlers.jjrvisSpeech.postMessage({id:this.id,command:'abort'});}
       }
       window.addEventListener('jjrvis-native-speech',event=>{const d=event.detail,r=sessions.get(d.id);if(!r)return;
-        if(d.type==='result'){const result={0:{transcript:d.text,confidence:1},length:1,isFinal:d.final};r.onresult?.({resultIndex:0,results:[result]});}
-        if(d.type==='start')r.onstart?.({});if(d.type==='error')r.onerror?.({error:d.error});
-        if(d.type==='end'){r.running=false;r.onend?.({});sessions.delete(d.id);}
+        if(d.type==='result'&&!r.finalDelivered){
+          const changed=r.partial!==d.text;r.partial=d.text;
+          if(d.final){r.finishPhrase();}
+          else{const result={0:{transcript:d.text,confidence:1},length:1,isFinal:false};r.onresult?.({resultIndex:0,results:[result]});
+            if(changed&&r.running&&!r.finalDelivered){r.clearPhrase();r.phraseTimer=setTimeout(()=>{r.finishPhrase();window.webkit.messageHandlers.jjrvisSpeech.postMessage({id:r.id,command:'stop'});},1400);}}
+        }
+        if(d.type==='level'){const meter=document.getElementById('mic-level');if(meter)meter.value=Math.max(0,Math.min(100,Number(d.value)||0));}
+        if(d.type==='start')r.onstart?.({});if(d.type==='error'){r.clearPhrase();r.partial='';r.finalDelivered=true;r.onerror?.({error:d.error});}
+        if(d.type==='end'){r.clearPhrase();r.running=false;r.onend?.({});sessions.delete(d.id);}
       });
       window.SpeechRecognition=window.webkitSpeechRecognition=NativeRecognition;
       document.addEventListener('DOMContentLoaded',()=>{document.documentElement.dataset.nativeApp='apple';});

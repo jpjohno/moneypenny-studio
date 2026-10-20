@@ -1,0 +1,7 @@
+{
+  "apply_after": "jjrvis-conversation-ux.patch",
+  "before_sha256": "fed6eba9f58966e92e932cb33c38e1276252bba6b85a6761d45fe9b59f88062b",
+  "after_sha256": "48f47fcbaf756f36d69f5fc525285d2bb8769bd7e34df75fb7b396e4f59e0b3f",
+  "file": "workspace.js",
+  "exact_replay_verified": true
+}

@@ -1,3 +1,7 @@
+# Latest phrase repair
+
+See [VOICE_PHRASE_REPAIR.md](VOICE_PHRASE_REPAIR.md) for the failed spoken-command diagnosis, phrase completion correction, real native input levels and v30 fabric repair. The repeated real spoken test remains pending.
+
 # Latest conversation update
 
 See [CONVERSATION_UX_RELEASE.md](CONVERSATION_UX_RELEASE.md) for explicit microphone startup, map and connection UX, shared clothing palettes and the installed native media-permission update. Apply after the scene repair increment.
