@@ -279,3 +279,10 @@ body[data-hud-theme] .command-scene .command-world-stage .globe-reactor{aspect-r
 .computer-file-desk [data-ask-document][hidden]{display:none!important}
 
 .assistant-document{padding:8px;border:1px solid var(--display-line);border-radius:8px;margin:8px 0}.assistant-document[hidden]{display:none!important}.assistant-document small{flex:1;overflow-wrap:anywhere}.assistant-document button{min-height:34px!important;font-size:11px!important}
+/* A selected document occupies its own row; it must never squeeze the question. */
+#assistant-form:has(.assistant-document:not([hidden])){display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:stretch}
+#assistant-form:has(.assistant-document:not([hidden])) #assistant-input{grid-column:1;grid-row:1;min-width:0;width:100%}
+#assistant-form:has(.assistant-document:not([hidden])) #assistant-submit{grid-column:2;grid-row:1;align-self:stretch}
+#assistant-form .assistant-document{grid-column:1/-1;grid-row:2;display:flex;align-items:center;gap:10px;min-width:0;margin:0}
+#assistant-form .assistant-document small{min-width:0;line-height:1.4}
+#assistant-form .assistant-document button{flex:none;width:auto;align-self:center;padding:7px 10px;min-height:34px}
