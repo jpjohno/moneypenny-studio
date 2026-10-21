@@ -57,3 +57,75 @@ export function openSpeechGate(param,at){
   param.cancelScheduledValues(at);param.setValueAtTime(0,at);
   param.linearRampToValueAtTime(1,at+.004);
 }
+
+const visemeLifecycles=new WeakSet();
+// HeadAudio's bundled event handler treats numeric index 0 as false, although
+// index 0 is the open AA vowel. Keep all of its callbacks and analysis intact,
+// then apply a checked index so AA can replace the previous consonant too.
+export function installSpeechVisemeLifecycle(processor){
+  if(!processor?.port||typeof processor.port.onmessage!=='function'||typeof processor.resetAll!=='function'||!Array.isArray(processor.visemeNames))return false;
+  if(visemeLifecycles.has(processor))return true;
+  visemeLifecycles.add(processor);
+  const receive=processor.port.onmessage,reset=processor.resetAll;
+  processor.port.onmessage=function(event){
+    receive.call(this,event);
+    const data=event?.data,index=data?.viseme;
+    if(data?.event==='viseme'&&Number.isInteger(index)&&index>=0&&index<processor.visemeNames.length){
+      processor.visemeActive=processor.visemeNames[index]==='viseme_sil'?-1:index;
+    }
+  };
+  // The worker reset clears its analysis buffers, but does not send an ended
+  // event or clear the main-thread active vowel. Release it locally as well;
+  // HeadAudio's normal interpolation closes the mouth instead of holding it.
+  processor.resetAll=function(){this.visemeActive=-1;return reset.call(this);};
+  return true;
+}
+
+// Lip interpolation follows the PCM clock, independently of the character's
+// capped animation/physics dt. One update catches up only to the latest mouth
+// target, never replays missed phonemes or advances more than 100 ms.
+export class SpeechFrameClock {
+  constructor(context){this.context=context;this.reset();}
+  reset(){const now=this.context?.currentTime;this.last=Number.isFinite(now)?now:null;}
+  tick(){
+    const now=this.context?.currentTime;
+    if(!Number.isFinite(now)){this.last=null;return 0;}
+    const elapsed=this.last===null?0:(now-this.last)*1000;
+    this.last=now;
+    return Math.min(100,Math.max(0,elapsed));
+  }
+}
+
+// Generated passages often carry a few hundred milliseconds of digital quiet
+// after the words. Shorten only a confirmed tail: never leading audio, never
+// more than 350 ms, and leave at least 80 ms after the last active 20 ms window.
+// A peak guard preserves short quiet consonants that an RMS-only gate can miss.
+export function trimSpeechTail(context,buffer){
+  const rate=buffer?.sampleRate,length=buffer?.length,channels=buffer?.numberOfChannels;
+  if(!Number.isFinite(rate)||rate<=0||!Number.isInteger(length)||length<=0||!Number.isInteger(channels)||channels<=0||typeof context?.createBuffer!=='function')return buffer;
+  const window=Math.max(1,Math.ceil(rate*.02)),margin=Math.ceil(rate*.08),maximum=Math.floor(rate*.35),threshold=10**(-55/20);
+  if(length<=margin+window)return buffer;
+  const samples=Array.from({length:channels},(_,channel)=>buffer.getChannelData(channel));
+  const earliest=Math.max(0,length-maximum-margin-window);
+  let activeEnd=null;
+  for(let end=length;end>earliest;){
+    const start=Math.max(earliest,end-window),count=end-start;
+    let active=false;
+    for(const data of samples){
+      let sum=0,peak=0;
+      for(let i=start;i<end;i++){
+        const value=data[i];if(!Number.isFinite(value))return buffer;
+        sum+=value*value;peak=Math.max(peak,Math.abs(value));
+      }
+      if(Math.sqrt(sum/count)>threshold||peak>threshold){active=true;break;}
+    }
+    if(active){activeEnd=end;break;}end=start;
+  }
+  // Do not manufacture a meaningful duration for an all-quiet or uncertain clip.
+  if(activeEnd===null)return buffer;
+  const end=Math.min(length,Math.max(activeEnd+margin,length-maximum));
+  if(length-end<window)return buffer;
+  const trimmed=context.createBuffer(channels,end,rate);
+  for(let channel=0;channel<channels;channel++)trimmed.getChannelData(channel).set(samples[channel].subarray(0,end));
+  return trimmed;
+}

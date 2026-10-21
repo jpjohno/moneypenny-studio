@@ -8,8 +8,36 @@ const looks={
 
 const hairOriginals=new WeakMap();
 const eyePalettes=new WeakMap();
+const hairGrades=new WeakMap();
+const hairLuma=[.2126,.7152,.0722],hairBeige=[1.18,1.02,.78];
+const hairBeigeLuma=hairBeige.reduce((sum,value,index)=>sum+value*hairLuma[index],0);
+export const HAIR_ROSE_GRADE=Object.freeze({blueGreen:[-.035,.005],redGreen:[.025,.10],blend:.9,gain:hairBeige.map(value=>value/hairBeigeLuma),luma:hairLuma});
 export const IRIS_PALETTE=Object.freeze({centres:[[.299,.704],[.705,.299]],inner:[.032,.043],outer:[.107,.115],gain:[.94,1.10,1.38]});
 const smoothstep=(a,b,x)=>{const t=Math.max(0,Math.min(1,(x-a)/(b-a)));return t*t*(3-2*t);};
+// Grade only the rosy accent fibres of this existing atlas, retaining their
+// luminance, alpha mask and authored detail. This is a colour correction only.
+export function hairRoseMask(r,g,b){return smoothstep(...HAIR_ROSE_GRADE.blueGreen,b-g)*smoothstep(...HAIR_ROSE_GRADE.redGreen,r-g);}
+export function hairRoseGrade(rgb,strength=1){
+  const weight=HAIR_ROSE_GRADE.blend*Math.max(0,Math.min(1,strength))*hairRoseMask(...rgb);
+  const luminance=rgb.reduce((sum,value,index)=>sum+value*HAIR_ROSE_GRADE.luma[index],0);
+  return rgb.map((value,index)=>value+(luminance*HAIR_ROSE_GRADE.gain[index]-value)*weight);
+}
+function prepareHairRoseGrade(material){
+  if(hairGrades.has(material))return hairGrades.get(material);
+  const strength={value:0},previous=material.onBeforeCompile,previousKey=material.customProgramCacheKey;
+  material.onBeforeCompile=function(shader,renderer){
+    previous.call(this,shader,renderer);shader.uniforms.moneypennyHairRoseStrength=strength;
+    shader.fragmentShader='uniform float moneypennyHairRoseStrength;\n'+shader.fragmentShader.replace('#include <map_fragment>',`#include <map_fragment>
+      #ifdef USE_MAP
+      float hairRoseMask=smoothstep(${HAIR_ROSE_GRADE.blueGreen},sampledDiffuseColor.b-sampledDiffuseColor.g)*smoothstep(${HAIR_ROSE_GRADE.redGreen},sampledDiffuseColor.r-sampledDiffuseColor.g);
+      float hairLuminance=dot(diffuseColor.rgb,vec3(${HAIR_ROSE_GRADE.luma}));
+      vec3 beigeHair=hairLuminance*vec3(${HAIR_ROSE_GRADE.gain});
+      diffuseColor.rgb=mix(diffuseColor.rgb,beigeHair,${HAIR_ROSE_GRADE.blend}*moneypennyHairRoseStrength*hairRoseMask);
+      #endif`);
+  };
+  material.customProgramCacheKey=function(){return previousKey.call(this)+'|moneypenny-hair-rose-v1';};
+  material.needsUpdate=true;hairGrades.set(material,strength);return strength;
+}
 export function irisPaletteMask(u,v){
   const d=Math.min(...IRIS_PALETTE.centres.map(([x,y])=>Math.hypot(u-x,v-y)));
   return smoothstep(...IRIS_PALETTE.inner,d)*(1-smoothstep(...IRIS_PALETTE.outer,d));
@@ -52,6 +80,10 @@ export function setHairTone(root,tone='darkblonde'){
       // Lift the fibres and reduce the atlas's pink cast toward a lighter beige blonde.
       if(tone==='lightblonde')material.color.lerp(new THREE.Color(1,1,1),.65).multiply(new THREE.Color(.92,1.03,1.03));
       else if(!authoredBlonde)material.color.multiply(tint);
+      // The reviewed v39 accent texels contain a rose hue. Keep the requested
+      // blonde choice while removing that hue only in its existing hair map.
+      const grade=tone==='lightblonde'&&material.map&&/^v39\b/.test(node.userData?.groom_revision||'')?prepareHairRoseGrade(material):hairGrades.get(material);
+      if(grade)grade.value=tone==='lightblonde'?1:0;
     }
   });
 }

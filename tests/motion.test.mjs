@@ -72,3 +72,49 @@ test('presentation intensity changes actual hand travel rather than only metadat
  const small=distance(.2),large=distance(.8);
  assert.ok(small>.005,'small presentation never moved');assert.ok(small<large*.4,`intensity ignored: ${small} versus ${large}`);
 });
+
+test('a two second sequence keeps its duration at 5 and 60 fps instead of slowing under load',()=>{
+ for(const fps of [5,60]){
+  const director=new MotionDirector(rig());director.autonomous=false;
+  director.plan({steps:[{skill:'wave',duration:1},{skill:'bow',duration:1}]});
+  const frames=fps*2;
+  for(let frame=0;frame<frames;frame++)director.update(1000/fps);
+  assert.ok(Math.abs(director.clock-2)<1e-8,`${fps} fps lost elapsed time: ${director.clock}`);
+  assert.equal(director.active,null,`${fps} fps did not finish by the stated duration`);
+  assert.equal(director.queue.length,0);
+ }
+});
+
+test('a dropped frame carries into the next pose and preserves a completed turn',async()=>{
+ const {RigController,authoredNeutral}=await import('../static/rig.js');
+ const {Vector3}=await import('three');
+ const head=rig();head.studioNeutral=authoredNeutral(head.armature);
+ const r=new RigController(head),director=new MotionDirector(head,()=>{},r);director.autonomous=false;
+ director.plan({steps:[{skill:'turn',duration:1},{skill:'bow',duration:2,intensity:1}]});
+ r.resetBody(true);director.update(1600);r.update(1.6);
+ assert.equal(director.active.skill,'bow');assert.equal(director.active.start,1);
+ assert.ok(Math.abs(director.heading-Math.PI)<1e-8);
+ const torso=r.bones.Head.getWorldPosition(new Vector3()).sub(r.bones.Hips.getWorldPosition(new Vector3()));
+ assert.ok(torso.z<-.2,'elapsed part of the bow was lost at the step boundary');
+ director.stop();director.update(450);
+ assert.equal(director.active,null);assert.equal(director.queue.length,0);
+ assert.ok(Math.abs(director.currentHeading-Math.PI)<1e-8,'Stop lost the final facing direction');
+});
+
+test('a short step reaches its authored pose rather than remaining inside two overlapping fades',async()=>{
+ const {RigController,authoredNeutral}=await import('../static/rig.js');
+ const {Vector3}=await import('three');
+ const maximumForward=duration=>{
+  const head=rig();head.studioNeutral=authoredNeutral(head.armature);
+  const r=new RigController(head),director=new MotionDirector(head,()=>{},r);director.autonomous=false;
+  director.plan({steps:[{skill:'bend_forward',duration,intensity:1}]});let maximum=0;
+  for(let frame=0;frame<duration*60;frame++){
+   r.resetBody(true);director.update(1000/60);r.update(1/60);
+   maximum=Math.max(maximum,r.bones.Head.getWorldPosition(new Vector3()).sub(r.bones.Hips.getWorldPosition(new Vector3())).z);
+  }
+  return maximum;
+ };
+ const short=maximumForward(1),long=maximumForward(8);
+ assert.ok(short>.35,'short step hardly moved the actual body');
+ assert.ok(short>long*.9,`short pose was attenuated: ${short} versus ${long}`);
+});

@@ -43,3 +43,17 @@ test('Stop drains old audio without letting stale completion clear a replacement
  next.onended();await replacement;
  assert.equal(h.sandbox.state().speaking,false);assert.equal(h.sandbox.state().currentSource,null);
 });
+test('animation preview stops locally without waiting for a stalled voice service cancellation',async()=>{
+ const h=harness(),busy=[];let completeRequest;
+ h.sandbox.proxiedPresence=false;
+ h.sandbox.api=()=>new Promise(resolve=>{completeRequest=resolve;});
+ h.sandbox.setBusy=value=>busy.push(value);
+ const speech=h.sandbox.play({duration:1});
+ await vm.runInContext('stopAll(true,true,false)',h.sandbox);
+ await speech;
+ assert.equal(h.sandbox.state().speaking,false);
+ assert.equal(h.sandbox.state().currentSource,null);
+ assert.equal(busy.at(-1),false,'controls settle while the voice service request is pending');
+ assert.equal(typeof completeRequest,'function','the old synthesis is still cancelled in the background');
+ completeRequest();
+});

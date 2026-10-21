@@ -80,7 +80,7 @@ export class AnimationBuilder {
   this.say('Preparing the animation…');await this.api.stopConversation();
   if(epoch!==this.epoch)return false;
   const library=this.api.getLibrary();if(!library)throw new Error('Wait for the character to finish loading.');
-  this.api.getRig()?.clear();library.loop=false;library.playSequence(data,'animation-builder');
+  this.api.getRig()?.clear();library.loop=false;library.speed=1;library.playSequence(data,'animation-builder');
   this.api.frame('full',data);this.say(`Playing ${data.steps.length} movements · ${data.steps.reduce((sum,step)=>sum+step.duration,0)} seconds. Stop at any time.`);
   return true;
  }

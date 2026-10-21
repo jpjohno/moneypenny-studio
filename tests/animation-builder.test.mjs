@@ -87,3 +87,18 @@ test('stopping while Preview waits for voice shutdown prevents that preview from
  const pending=AnimationBuilder.prototype.preview.call(view);AnimationBuilder.prototype.stop.call(view);release();
  assert.equal(await pending,false);assert.equal(played,0);
 });
+test('Preview uses the stated timing even after another library clip was slowed or looped',async()=>{
+ const library={speed:.5,loop:true,playSequence(data,source){assert.equal(this.speed,1);assert.equal(this.loop,false);assert.equal(source,'animation-builder');assert.equal(data.steps.length,2);}};
+ const view={epoch:0,draft:new AnimationDraft().replace(sample()),$:()=>({value:'Greeting'}),say(){},api:{
+  stopConversation:async()=>{},getLibrary:()=>library,getRig:()=>({clear(){}}),frame(){}
+ }};
+ assert.equal(await AnimationBuilder.prototype.preview.call(view),true);
+});
+test('library sequence playback keeps real-time duration on a busy 5 fps stage',()=>{
+ for(const fps of [5,60]){
+  const h=harness();h.library.playSequence({...sample(),steps:[{skill:'wave',duration:1},{skill:'bow',duration:1}]});
+  for(let frame=0;frame<fps*2;frame++){h.controller.resetBody(true);h.library.update(1/fps);h.controller.update(1/fps);}
+  assert.equal(h.library.playing,false,`${fps} fps library sequence ran beyond its stated two seconds`);
+  assert.equal(h.director.active,null);assert.equal(h.director.queue.length,0);
+ }
+});

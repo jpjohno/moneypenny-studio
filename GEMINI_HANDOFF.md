@@ -151,3 +151,39 @@ unlocked the native app, the workspace was reloaded and visibly showed v39,
 the blonde/blue palette, a working Wave and the local Create animations link.
 The Studio save/reopen/Preview/Stop workflow was also checked live. No microphone
 or acoustic playback certification was performed in this follow-up.
+
+## Movement and mouth repair, 21 October 2026
+
+The current update fixes lost elapsed time under dropped frames and carries
+queued steps across their real boundaries. A nominal 2-second sequence formerly
+took 4.6 seconds at 5 fps; actual skeleton tests now finish at 2 seconds at both
+5 and 60 fps. Duration-relative fades let short gestures reach their pose.
+Builder Preview explicitly uses 1x/single play and stops local speech immediately
+while cancelling old backend synthesis in the background. No new render loop.
+
+The local HeadAudio adapter repairs a falsy-zero test that skipped viseme_aa and
+releases the active mouth target on reset. Lip interpolation uses the audio clock
+rather than a clamped body-frame delta. Reapplying the same mood now preserves
+ongoing gaze, blink and head tracks. Conservative trailing-quiet trimming keeps
+80 ms after the active window, removes at most 350 ms, and preserves leading and
+retained PCM samples. Both voice and lip analysis receive the same resulting
+buffer. The tested greeting clips each lose 160 ms of confirmed quiet.
+
+A reversible blonde-only shader correction reduces the pink accent fibres.
+No face/body geometry, alpha mask or texture was replaced. Coarse hair cards and
+source skin detail still limit realism. See MOTION_SPEECH_REPAIR_VERIFICATION.json
+for current evidence and limits.
+
+Native QA after owner unlock visibly reached Speaking with mouth movement and a
+presentation gesture, and a batched Replay→Stop check reached VOICE STOPPED.
+Wave and the saved 7-second wave/bow sequence completed. A broad voice-help
+matcher exposed by this test is isolated in the exact-basis private broker
+overlay `integrations/jjrvis/jjrvis-voice-help.patch`; it also repairs a stale
+Speaking badge after Stop. No microphone was opened in this follow-up. Visual
+playback and automated clock checks do not certify acoustic alignment.
+
+The anchored “say exactly: TEXT” utility returns at most 400 characters locally
+without a model call or device action; embedded quotations do not activate it.
+The native literal phrase and Replay→Stop/3D READY checks passed after the
+coordinated broker restart. The current pass has 134 Studio Node checks and
+89 focused broker Python plus 21 broker JavaScript checks passing.

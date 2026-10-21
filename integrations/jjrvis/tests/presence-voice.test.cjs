@@ -105,3 +105,13 @@ test('animation creation link exists only in a local workspace movement menu',()
   assert.equal(rendered.includes('http://127.0.0.1:8090/?panel=animation#animationBuilder'),hostname!=='app.jjrvis.com');
  }
 });
+
+
+test('Stop clears the visible speaking badge and unowned frame events cannot restore it',async()=>{
+ const h=harness();h.ctx.speak('Ready for a voice check.');await tick();await h.resolveAudio();
+ const id=h.audioMessages()[0].message.requestId;h.emit('moneypenny-presence-speaking',id,{sequence:0});
+ assert.equal(h.presenceState.textContent,'SPEAKING');h.ctx.stopVoice();
+ assert.equal(h.presenceState.textContent,'3D READY');
+ h.emit('moneypenny-presence-speaking',undefined);h.emit('moneypenny-presence-speaking',id,{sequence:0});
+ assert.equal(h.presenceState.textContent,'3D READY');assert.equal(h.ctx.state.presence,null);
+});

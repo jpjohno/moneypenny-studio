@@ -1,0 +1,33 @@
+{
+  "prepared": "2026-10-21",
+  "reported_question": "For a voice check, say exactly: A calm afternoon at home.",
+  "cause": "Any voice-related substring incorrectly selected the fixed microphone-help response.",
+  "fixed_scope": [
+    "Voice-help intent matching only",
+    "Stop resets the visible ready-stage badge",
+    "Unowned frame messages cannot restore speaking"
+  ],
+  "python_core_stream_intent_tests_passed": 89,
+  "js_presence_startup_interrupt_tests_passed": 21,
+  "exact_patch_replay_verified": true,
+  "live_broker_restarted": true,
+  "native_activation_verified": true,
+  "microphone_opened": false,
+  "audio_played": true,
+  "live_workspace_sha256": "94750a4606fb546be39fbf22b79722590ea4e91d8e5c172a0f18d7e70ed2a06e",
+  "literal_speech_utility": {
+    "forms": [
+      "say exactly: TEXT",
+      "For a voice check, say exactly: TEXT"
+    ],
+    "anchored": true,
+    "max_payload_characters": 400,
+    "model_called": false,
+    "external_action_dispatched": false,
+    "existing_credential_redaction_preserved": true
+  },
+  "native_exact_literal_answer_verified": true,
+  "native_replay_reached_speaking": true,
+  "native_stop_restored_3d_ready": true,
+  "acoustic_sync_certified": false
+}

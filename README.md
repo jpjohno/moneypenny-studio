@@ -168,3 +168,13 @@ See [SESSION_HANDOFF.md](SESSION_HANDOFF.md) for measured live checks, browser a
 Keep licence terms for any character, clothing, textures or voice you add. The shipped path deliberately uses the CC0 MPFB character rather than upstream's non-commercial sample characters.
 
 The server binds to loopback, rejects foreign Host/Origin requests, requires the studio's custom request header for POST actions and disables response caching for chat/audio. It is a single-user local tool. Public hosting, user accounts, remote microphones and a hardened multi-user deployment are not implemented.
+
+### Movement and mouth timing repair
+
+Movement sequences keep their stated duration under dropped frames, and short
+steps reach their pose before easing out. Builder Preview starts at normal speed
+and does not wait for the old voice-service cancellation request. Mouth shapes
+now include the AA vowel, release on Stop and follow the audio clock; repeated
+speech phrases preserve ongoing facial animation. Quiet generated tails are
+conservatively shortened using the same PCM for sound and lip analysis.
+See `MOTION_SPEECH_REPAIR_VERIFICATION.json` for measured results and limitations.

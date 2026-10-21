@@ -19,7 +19,7 @@ import { actionOnly, movementAcknowledgement, wardrobeCommand } from './action-c
 import { chooseModel } from './model-choice.js';
 import { renderProfile,StageActivity } from './render-budget.js';
 import { studioFetch as fetch,studioURL,parentOrigins,STUDIO_BASE } from './studio-paths.js';
-import {PresenceAudio,connectSpeechSource,fadeSpeechGain,openSpeechGate} from './presence-audio.js';
+import {PresenceAudio,connectSpeechSource,fadeSpeechGain,openSpeechGate,installSpeechVisemeLifecycle,SpeechFrameClock,trimSpeechTail} from './presence-audio.js';
 
 const $ = id => document.getElementById(id);
 const jarvisEmbed=new URLSearchParams(location.search).get('embed')==='jarvis';
@@ -160,7 +160,7 @@ async function showAvatar(file=null, localCharacter=null) {
     rig=new RigController(head,value=>{$('rigState').textContent=value;});
     rigView=new RigView(head,rig,(name,target,held)=>tools?.rigChanged(name,target,held));
     rigView.show($('showRig').checked);rigView.select($('rigTarget').value);
-    motionLibrary=new MotionLibrary(head,rig,value=>{$('libraryState').textContent=value;if(motionLibrary?.currentSource==='animation-builder')animationBuilder?.say(value);const sequence=motionLibrary?.canPause===false||motionLibrary?.items.find(item=>item.id===$('motionLibrary').value)?.format==='sequence';$('pauseMotion').disabled=sequence;$('motionPosition').disabled=sequence||!motionLibrary?.current;});
+    motionLibrary=new MotionLibrary(head,rig,value=>{$('libraryState').textContent=value;if(motionLibrary?.currentSource==='animation-builder'){animationBuilder?.say(value);$('motionSpeed').value=String(motionLibrary.speed);$('loopMotion').checked=motionLibrary.loop;}const sequence=motionLibrary?.canPause===false||motionLibrary?.items.find(item=>item.id===$('motionLibrary').value)?.format==='sequence';$('pauseMotion').disabled=sequence;$('motionPosition').disabled=sequence||!motionLibrary?.current;});
     poseCorrectives=new PoseCorrectives(head.armature);
     seatSupport=new SeatSupport(head.scene,rig);
     try{motionLibrary.mapping=JSON.parse(localStorage.getItem('moneypenny-bone-map')||'{}');}catch{}
@@ -255,6 +255,8 @@ async function initializeStage() {
     if(!jarvisEmbed){const floor=new THREE.Mesh(new THREE.PlaneGeometry(6,6),new THREE.ShadowMaterial({opacity:.22}));floor.rotation.x=-Math.PI/2;floor.position.y=-.003;floor.receiveShadow=true;head.scene.add(floor);}
     await head.audioCtx.audioWorklet.addModule(studioURL('/static/vendor/headaudio/headworklet.min.mjs'));
     lips=new HeadAudio(head.audioCtx,{parameterData:{vadGateActiveDb:-40,vadGateInactiveDb:-55,speakerMeanHz:220}});
+    installSpeechVisemeLifecycle(lips);
+    const speechClock=new SpeechFrameClock(head.audioCtx);
     await lips.loadModel(studioURL('/static/vendor/headaudio/model-en-mixed.bin'));
     head.audioSpeechGainNode.connect(lips);
     const delay=head.audioCtx.createDelay(1);speechDelay=delay;delay.delayTime.value=Number($('mouthTiming').value)/1000;
@@ -262,17 +264,22 @@ async function initializeStage() {
     head.audioSpeechGainNode.disconnect(head.audioReverbNode); head.audioSpeechGainNode.connect(delay); delay.connect(speechGate);speechGate.connect(head.audioReverbNode);
     analyser=head.audioCtx.createAnalyser(); analyser.fftSize=256; head.audioSpeechGainNode.connect(analyser);
     lips.onvalue=(key,value)=>{const target=head.mtAvatar[key];if(target)Object.assign(target,{newvalue:value,needsUpdate:true});};
+    let previousMotionClock=head.animClock;
     head.opt.update=dt=>{
+      // TalkingHead limits its pose interpolation delta, but its animation clock
+      // retains elapsed time and freezes while the stage is hidden.
+      const motionMs=Math.max(0,head.animClock-previousMotionClock);
+      previousMotionClock=head.animClock;
       renderFrames++;
       if(renderFrames%30===0)$('avatar').dataset.renderFrames=String(renderFrames);
       stageActivity.update({active:busy||userSpeaking||head.isSpeaking||!!motion?.active||!!motion?.queue.length||!!motionLibrary?.playing||!!rig?.targets.size});
-      lips.update(dt);if(!rig)return;
-      const seconds=dt/1000;
+      lips.update(speechClock.tick());if(!rig)return;
+      const seconds=motionMs/1000;
       if((busy||userSpeaking)&&motionLibrary?.currentSource==='persona')motionLibrary.stop();
       rig.resetBody(!!motion?.active||!!motion?.queue.length||motionLibrary?.playing||rig.targets.size>0);
       rig.breathe(seconds,!!motion?.active||!!motionLibrary?.playing||!motion?.autonomous||busy||userSpeaking);
       if(motionLibrary?.playing)motionLibrary.update(seconds);
-      else if(motion){motion.engaged=busy||userSpeaking;motion.update(dt);}
+      else if(motion){motion.engaged=busy||userSpeaking;motion.update(motionMs);}
       rig.update(seconds);
       const stage=$('avatar'),skill=motion?.active?.skill||'idle',facing=String(Math.round((motion?.currentHeading||0)*180/Math.PI));
       if(stage.dataset.motion!==skill)stage.dataset.motion=skill;
@@ -294,7 +301,7 @@ async function initializeStage() {
   } catch(e) { notify(`3D stage: ${e.message||e}`); setState('Stage unavailable','');postPresence('moneypenny-presence-error',{message:'The live character or voice could not start. Open Moneypenny Studio to retry.'}); }
 }
 
-async function stopAll(clearNotice=true,cancelLocalVoice=true) {
+async function stopAll(clearNotice=true,cancelLocalVoice=true,waitForLocalVoice=true) {
   const cancelled=generation;
   generation++; controller?.abort(); controller=null;motionLibrary?.stop();
   const stopGeneration=generation;
@@ -317,8 +324,11 @@ async function stopAll(clearNotice=true,cancelLocalVoice=true) {
   if(visualizer)cancelAnimationFrame(visualizer);
   actionTimers.forEach(clearTimeout);actionTimers=[];
   for(const key of ['headRotateX','headRotateZ','bodyRotateX','eyeBlinkLeft'])head?.setValue(key,0,150);
-  if(cancelLocalVoice&&!proxiedPresence)try {await api('/api/speech/stop',{owner:`${owner}:${cancelled}`});} catch {}
   if(generation===stopGeneration){if(clearNotice)notify();setBusy(false);setState(userSpeaking?'Listening to you':avatarReady?'Here with you':'Character unavailable',avatarReady?'ready':'');}
+  if(cancelLocalVoice&&!proxiedPresence){
+    const cancelling=api('/api/speech/stop',{owner:`${owner}:${cancelled}`}).catch(()=>{});
+    if(waitForLocalVoice)await cancelling;
+  }
 }
 
 function performActions(performance={}) {
@@ -346,7 +356,7 @@ async function prepareSpeech(value, token) {
   await head.audioCtx.resume();
   if(!currentSource)setState('Preparing her voice','busy');
   const response=await api('/api/speech',{text:value,speed:Number($('speed').value),owner:`${owner}:${token}`},controller?.signal);
-  const audio=await head.audioCtx.decodeAudioData(await response.arrayBuffer());
+  const audio=trimSpeechTail(head.audioCtx,await head.audioCtx.decodeAudioData(await response.arrayBuffer()));
   if(token!==generation)throw new DOMException('Stopped','AbortError');
   return audio;
 }
@@ -625,7 +635,7 @@ if(jarvisEmbed){
       if(!avatarReady||!lipReady)throw new Error('Moneypenny is still preparing her character and voice.');
       await new Promise((resolve,reject)=>{const timer=setTimeout(()=>reject(new Error('Tap Moneypenny once to enable her voice on this device.')),2500);head.audioCtx.resume().then(()=>{clearTimeout(timer);resolve();},error=>{clearTimeout(timer);reject(error);});});
       if(head.audioCtx.state!=='running')throw new Error('Tap Moneypenny once to enable her voice on this device.');
-      return head.audioCtx.decodeAudioData(bytes);
+      return trimSpeechTail(head.audioCtx,await head.audioCtx.decodeAudioData(bytes));
     },
     playAudio:(audio,{onStarted})=>playPrepared(audio,generation,{onStarted,mood:$('mood').value||'neutral'}),
     drain:()=>new Promise(resolve=>setTimeout(resolve,Math.round((speechDelay?.delayTime.value||0)*1000)+30)),
@@ -706,7 +716,7 @@ async function initialize() {
   // shown in JJRVIS remain authoritative when opening this editor.
   await syncAppearance(true);
   animationBuilder=new AnimationBuilder($('animationBuilder'),{
-    getLibrary:()=>motionLibrary,getRig:()=>rig,stopConversation:stopAll,frame:frameCharacter,
+    getLibrary:()=>motionLibrary,getRig:()=>rig,stopConversation:()=>stopAll(true,true,false),frame:frameCharacter,
     onSaved:async record=>{await tools.refreshMotions();$('motionLibrary').value=record.id;await $('motionLibrary').onchange();}
   });
   try{await animationBuilder.start();}catch(error){animationBuilder.say(error.message);}

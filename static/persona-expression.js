@@ -52,5 +52,9 @@ export function installWarmExpression(head){
  head.animMoods.warm=mood;installSpeakingSmile(head);return true;
 }
 export function setPersonaMood(head,mood='neutral'){
- head.setMood(head.studioNeutral&&mood==='neutral'&&head.animMoods?.warm?'warm':mood);
+ const selected=head.studioNeutral&&mood==='neutral'&&head.animMoods?.warm?'warm':mood;
+ // Reapplying the same mood replaces every queued blink, gaze and head track
+ // in TalkingHead. Adjacent speech phrases must not restart those motions.
+ if(head.moodName===selected&&head.mood===head.animMoods?.[selected])return false;
+ head.setMood(selected);return true;
 }

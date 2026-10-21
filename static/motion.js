@@ -14,15 +14,16 @@ export class MotionDirector {
     head.armature.traverse(bone=>{if(bone.isBone){this.bones[bone.name]=bone;this.rest[bone.name]=(rig?.rest[bone.name]?.q||head.studioNeutral?.[bone.name]?.q||head.poseBase?.props[`${bone.name}.quaternion`]||bone.quaternion).clone();}});
     this.hipsPosition=this.bones.Hips.position.clone();this.autonomous=true;this.activity=.45;this.persona='';this.engaged=false;
     this.height=head.avatarHeight||1.75;
-    this.onChoosePlan=null;this.planning=false;this.heading=0;this.currentHeading=0;
+    this.onChoosePlan=null;this.planning=false;this.heading=0;this.currentHeading=0;this.nextStepAt=null;
   }
-  stop(){this.queue=[];if(this.active){this.active.release=this.clock;this.active.frozenHeading=this.currentHeading;this.heading=this.currentHeading;}this.nextDecision=this.clock+5;}
-  resetPlacement(){this.queue=[];this.active=null;this.heading=0;this.currentHeading=0;this.head.armature.quaternion.copy(this.rootRotation);this.head.armature.position.copy(this.origin);this.nextDecision=this.clock+5;}
+  stop(){this.queue=[];this.nextStepAt=null;if(this.active){this.active.release=this.clock;this.active.frozenHeading=this.currentHeading;this.heading=this.currentHeading;}this.nextDecision=this.clock+5;}
+  resetPlacement(){this.queue=[];this.active=null;this.nextStepAt=null;this.heading=0;this.currentHeading=0;this.head.armature.quaternion.copy(this.rootRotation);this.head.armature.position.copy(this.origin);this.nextDecision=this.clock+5;}
   plan(plan,source='instruction') {
     if(!plan?.steps?.length)return false;
     if(['conversation','persona'].includes(source)&&[this.active,...this.queue].some(step=>step&&!['conversation','persona'].includes(step.source)))return false;
     this.stop();this.active=null;
     this.queue=plan.steps.filter(x=>MOTION_SKILLS.includes(x.skill)).map(x=>({...x,duration:clamp(Number(x.duration)||4,1,20),intensity:clamp(Number(x.intensity)||.6,.1,1),source}));
+    this.nextStepAt=this.clock;
     return !!this.queue.length;
   }
   animatePose(pose,weight) {
@@ -77,6 +78,7 @@ export class MotionDirector {
     const side=this.lastPresentationSide==='left'?'right':'left';
     if(skill==='present')this.lastPresentationSide=side;
     this.queue=[{skill,side,duration:skill==='idle'?3:5+Math.random()*3,intensity:playful&&this.activity>.65?.25+this.activity*.4:.12+this.activity*.2,source:'persona'}];
+    this.nextStepAt=this.clock;
   }
   applyHeading(heading){
     const root=this.head.armature,yaw=new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0),heading);
@@ -85,10 +87,26 @@ export class MotionDirector {
     const offset=root.position.clone().sub(this.origin).applyQuaternion(yaw);
     root.position.copy(this.origin).add(offset);this.currentHeading=heading;
   }
+  beginStep(start){
+    this.active={...this.queue.shift(),start};this.nextStepAt=null;
+    this.onState(`${this.active.source==='persona'?'Persona chose':'Moving'} · ${this.active.skill.replaceAll('_',' ')}`);
+  }
   update(milliseconds) {
-    const dt=Math.min(milliseconds/1000,.1);this.clock+=dt;
+    // This is elapsed animation time, not a physics integration step. Dropping
+    // time above 100 ms made a busy 5 fps stage play at half speed. Evaluate the
+    // final pose once, carrying any elapsed time across queued step boundaries.
+    const dt=Number.isFinite(milliseconds)?Math.max(0,milliseconds)/1000:0;
+    const previousClock=this.clock;this.clock+=dt;
     if(this.engaged&&this.active?.source==='persona'&&this.active.release===undefined)this.stop();
-    if(!this.active&&this.queue.length){this.active={...this.queue.shift(),start:this.clock};this.onState(`${this.active.source==='persona'?'Persona chose':'Moving'} · ${this.active.skill.replaceAll('_',' ')}`);}
+    if(!this.active&&this.queue.length)this.beginStep(this.nextStepAt??previousClock);
+    while(this.active&&this.clock+1e-9>=this.active.start+this.active.duration){
+      const completed=this.active,end=completed.start+completed.duration;
+      const directTurn=completed.skill==='turn'&&!['persona','conversation'].includes(completed.source);
+      this.heading=(completed.frozenHeading??(this.heading+(directTurn?Math.PI:0)))%(Math.PI*2);
+      this.active=null;this.rig?.releasePose();
+      if(this.queue.length)this.beginStep(end);
+      else {this.nextStepAt=null;this.onState(this.autonomous?'Persona movement enabled':'Movement paused');}
+    }
     if(!this.active){
       this.head.armature.position.copy(this.origin);this.head.armature.quaternion.copy(this.rootRotation);this.applyHeading(this.heading);
       if(this.autonomous&&!this.engaged&&this.clock>=this.nextDecision){
@@ -99,7 +117,9 @@ export class MotionDirector {
     }
     const a=this.active,t=this.clock-a.start,p=clamp(t/a.duration,0,1),k=a.intensity;
     const deliberate=['supported_step','bend_forward'].includes(a.skill);
-    const fade=deliberate?1.2:.65,releaseTime=deliberate?1.2:.4;
+    // Quick gestures respond promptly. Short authored steps still reach their
+    // pose instead of spending their whole duration in overlapping fades.
+    const fade=Math.min(deliberate?1.2:.38,a.duration*(deliberate?.4:.25)),releaseTime=deliberate?1.2:.4;
     let w=ease(clamp(t/fade,0,1))*ease(clamp((a.duration-t)/fade,0,1));
     if(a.release!==undefined)w*=1-ease(clamp((this.clock-a.release)/releaseTime,0,1));
     const pose={};let root=new THREE.Euler(),offset=new THREE.Vector3();

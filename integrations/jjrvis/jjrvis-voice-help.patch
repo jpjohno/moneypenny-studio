@@ -1,0 +1,65 @@
+diff --git a/jjrvis_core.py b/jjrvis_core.py
+--- a/jjrvis_core.py
++++ b/jjrvis_core.py
+@@ -24,2 +24,35 @@
+ LOGGER = logging.getLogger('jjrvis.core')
++
++
++
++def literal_speech_request(question):
++    """Bounded top-level speech check; embedded/quoted instructions are data."""
++    match = re.fullmatch(r'\s*(?:for a voice check,\s*)?(?:please\s+)?say exactly:\s*(.+?)\s*', question, re.I | re.S)
++    if not match:
++        return None
++    text = match.group(1).strip()
++    return text if 0 < len(text) <= 400 else None
++
++
++def voice_controls_request(question):
++    """Only explicit listening/control help gets the fixed microphone FAQ.
++
++    Voice-related words can instead be quoted content, a read-aloud request,
++    or ordinary conversation. Those still need their requested answer.
++    """
++    lower = question.casefold()
++    if re.search(r"\b(?:say|repeat|read|speak)\s+(?:exactly|only|the following|these words|this (?:phrase|sentence|text)|after me)\b|\b(?:say|repeat|read|speak)\s*:", lower):
++        return False
++    # A quoted question is content to discuss/read, not a control instruction.
++    control = re.sub(r'"[^"\n]*"|“[^”\n]*”|(?<!\w)\'[^\'\n]*\'(?!\w)', '', lower)
++    voice = r'(?:microphone|mic|voice|audio|speech|dictation|conversation|speaking|listening)'
++    return bool(re.search(
++        r'\b(?:how|where)\b.{0,50}\b(?:use|enable|disable|start|stop|turn on|turn off|set up|configure|fix)\b.{0,45}\b'+voice+r'\b|'
++        r'\bhow\s+(?:do|can|should)\s+(?:i|we)\s+(?:speak|talk|listen)\s+(?:to|with|through)\s+(?:you|moneypenny|jarvis|jjrvis)\b|'
++        r'\b(?:where|which|what)\b.{0,30}\b'+voice+r'\b.{0,20}\b(?:button|control|setting|permission)s?\b|'
++        r'\b(?:can|could|do|did)\s+you\s+hear\s+me\b|'
++        r'\b(?:are|were)\s+you\s+listening(?:\s+(?:to me|now))?[?.!\s]*$|'
++        r'\b(?:do|can|will|are)\s+you\s+(?:listen|listening)\s+(?:continuously|all the time|in the background)\b|'
++        r'\b'+voice+r'\b.{0,25}\b(?:not working|doesn[’\']t work|isn[’\']t working|not picking up|unavailable|silent)\b|'
++        r'^\s*(?:there is |there[’\']s )?no (?:sound|audio|voice)[?.!\s]*$', control))
+ 
+@@ -400,2 +433,7 @@
+             if selected_file:return await self.ask_document(question,settings,selected_file,emit)
++            literal = literal_speech_request(question)
++            if literal is not None:
++                return {'answer': redact(literal), 'sources': [], 'web_results': [],
++                        'model': 'local-speech-utility', 'checked_at': now(),
++                        'mode': 'literal_speech', 'actions_executed': False}
+             started = time.monotonic()
+@@ -455,3 +493,3 @@
+                 return await make_briefing(question, settings, self.infrastructure)
+-            voice_controls_requested = any(w in lower for w in ('voice','speak','speaking','talk','conversation','hear','heard','listen','microphone','audio','read aloud'))
++            voice_controls_requested = voice_controls_request(question)
+             # A local planning pass chooses the read-only capabilities required by
+diff --git a/workspace.js b/workspace.js
+--- a/workspace.js
++++ b/workspace.js
+@@ -591,3 +591,3 @@
+ function resumeWake(){wakePaused=false;if(wakeEnabled&&!document.hidden&&!activeRecognition&&!activeUtterance)wakeStarter?.();}
+-function stopVoice(){streamingSpeech?.cancel();streamingSpeech=null;presenceSpeech?.segment?.done(new DOMException('Stopped','AbortError'));presenceSpeech=null;speechController?.abort();speechController=null;if(cloudAudio){cloudAudio.pause();URL.revokeObjectURL(cloudAudio.src);cloudAudio=null;}postToPresence({type:'jjrvis-stop'});clearTimeout(wakeRestart);wakePaused=true;if(activeRecognition){const recognition=activeRecognition;activeRecognition=null;try{recognition.abort();}catch{}}const dictate=$('#assistant-dictate');if(dictate){dictate.textContent='🎙 Speak';dictate.classList.remove('voice-active');}if('speechSynthesis' in window)window.speechSynthesis.cancel();const stopping=requestVoiceStop();activeUtterance=null;voiceState('Voice ready');return stopping;}
++function stopVoice(){streamingSpeech?.cancel();streamingSpeech=null;presenceSpeech?.segment?.done(new DOMException('Stopped','AbortError'));presenceSpeech=null;speechController?.abort();speechController=null;if(cloudAudio){cloudAudio.pause();URL.revokeObjectURL(cloudAudio.src);cloudAudio=null;}postToPresence({type:'jjrvis-stop'});clearTimeout(wakeRestart);wakePaused=true;if(activeRecognition){const recognition=activeRecognition;activeRecognition=null;try{recognition.abort();}catch{}}const dictate=$('#assistant-dictate');if(dictate){dictate.textContent='🎙 Speak';dictate.classList.remove('voice-active');}if('speechSynthesis' in window)window.speechSynthesis.cancel();const stopping=requestVoiceStop();activeUtterance=null;const state=document.querySelector('[data-presence-state]');if(state?.dataset.state==='ready')state.textContent='3D READY';voiceState('Voice ready');return stopping;}
+ function muteReply(){const request=assistantRequest;mutedSpeechRequest=request;voiceReplyRequested=false;const pending=stopVoice();voiceState('Speech stopped. Your text reply can continue.');Promise.resolve(pending).finally(()=>{if(request===assistantRequest&&!stopped)resumeWake();});return pending;}
+@@ -852,3 +852,3 @@
+  }
+- if(data.requestId!==presenceSpeech?.requestId)return;
++ if(!presenceSpeech||data.requestId!==presenceSpeech.requestId)return;
+  if(data.type==='moneypenny-presence-speaking'&&data.sequence===presenceSpeech?.segment?.sequence){if(state)state.textContent='SPEAKING';presenceSpeech.onStarted?.();}

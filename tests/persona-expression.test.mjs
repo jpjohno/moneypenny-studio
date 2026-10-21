@@ -83,3 +83,16 @@ test('imported characters keep their selected expression',()=>{
  const head={animMoods:{neutral:{}},setMood(value){this.selected=value;}};
  assert.equal(installWarmExpression(head),false);setPersonaMood(head,'neutral');assert.equal(head.selected,'neutral');
 });
+
+
+test('adjacent speech phrases keep the actual TalkingHead mood animation queue continuous',()=>{
+ const head=speechHead();
+ const queued=[...head.animQueue],mood=head.mood;
+ assert.ok(queued.length>0);assert.equal(setPersonaMood(head,'neutral'),false);
+ assert.equal(head.mood,mood);assert.deepEqual(head.animQueue,queued);
+ for(let i=0;i<queued.length;i++)assert.equal(head.animQueue[i],queued[i],'existing timed tracks retain their identity and progress');
+ // A replaced mood definition is a real change even if its name is retained.
+ head.animMoods.warm={...head.animMoods.warm,baseline:{...head.animMoods.warm.baseline,cheekSquintLeft:.05}};
+ assert.equal(setPersonaMood(head,'neutral'),true);assert.notEqual(head.mood,mood);
+ assert.notEqual(head.animQueue[0],queued[0]);
+});
