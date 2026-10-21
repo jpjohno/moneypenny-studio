@@ -1,0 +1,13 @@
+{
+  "blender": {
+    "version": "4.5.14",
+    "dmg": "https://download.blender.org/release/Blender4.5/blender-4.5.14-macos-arm64.dmg",
+    "hashes": "https://download.blender.org/release/Blender4.5/blender-4.5.14.sha256",
+    "sha256": "65134d9b07b20e2fa8d3c9e44f6f44ffb5c9774dd521b95f50387310241ca170"
+  },
+  "mpfb": {
+    "version": "2.0.18",
+    "url": "https://extensions.blender.org/download/sha256:c075b3e9b94b8e5556a5f03f4653602d02ea306de08126e8f55ed6dee28a2dad/add-on-mpfb-v2.0.18.zip",
+    "sha256": "c075b3e9b94b8e5556a5f03f4653602d02ea306de08126e8f55ed6dee28a2dad"
+  }
+}

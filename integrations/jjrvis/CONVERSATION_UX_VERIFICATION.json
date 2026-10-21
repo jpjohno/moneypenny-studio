@@ -1,0 +1,22 @@
+{
+  "date": "2026-10-20",
+  "implemented": true,
+  "native_app_built_signed_installed": true,
+  "native_microphone_hardware_verified": false,
+  "browser_microphone_verified": true,
+  "browser_capture_stopped": true,
+  "broker_suite_passed": 415,
+  "focused_proxy_suite_passed": 35,
+  "browser_voice_suite_passed": 39,
+  "final_layout_suite_passed": 10,
+  "studio_python_passed": 65,
+  "studio_python_skipped": 2,
+  "photographic_realism_verified": false,
+  "public_distribution_ready": false,
+  "runtime_character_in_git": false,
+  "browser_conversation_start_and_stop_verified": true,
+  "native_microphone_permission_granted": true,
+  "native_microphone_start_stop_verified": true,
+  "native_spoken_question_roundtrip_verified": false,
+  "native_verification_note": "Unlocked app: localhost microphone permission accepted, spoken invitation completed, Listening shown, Stop returned to microphone off. No dictated question tested."
+}

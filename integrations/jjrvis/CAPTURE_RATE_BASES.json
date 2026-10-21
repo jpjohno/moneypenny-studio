@@ -1,0 +1,12 @@
+{
+  "apply_after": "jjrvis-voice-phrase.patch",
+  "before_sha256": {
+    "workspace.js": "48f47fcbaf756f36d69f5fc525285d2bb8769bd7e34df75fb7b396e4f59e0b3f",
+    "jarvis_comm_broker.py": "8e69c1118183a805464f025ba272739097d057052e5369bcfc747587e3d009cc"
+  },
+  "after_sha256": {
+    "workspace.js": "e613d441b8fb1375c7e6821d0cf4a897107379973686d38dc93b9bd0600fa779",
+    "jarvis_comm_broker.py": "ac718ddd12243bdbe72d5ca1312cfe587fe7dde7326a213debc390370997e3c8"
+  },
+  "exact_replay_verified": true
+}

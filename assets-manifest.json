@@ -1,0 +1,52 @@
+[
+  {
+    "path": "static/vendor/talkinghead/talkinghead.mjs",
+    "url": "https://raw.githubusercontent.com/met4citizen/TalkingHead/2afe6d79779313db8909badebf46f9805a6c7b70/modules/talkinghead.mjs",
+    "sha256": "2580bfb965f432e3c6eed0115417d5a2814f4ad0689e031a0977122b42817f6b"
+  },
+  {
+    "path": "static/vendor/talkinghead/lipsync-en.mjs",
+    "url": "https://raw.githubusercontent.com/met4citizen/TalkingHead/2afe6d79779313db8909badebf46f9805a6c7b70/modules/lipsync-en.mjs",
+    "sha256": "675c5e5a812fac0f378ce37a659d5e35b4968095aa1a991e0045509403e54ca5"
+  },
+  {
+    "path": "static/vendor/talkinghead/LICENSE",
+    "url": "https://raw.githubusercontent.com/met4citizen/TalkingHead/2afe6d79779313db8909badebf46f9805a6c7b70/LICENSE",
+    "sha256": "a168d1f90b70b313fb594ddb07e03c9dea08fe2a43df2b4f607db6920ce69cfa"
+  },
+  {
+    "path": "static/vendor/headaudio/headaudio.min.mjs",
+    "url": "https://raw.githubusercontent.com/met4citizen/HeadAudio/d3af5f9ff86ab6b2b1913d411a4e1922ec101953/dist/headaudio.min.mjs",
+    "sha256": "3d7635d8a9f9882dc804e5caacfb501a30a53d2c4f4c2cce85247bb6244de140"
+  },
+  {
+    "path": "static/vendor/headaudio/headworklet.min.mjs",
+    "url": "https://raw.githubusercontent.com/met4citizen/HeadAudio/d3af5f9ff86ab6b2b1913d411a4e1922ec101953/dist/headworklet.min.mjs",
+    "sha256": "37ebeb1d4d7e41fca7d12bb8fb411f7ce6bb21a2589602dec18e0a48b343be55"
+  },
+  {
+    "path": "static/vendor/headaudio/model-en-mixed.bin",
+    "url": "https://raw.githubusercontent.com/met4citizen/HeadAudio/d3af5f9ff86ab6b2b1913d411a4e1922ec101953/dist/model-en-mixed.bin",
+    "sha256": "0358f68989b5861f9b7d18871b010fa6cbf88a53bda4954a954d8c548bbcf251"
+  },
+  {
+    "path": "static/vendor/headaudio/LICENSE",
+    "url": "https://raw.githubusercontent.com/met4citizen/HeadAudio/d3af5f9ff86ab6b2b1913d411a4e1922ec101953/LICENSE",
+    "sha256": "d45d4192f4e7502846c6b01d743eddbff20b3752e4c350a88418f59e4587a60f"
+  },
+  {
+    "path": "static/avatars/mpfb.glb",
+    "url": "https://raw.githubusercontent.com/met4citizen/TalkingHead/2afe6d79779313db8909badebf46f9805a6c7b70/avatars/mpfb.glb",
+    "sha256": "63c645a2a863b9972e9a9c2ed576a1de4c390b8475508e1473e69c87a3ee299c"
+  },
+  {
+    "path": "static/vendor/talkinghead/retargeter.mjs",
+    "url": "https://raw.githubusercontent.com/met4citizen/TalkingHead/2afe6d79779313db8909badebf46f9805a6c7b70/modules/retargeter.mjs",
+    "sha256": "aae6954f90f35263d6116737b3e34a202f3f1430ffd1ce1368f7af7d2e8774cd"
+  },
+  {
+    "path": "static/vendor/talkinghead/dynamicbones.mjs",
+    "url": "https://raw.githubusercontent.com/met4citizen/TalkingHead/2afe6d79779313db8909badebf46f9805a6c7b70/modules/dynamicbones.mjs",
+    "sha256": "e3e754a8c4296b470a763be3705694d10dfa00cb7a0b311fa6d4751297ab8d82"
+  }
+]

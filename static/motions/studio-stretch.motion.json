@@ -1,0 +1,1 @@
+{"version":1,"name":"Studio shoulder stretch","duration":6,"frames":[{"at":0,"joints":{"LeftArm":[0,0,0],"RightArm":[0,0,0]}},{"at":0.35,"joints":{"LeftArm":[-0.15,0,-0.6],"RightArm":[-0.15,0,0.6]}},{"at":0.65,"joints":{"LeftArm":[-0.15,0,-0.6],"RightArm":[-0.15,0,0.6]}},{"at":1,"joints":{"LeftArm":[0,0,0],"RightArm":[0,0,0]}}]}

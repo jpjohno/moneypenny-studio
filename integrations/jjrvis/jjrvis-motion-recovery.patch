@@ -1,0 +1,37 @@
+diff --git a/workspace.js b/workspace.js
+--- a/workspace.js
++++ b/workspace.js
+@@ -215 +215 @@
+- <div class="presence-scene"><section class="moneypenny-presence" aria-label="Moneypenny live 3D assistant"><div class="presence-top"><span>MONEYPENNY</span><b data-presence-state>PREPARING 3D</b></div><iframe id="moneypenny-presence" title="Live 3D Moneypenny" src="/presence/?embed=jarvis" allow="autoplay" loading="eager"></iframe><div class="presence-footer"><span>YOUR FRONT OF HOUSE</span><div><button type="button" data-presence-wave>Wave</button>${['localhost','127.0.0.1'].includes(location.hostname)?'<a href="http://127.0.0.1:8090/" target="_blank" rel="noopener">Customise Moneypenny ↗</a>':'<button type="button" data-persona-options>Voice & persona</button>'}<button type="button" data-open-companion>Companion view</button></div></div></section>
++ <div class="presence-scene"><section class="moneypenny-presence" aria-label="Moneypenny live 3D assistant"><div class="presence-top"><span>MONEYPENNY</span><b data-presence-state>PREPARING 3D</b></div><iframe id="moneypenny-presence" title="Live 3D Moneypenny" src="/presence/?embed=jarvis" allow="autoplay" loading="eager"></iframe><div class="presence-footer"><span>YOUR FRONT OF HOUSE</span><div><button type="button" data-presence-wave>Wave</button><button type="button" data-character-orbit aria-pressed="false">Rotate person</button><details class="presence-movement-menu"><summary>Move & view</summary><div>${[['turn around','Turn around'],['walk','Walk'],['dance','Dance'],['stretch','Stretch'],['full body','Full body'],['reset view','Reset view'],['move naturally','Move naturally'],['stop moving','Stop movement']].map(([value,label])=>`<button type="button" data-presence-movement="${value}">${label}</button>`).join('')}</div></details><small data-motion-feedback>Live M2 · drag to rotate</small>${['localhost','127.0.0.1'].includes(location.hostname)?'<a href="http://127.0.0.1:8090/" target="_blank" rel="noopener">Customise Moneypenny ↗</a>':'<button type="button" data-persona-options>Voice & persona</button>'}<button type="button" data-open-companion>Companion view</button></div></div></section>
+@@ -233 +233,3 @@
+-  document.querySelector('[data-presence-wave]').onclick=()=>postToPresence({type:'jjrvis-wave'});
++  document.querySelector('[data-presence-wave]').onclick=()=>requestPresenceMovement('wave').catch(error=>notify(error.message));
++  document.querySelector('[data-character-orbit]').onclick=e=>{const hub=document.querySelector('.command-scene'),enabled=hub.dataset.interaction!=='character';hub.dataset.interaction=enabled?'character':'world';e.currentTarget.setAttribute('aria-pressed',String(enabled));e.currentTarget.textContent=enabled?'Finish rotating':'Rotate person';};
++  for(const button of document.querySelectorAll('[data-presence-movement]'))button.onclick=()=>{button.closest('details').open=false;requestPresenceMovement(button.dataset.presenceMovement).catch(error=>notify(error.message));};
+@@ -252,0 +255,2 @@
++  onDismiss:()=>localStorage.setItem('jjrvis-overview-headlines','off'),
++  onCard:()=>requestPresenceMovement('present',{quiet:true}).catch(()=>{}),
+@@ -256,0 +261 @@
++ if(localStorage.getItem('jjrvis-overview-headlines')!=='off')commandBriefing?.open('news',false,true);
+@@ -604,0 +610,7 @@
++const movementPending=new Map();let movementSequence=0;
++function requestPresenceMovement(text,{quiet=false}={}){
++ if(stopped)return Promise.reject(new Error('Unlock JJRVIS first.'));
++ const state=document.querySelector('[data-presence-state]');if(state?.dataset.state!=='ready')return Promise.reject(new Error('Moneypenny is still preparing her 3D stage.'));
++ const requestId='movement-'+(++movementSequence);
++ return new Promise((resolve,reject)=>{const timeout=setTimeout(()=>{movementPending.delete(requestId);reject(new Error('The movement did not respond. Open Studio to check the stage.'));},4000);movementPending.set(requestId,{resolve,reject,timeout,quiet});postToPresence({type:'jjrvis-perform',text,requestId});});
++}
+@@ -830 +842,3 @@
+- if(data.type==='moneypenny-presence-ready'&&state){state.textContent='3D READY';state.dataset.state='ready';}
++ if(data.type==='moneypenny-presence-ready'&&state){state.textContent='3D READY';state.dataset.state='ready';const hint=document.querySelector('[data-motion-feedback]');if(hint)hint.textContent='Live '+(data.characterRevision||'M2')+' · drag to rotate';}
++ if(data.type==='moneypenny-motion-state'){const hint=document.querySelector('[data-motion-feedback]');if(hint)hint.textContent=String(data.characterRevision||'Live')+' · '+String(data.state||'').slice(0,100);return;}
++ if(data.type==='moneypenny-presence-motion'){const pending=movementPending.get(data.requestId);if(!pending)return;clearTimeout(pending.timeout);movementPending.delete(data.requestId);const detail=String(data.detail||'Movement updated.').slice(0,180);if(!pending.quiet){const hint=document.querySelector('[data-motion-feedback]');if(hint)hint.textContent=detail;}if(data.ok)pending.resolve(detail);else pending.reject(new Error(detail));return;}
+@@ -970,0 +985,7 @@
++ if(/^(?:(?:moneypenny[, ]+)?please )?(?:wave|turn around|spin|walk|dance|do a jig|stretch|bow|sit|kneel|lie on|bend (?:over|forward|down)|touch (?:your|the)|reach|stop moving|relax|move naturally|full body|portrait|reset view)\b/i.test(question)){
++  const motionText=question.replace(/^(?:moneypenny[, ]+)?please /i,'').replace(/[.!?]+$/,'').toLowerCase();
++  if(current!=='overview')navigate('overview');input.value='';
++  try{const message=await requestPresenceMovement(motionText);completeAssistantCommand(message,shouldSpeak);}catch(error){completeAssistantCommand(error.message,shouldSpeak);}return;
++ }
++ const appLaunch=question.match(/^(?:open|launch|start)(?: my| the)? (Excel|Numbers|Word|Pages|Acrobat|Preview|Safari|Notes)[.!?]*$/i);
++ if(appLaunch){const names={excel:'Excel',numbers:'Numbers',word:'Word',pages:'Pages',acrobat:'Acrobat',preview:'Preview',safari:'Safari',notes:'Notes'},name=names[appLaunch[1].toLowerCase()];input.value='';try{await api('/v1/workspace/computer/apps/'+encodeURIComponent(name)+'/open',{});completeAssistantCommand('Asked this Mac to open '+name+'.',shouldSpeak);}catch(error){completeAssistantCommand(error.message,shouldSpeak);}return;}

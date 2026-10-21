@@ -1,0 +1,14 @@
+{
+  "prepared": "2026-10-21",
+  "apply_after": "jjrvis-voice-identity.patch",
+  "requires_exact_private_basis": true,
+  "before_sha256": {
+    "jjrvis_core.py": "a94c10479dd06d781dd52285d4deba3fadce5815f0de59d296b70c22aa7c1f00",
+    "workspace.js": "a4e028fc44b92a9ac4512624a24eec06942500ff68ae5118995e5d191253d4c9"
+  },
+  "after_sha256": {
+    "jjrvis_core.py": "6de9ecb2bcb458571be0cccebfaf0137c528000593544542175263adf670e347",
+    "workspace.js": "94750a4606fb546be39fbf22b79722590ea4e91d8e5c172a0f18d7e70ed2a06e"
+  },
+  "exact_replay_verified": true
+}

@@ -1,0 +1,102 @@
+{
+  "checked_on": "2026-10-21",
+  "status": "implemented_live_worker_proxy_persona_and_native_voice_verified",
+  "studio_javascript_checks": 151,
+  "studio_python_checks": 109,
+  "studio_python_skipped": 2,
+  "focused_private_python_checks": 95,
+  "focused_private_javascript_checks": 22,
+  "persona_agent_python_checks": 145,
+  "routing_agent_python_checks": 84,
+  "syntax_checks_passed": true,
+  "phoneme_timing": {
+    "worker": {
+      "sample_seconds": 2.948,
+      "elapsed_seconds": 4.98,
+      "cue_count": 42,
+      "visemes": [
+        "viseme_DD",
+        "viseme_E",
+        "viseme_I",
+        "viseme_PP",
+        "viseme_SS",
+        "viseme_TH",
+        "viseme_U",
+        "viseme_aa",
+        "viseme_kk",
+        "viseme_nn",
+        "viseme_sil"
+      ],
+      "wav_bytes": 142850,
+      "text_in_metadata": false,
+      "worker_closed": true
+    },
+    "broker_route": {
+      "voice_http_status": 200,
+      "timing_cues": 30,
+      "duration": 1.85529,
+      "voice_provider": "local-kokoro",
+      "unknown_wav_chunk_accepted_by_server": true
+    },
+    "studio_live_playback": {
+      "driver": "voice-phonemes",
+      "cue_count": 99,
+      "notice_empty": true
+    },
+    "original_pcm_samples_preserved_by_metadata": true,
+    "quiet_trim_preserves_retained_samples": true,
+    "single_inference_per_synthesis": true,
+    "new_model_download": false,
+    "queue_stop_delay_and_real_vendor_morph_tests": true,
+    "legacy_audio_fallback": true
+  },
+  "persona": {
+    "state": "saved",
+    "answer_model": "uncensored-3b:latest",
+    "voice": "bf_emma",
+    "stored_prompt_excluded": true,
+    "live_answer": {
+      "status": 200,
+      "elapsed_seconds": 18.18,
+      "answer_present": true,
+      "answer_length": 91,
+      "model": "uncensored-3b:latest",
+      "persona": {
+        "state": "saved",
+        "id": "4ceff3ea-d4ea-44de-a659-18588e2cd09d",
+        "name": "Moneypenny",
+        "source": "Moneypenny Studio \u00b7 saved on this Mac"
+      },
+      "mode": "local_conversation",
+      "provenance": "model_generated"
+    }
+  },
+  "visual": {
+    "change": "explicit_existing_room_environment_for_skin_and_blouse",
+    "skin_intensity": 0.62,
+    "blouse_intensity": 0.3,
+    "new_textures": 0,
+    "new_render_passes": 0,
+    "geometry_changed": false,
+    "photo_realism_achieved": false
+  },
+  "native": {
+    "unlocked_content_reloaded": true,
+    "saved_persona_model_voice_settings_verified": true,
+    "British_speaking_state_visible": true,
+    "mouth_motion_visible": true,
+    "Stop_returns_3D_ready": true,
+    "microphone_opened": false,
+    "generated_saved_persona_reply_visible": true,
+    "reply_caption": "Moneypenny \u00b7 uncensored-3b:latest",
+    "progressive_text_visible_around_seconds": 4,
+    "final_reply_and_idle_verified": true
+  },
+  "limits": [
+    "Current hair/skin source detail remains visibly CG; photographic appearance is not achieved.",
+    "A local model named uncensored does not guarantee every answer or unrestricted coding.",
+    "Exact acoustic alignment is not certified by a screenshot; timing and lifecycle were tested structurally and visually.",
+    "No arbitrary application or physical autonomy was added.",
+    "Source publication does not deploy a standalone JJRVIS server or redistribute licensed runtime assets."
+  ]
+}

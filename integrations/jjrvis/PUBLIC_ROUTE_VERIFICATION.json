@@ -1,0 +1,37 @@
+{
+  "/preview": {
+    "status": 200,
+    "https_verified": true,
+    "nosniff": "nosniff",
+    "csp": true,
+    "owner_cookie_issued": false
+  },
+  "/preview.js": {
+    "status": 200,
+    "https_verified": true,
+    "nosniff": "nosniff",
+    "csp": true,
+    "owner_cookie_issued": false
+  },
+  "/lifestyle.css": {
+    "status": 200,
+    "https_verified": true,
+    "nosniff": "nosniff",
+    "csp": true,
+    "owner_cookie_issued": false
+  },
+  "/v1/workspace": {
+    "status": 401,
+    "https_verified": true,
+    "nosniff": "nosniff",
+    "csp": true,
+    "owner_cookie_issued": false
+  },
+  "/workspace/local-connect": {
+    "status": 403,
+    "https_verified": true,
+    "nosniff": "nosniff",
+    "csp": true,
+    "owner_cookie_issued": false
+  }
+}

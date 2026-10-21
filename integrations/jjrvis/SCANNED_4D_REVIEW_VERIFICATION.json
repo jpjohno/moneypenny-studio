@@ -1,0 +1,95 @@
+{
+  "date": "2026-10-21",
+  "scope": "private local captured-human review; existing conversational avatar remains v38",
+  "implementation": {
+    "review_url": "http://127.0.0.1:8090/realism",
+    "entry": "Realism previews in Studio header",
+    "decoder_cache_limit": 3,
+    "prefetch_frames": 2,
+    "max_decoders_in_flight": 1,
+    "render_limit_fps": 30,
+    "max_device_pixel_ratio": 1.25,
+    "hidden_document_pauses_playback": true,
+    "disposal_releases_imagebitmaps_textures_geometry_and_skeletons": true
+  },
+  "recorded_4d": {
+    "source": "Renderpeople Aliyah 4D004 dancing",
+    "source_url": "https://download.renderpeople.com/free/rp_aliyah_4d_004_dancing_BLD.zip",
+    "source_fps": 30,
+    "source_frames": 1112,
+    "source_frame_step": 2,
+    "source_connectivity_and_uvs_change": true,
+    "independent_mesh_frames": true,
+    "variants": {
+      "detail": {
+        "frames": 556,
+        "fps": 15,
+        "duration_seconds": 37.06666666666667,
+        "texture_size": 1024,
+        "total_bytes": 508759956,
+        "full_sequence": true,
+        "manifest_sha256": "59cf013e6a6a8940f24a0db8720a1ab6ae1d70bde48ce5802b663cdabe83e64d",
+        "unique_source_geometry_hashes": 556,
+        "unique_source_texture_hashes": 556
+      },
+      "light": {
+        "frames": 556,
+        "fps": 15,
+        "duration_seconds": 37.06666666666667,
+        "texture_size": 512,
+        "total_bytes": 427166576,
+        "full_sequence": true,
+        "manifest_sha256": "7b68bdb83bb258b9a2e433d0abc2ee739a7d78cf722374e26f7fbd182b485f30",
+        "unique_source_geometry_hashes": 556,
+        "unique_source_texture_hashes": 556
+      }
+    },
+    "embedded_source_scripts_executed": false,
+    "arbitrary_requested_actions": false,
+    "live_speech": false
+  },
+  "scanned_rig": {
+    "source": "Renderpeople Claudia rigged002",
+    "source_url": "https://renderpeople.com/sample/free/renderpeople_free_rigged_people_FBX.zip",
+    "bones": 88,
+    "canonical_body_and_eye_bones": 54,
+    "actual_articulating_visemes": 14,
+    "neutral_silence_shape": true,
+    "speech_quality": "approximate native-bone bake, not calibrated phonemes or full ARKit",
+    "packaged_builder_executed": true,
+    "builder_preserved_original_file_checksums": true,
+    "rebuilt_positions_and_morphs_match_reviewed_prototype": true,
+    "wave_test_hand_displacement_m": 0.641,
+    "bone_transforms_finite": true,
+    "dental_visibility_verified": false,
+    "live_pronunciation_verified": false
+  },
+  "automated_checks": {
+    "node_passed": 83,
+    "python_passed": 90,
+    "python_skipped": 2,
+    "syntax_checks_passed": true,
+    "routing_tests_cover": "same-origin, host, missing assets, fixed quality directories and strict frame filenames",
+    "runtime_tests_cover": "bounded frames, slow decoder, seek/pause/stop, mode/restart races, errors, cleanup, quality switching, full bounds and current-pose close-up"
+  },
+  "browser_observed": {
+    "four_d_rendered": true,
+    "play_pause_observed": true,
+    "timeline_reached_last_frame": true,
+    "orbit_shows_back_of_model": true,
+    "both_picture_qualities_loaded": true,
+    "closeup_framing_reviewed": true,
+    "scan_rendered": true,
+    "scan_wave_and_mouth_controls_invoked": true,
+    "captured_console_warnings_or_errors": 0,
+    "proof": "Moneypenny-4D-review-20261021.png in owner Downloads"
+  },
+  "publication": {
+    "source_only": true,
+    "raw_or_derived_vendor_assets_in_git": false,
+    "customer_redistribution_permission_obtained": false,
+    "review_routes_added_to_jjrvis_proxy": false,
+    "public_web_deployment": false,
+    "photo_realistic_autonomous_assistant_achieved": false
+  }
+}

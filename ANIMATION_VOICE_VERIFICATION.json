@@ -1,0 +1,95 @@
+{
+  "date": "2026-10-21",
+  "status": "implemented_and_verified_in_studio_live_broker_and_unlocked_native_app",
+  "animation_builder": {
+    "actions": [
+      "wave",
+      "bow",
+      "stretch",
+      "turn",
+      "bend_forward",
+      "walk",
+      "dance",
+      "jig",
+      "idle"
+    ],
+    "max_steps": 8,
+    "seconds_per_step": [
+      1,
+      20
+    ],
+    "playback": "existing MotionDirector and repaired rig",
+    "save_format": ".sequence.json",
+    "model_calls": 0,
+    "extra_render_loop": false,
+    "verified_browser_workflow": [
+      "created wave4s + bow3s",
+      "Preview visibly started wave",
+      "saved to library",
+      "reloaded page",
+      "reopened both saved steps",
+      "Preview and Stop verified after reopen"
+    ],
+    "demo": "Welcome \u00b7 wave and bow",
+    "unsupported_sequence_controls": [
+      "pause",
+      "seek",
+      "garment cues"
+    ],
+    "imported_baked_clip_controls_retained": true
+  },
+  "appearance": {
+    "shared_get_read_fixed": true,
+    "old_persona_startup_override_fixed": true,
+    "status_visible": true,
+    "hair": "lightblonde",
+    "eyes": "brightblue",
+    "reversible": true,
+    "geometry_maps_and_morphs_unchanged": true,
+    "shader_errors_in_live_studio": [],
+    "actual_atlas_tests": {
+      "unaffected_white_samples": 319,
+      "selected_blue_fibre_samples": 107,
+      "unaffected_forward_pupil_samples": 12
+    },
+    "photographic_quality_achieved": false
+  },
+  "voice": {
+    "reported_accent_change_reproduced": false,
+    "reply_profile_and_speed_pinned": true,
+    "wrong_voice_metadata_rejected": true,
+    "silent_voice_substitution": false,
+    "moneypenny": "local-kokoro bf_emma en-GB",
+    "jarvis": "local-kokoro bm_george en-GB",
+    "saved_voice_and_speed_preserved": true,
+    "live_preview_routes_verified_after_restart": true,
+    "acoustic_review": false,
+    "details": "integrations/jjrvis/VOICE_IDENTITY_VERIFICATION.json"
+  },
+  "checks": {
+    "studio_javascript_passed": 111,
+    "studio_python_passed": 104,
+    "studio_python_skipped": 2,
+    "broker_voice_python_passed": 53,
+    "broker_voice_javascript_passed": 21,
+    "broker_presence_proxy_python_passed": 36,
+    "syntax": "passed"
+  },
+  "activation": {
+    "studio_restarted": true,
+    "broker_restarted": true,
+    "proxy_current_sources_verified": [
+      "animation-builder.js",
+      "studio.js",
+      "appearance.js",
+      "motion-library.js",
+      "studio-tools.js"
+    ],
+    "native_app": "owner unlocked; workspace reloaded; style-v39, blonde hair, blue eyes, Wave and local Create animations link verified",
+    "microphone_opened": false,
+    "studio_entry": "http://127.0.0.1:8090/?panel=animation#animationBuilder",
+    "native_animation_link_verified": true,
+    "native_wave_verified": true
+  },
+  "publication": "source, tests, exact-basis private-broker patch, instructions and sanitized verification; runtime assets and owner data stay local"
+}

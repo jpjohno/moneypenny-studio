@@ -1,0 +1,40 @@
+{
+  "checked_at": "2026-10-18T21:31:22.855997+00:00",
+  "owner_workspace": "implemented_running",
+  "tester_mode": "restricted_text_chat_only",
+  "customer_launch_ready": false,
+  "implemented": [
+    "Sky, Pearl, Sage, Lavender and Midnight palettes",
+    "Moneypenny, Jarvis or both presence choices",
+    "Local British male Jarvis voice",
+    "Opt-in Open-Meteo forecasts with decorative day/night sky",
+    "Explicit website-only social and AI shortcuts",
+    "Separate expiring and revocable tester preview",
+    "Loopback supervised Moneypenny startup and recovery",
+    "Origin, payload, browser-policy and local-bootstrap hardening"
+  ],
+  "verified": {
+    "broker_python_tests": 353,
+    "studio_python_tests": 61,
+    "studio_python_skipped": 2,
+    "voice_js_tests": 22,
+    "display_js_tests": 4,
+    "studio_recovery_seconds": 0.81,
+    "public_https_preview_page": 200,
+    "public_unauthenticated_owner_api": 401,
+    "public_owner_bootstrap": 403,
+    "studio_foreign_origin_api": 403,
+    "test_invites_sent": false,
+    "paid_requests_in_live_checks": 0
+  },
+  "remaining": [
+    "Photographic character assets and commercial redistribution clearance",
+    "Full separate customer and household accounts",
+    "Home Assistant DNS and authentication repair",
+    "Remote authenticated 3D avatar rendering",
+    "Camera, phone and vehicle capabilities that are still labelled unconnected",
+    "Human voice/accent and acoustic lip-sync acceptance",
+    "Commercial weather endpoint or reviewed self-hosting before a sold service"
+  ],
+  "limitations": "Passing these bounded tests is not a complete security certification or proof that every external account is connected."
+}

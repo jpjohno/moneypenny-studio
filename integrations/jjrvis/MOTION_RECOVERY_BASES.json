@@ -1,0 +1,11 @@
+{
+  "apply_after": "jjrvis-workspace-polish.patch",
+  "zero_context": true,
+  "byte_exact_application_verified": true,
+  "files": {
+    "workspace.js": {
+      "before": "f83106e5a503abf46778a58f229f270825565b5bb9e50c5a1fd6bdd58f4a89aa",
+      "after": "a6cd6970074b31d730b81868f8d98167a4c53fb89e6579578fe4debaf68b4069"
+    }
+  }
+}

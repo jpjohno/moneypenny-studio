@@ -1,0 +1,54 @@
+{
+  "date": "2026-10-21",
+  "preferred_authoring_base": {
+    "path": "Moneypenny-Adult-Body-Source.blend",
+    "bytes": 56261576,
+    "sha256": "2b26290a38eeaae94f8e17df81d0ab1982624ba5b25885d24b2b88debbc5d4ae",
+    "status": "unfinished fictional adult parametric source, not a finished speaking character",
+    "origin": "scripts/character/build_body_source.py using MPFB core base, builtin body rig and the existing CC0 mpfb.glb sample",
+    "body_vertices": 19158,
+    "body_rig_bones": 52,
+    "body_shape_keys_including_basis": 5,
+    "main_body_has_production_speech_face": false,
+    "inspection": "read-only Blender with embedded scripts disabled; no user photographs, linked libraries, drivers, executable text modules or later legacy anatomical patch found",
+    "input_licences": [
+      {
+        "component": "MakeHuman/MPFB core graphics assets",
+        "licence": "CC0",
+        "source": "https://static.makehumancommunity.org/about/license.html"
+      },
+      {
+        "component": "TalkingHead mpfb.glb sample used as hidden reference and skin image",
+        "licence": "CC0",
+        "source": "https://github.com/met4citizen/TalkingHead#license"
+      }
+    ]
+  },
+  "pre_existing_tracked_legacy_study": {
+    "path": "Moneypenny-Adult-Anatomy-Study-v3.blend",
+    "bytes": 71775816,
+    "sha256": "6f30578a524292890bf0720282a38ac36648cd19521d59fe724e62ea26a6d6a9",
+    "first_tracked_commit": "6ba429a",
+    "preferred_clean_base": false,
+    "component_redistribution_clearance": false,
+    "runtime_copy_is_same_file_hash": false
+  },
+  "runtime_scan_assets_included_in_this_publication": false,
+  "renderpeople_distribution_permission_obtained": false,
+  "history_rewritten": false,
+  "prepared_local_4d_workshop": {
+    "path": ".runtime/scan-review/renderpeople-4d/workshop/Moneypenny-4D-Capture-Workshop.blend",
+    "bytes": 3426854,
+    "sha256": "4600fab30b9885119c95840afc4b8d78d39561c5548ec95a7f4f1b4bdf11916e",
+    "fps": 30,
+    "frame_range": [
+      1,
+      1112
+    ],
+    "verified_original_source_files": 1115,
+    "original_sources_unchanged": true,
+    "embedded_source_scripts_executed": false,
+    "new_scanner_installed": false,
+    "captured_data_published_to_git": false
+  }
+}

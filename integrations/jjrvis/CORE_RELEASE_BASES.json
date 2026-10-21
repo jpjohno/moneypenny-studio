@@ -1,0 +1,14 @@
+{
+  "prepared": "2026-10-18",
+  "basis": "reconstructed_by_reversing_exact_final_core_mail_edits_not_an_independent_historical_capture",
+  "apply_after": "jjrvis-release.patch",
+  "files_sha256": {
+    "jjrvis_core.py": "4bc902e750f5f5607d0a410e990dba49117f0127007d7c295c788985f6f20e56",
+    "workspace_data.py": "65dc4cc09a63ef5a09a3fd77d1602016027a06cfff539947bbbd46f4a293aa54",
+    "tests/test_core.py": "36d3d1b44971da40d874a8b0594439ed90f4eb463be2505d8fc7425a9e486357"
+  },
+  "new_files": [
+    "tests/test_mail_recovery.py"
+  ],
+  "verification": "Reversed cleanly from final source, then checked and applied with ordinary git apply in a temporary folder; resulting four files matched final source byte for byte."
+}

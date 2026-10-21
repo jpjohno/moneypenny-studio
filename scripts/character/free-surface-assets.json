@@ -1,0 +1,116 @@
+{
+  "repository": "https://github.com/ibrews/VitruvianGodot",
+  "commit": "bdecdcd537b4031fdd0fb299b7e4f93f084fffa0",
+  "asset_licence": "CC0 per upstream NOTICE.md",
+  "code_licence": "MIT; no upstream scripts executed",
+  "files": [
+    {
+      "path": "NOTICE.md",
+      "local_file": "NOTICE.md",
+      "bytes": 1628,
+      "sha256": "1f0203c80876f83f1a83ca397ff9919bfa1705bbaf95caa86d0cf6699d68326d"
+    },
+    {
+      "path": "LICENSE",
+      "local_file": "LICENSE",
+      "bytes": 1281,
+      "sha256": "6b72d00e6cc0958f4bf67b159099fd78046c490e5f04d1611190b0dd526bf9af"
+    },
+    {
+      "path": "godot_project/vitruvian_head.glb",
+      "local_file": "vitruvian_head.glb",
+      "bytes": 10189832,
+      "sha256": "54efb42e9f3dd7e7cf3c3e86ed5298f3ba26e341d5743245cbe2621c547c5f1f"
+    },
+    {
+      "path": "godot_project/vitruvian_body.glb",
+      "local_file": "vitruvian_body.glb",
+      "bytes": 6879364,
+      "sha256": "e9e002e2443672285c2d4306804addbba654c41953022865e4342b1bfad05b2a"
+    },
+    {
+      "path": "godot_project/vitruvian_hair_rigged.glb",
+      "local_file": "vitruvian_hair_rigged.glb",
+      "bytes": 37694332,
+      "sha256": "3e055dd659ea683b78a9fa5b408d8f534c79ac3aa70f20b77d0820913de4ad03"
+    },
+    {
+      "path": "godot_project/vit_face_bc.png",
+      "local_file": "vit_face_bc.png",
+      "bytes": 7835475,
+      "sha256": "7f5314694e267a7fb7270eab6159bb4a988220e13060cfabd7194df14a164a6d"
+    },
+    {
+      "path": "godot_project/vit_face_n.png",
+      "local_file": "vit_face_n.png",
+      "bytes": 5950785,
+      "sha256": "4223812ccc96211f6aa3ad61da314d2295ee459e4751081c9e35a45b0c0fd6b3"
+    },
+    {
+      "path": "godot_project/vit_face_rough.png",
+      "local_file": "vit_face_rough.png",
+      "bytes": 10064534,
+      "sha256": "f9911cd24f8aa5c81a3fd32ac977d45b36bcf2f7404b11749aca1024fca41400"
+    },
+    {
+      "path": "godot_project/vit_body_bc.png",
+      "local_file": "vit_body_bc.png",
+      "bytes": 6961109,
+      "sha256": "13f196036df42c56059ebe38dbb28fe01280ac0fe95e6203e48b4e3f2d8afd85"
+    },
+    {
+      "path": "godot_project/vit_body_n.png",
+      "local_file": "vit_body_n.png",
+      "bytes": 4877720,
+      "sha256": "2eb08479c83d5fd3f0fb9e4e4407e11f60a7f5ba07b6bd76dbf3b6e9581977d5"
+    },
+    {
+      "path": "godot_project/vit_body_rough.png",
+      "local_file": "vit_body_rough.png",
+      "bytes": 9418824,
+      "sha256": "1cfde80df4946b1c82f481f3d89ca6839703bc8172982ce1cad2cfaac02d88ad"
+    },
+    {
+      "path": "godot_project/vit_hair_diffuse.png",
+      "local_file": "vit_hair_diffuse.png",
+      "bytes": 1691178,
+      "sha256": "65e2708cf53024080d5b3a53f42509bdeed2df936272e48f068f2a06467cd352"
+    },
+    {
+      "path": "godot_project/vit_hair_normal.png",
+      "local_file": "vit_hair_normal.png",
+      "bytes": 6131884,
+      "sha256": "2c78723bb30dcdbcb798a2e52170d8cc2986ccc3747d94f734f06b4c2cd8b58a"
+    },
+    {
+      "path": "godot_project/vit_hair_opacity.png",
+      "local_file": "vit_hair_opacity.png",
+      "bytes": 3962134,
+      "sha256": "fb4ecd24ab071ea777584466daed0be8103a4ddee392150d070b86819d336123"
+    },
+    {
+      "path": "godot_project/vit_lash_atlas.png",
+      "local_file": "vit_lash_atlas.png",
+      "bytes": 115329,
+      "sha256": "d662cafbbc9ceadba22cb894bb6938ac5f57876ff5f43f449b25062c8ebb2b6f"
+    },
+    {
+      "path": "godot_project/vit_mouth.png",
+      "local_file": "vit_mouth.png",
+      "bytes": 3018410,
+      "sha256": "2e4d0f7e5a2f28613ed54bbd07fa2300b62a6c2b98dc7c1f6f0ac5ce5fe8da64"
+    },
+    {
+      "path": "godot_project/vit_sclera.png",
+      "local_file": "vit_sclera.png",
+      "bytes": 965536,
+      "sha256": "72bcb85327cf67ef0b0b35a8b6822293bc2059f9f11314a9aebffc95f31e08a7"
+    },
+    {
+      "path": "godot_project/vit_iris.png",
+      "local_file": "vit_iris.png",
+      "bytes": 581172,
+      "sha256": "e46a988b904b49db6343457215353a309dc67c19e03a6d02e00dea8fb5c51e49"
+    }
+  ]
+}

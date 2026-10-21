@@ -1,0 +1,113 @@
+{
+  "checked_at": "2026-10-19T01:21:43.498205+00:00",
+  "host": "https://app.jjrvis.com",
+  "scope": "Status and security metadata only; no credentials or response payloads retained.",
+  "application_tests": {
+    "command": ".venv/bin/python -m pytest tests -q",
+    "passed": 412,
+    "warnings": 1,
+    "duration_seconds": 19.89
+  },
+  "routes": [
+    {
+      "path": "/workspace",
+      "scope": "public",
+      "status": 200,
+      "seconds": 0.228,
+      "content_type": "text/html; charset=utf-8",
+      "frame_options": "DENY",
+      "nosniff": "nosniff",
+      "csp_present": true,
+      "cookie_issued": false,
+      "frame_src_self": true,
+      "capture_browser_optin": true
+    },
+    {
+      "path": "/theme-init.js",
+      "scope": "public",
+      "status": 200,
+      "seconds": 0.204,
+      "content_type": "text/javascript; charset=utf-8",
+      "frame_options": "DENY",
+      "nosniff": "nosniff",
+      "csp_present": true,
+      "cookie_issued": false
+    },
+    {
+      "path": "/command-deck.js",
+      "scope": "public",
+      "status": 200,
+      "seconds": 0.206,
+      "content_type": "text/javascript; charset=utf-8",
+      "frame_options": "DENY",
+      "nosniff": "nosniff",
+      "csp_present": true,
+      "cookie_issued": false
+    },
+    {
+      "path": "/scene-layout.js",
+      "scope": "public",
+      "status": 200,
+      "seconds": 0.206,
+      "content_type": "text/javascript; charset=utf-8",
+      "frame_options": "DENY",
+      "nosniff": "nosniff",
+      "csp_present": true,
+      "cookie_issued": false
+    },
+    {
+      "path": "/command-deck.css",
+      "scope": "public",
+      "status": 200,
+      "seconds": 0.201,
+      "content_type": "text/css; charset=utf-8",
+      "frame_options": "DENY",
+      "nosniff": "nosniff",
+      "csp_present": true,
+      "cookie_issued": false
+    },
+    {
+      "path": "/command-scene.css",
+      "scope": "public",
+      "status": 200,
+      "seconds": 0.204,
+      "content_type": "text/css; charset=utf-8",
+      "frame_options": "DENY",
+      "nosniff": "nosniff",
+      "csp_present": true,
+      "cookie_issued": false
+    },
+    {
+      "path": "/presence/",
+      "scope": "public",
+      "status": 401,
+      "seconds": 0.194,
+      "content_type": "application/json",
+      "frame_options": "DENY",
+      "nosniff": "nosniff",
+      "csp_present": true,
+      "cookie_issued": false
+    },
+    {
+      "path": "/presence/?embed=jarvis",
+      "scope": "owner",
+      "status": 200,
+      "seconds": 0.106,
+      "content_type": "text/html; charset=utf-8",
+      "frame_options": "SAMEORIGIN",
+      "nosniff": "nosniff",
+      "csp_present": true,
+      "cookie_issued": false,
+      "nonce_csp_present": true,
+      "blob_connections_permitted": true,
+      "capture_blocked": true
+    }
+  ],
+  "command_ui_tests": {
+    "command": "node --test tests/command-deck.test.cjs tests/command-scene.test.cjs",
+    "passed": 8,
+    "skipped": 5,
+    "failed": 0,
+    "note": "Browser-dependent scene checks were skipped in this direct Node run; parent is reviewing the live UI separately."
+  }
+}

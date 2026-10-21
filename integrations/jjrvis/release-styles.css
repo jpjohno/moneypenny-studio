@@ -1,0 +1,3 @@
+/* Reference overlay: the same rules are already applied by jjrvis-release.patch. */
+body[data-hud-theme="stark"] aside:after{content:"PRIVATE OWNER WORKSPACE"}
+.precision-letter-0,.precision-letter-1{animation-delay:.25s}.precision-letter-2{animation-delay:1.35s}.precision-letter-3{animation-delay:1.73s}.precision-letter-4{animation-delay:2.11s}.precision-letter-5{animation-delay:2.49s}.room-plan-svg{width:100%;max-height:400px}

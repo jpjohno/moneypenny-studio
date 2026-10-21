@@ -1,0 +1,43 @@
+{
+  "verified": "2026-10-20",
+  "backend_suite": {
+    "passed": 414,
+    "warning": "Existing Starlette TestClient deprecation",
+    "additional_asset_route_auth_tests_passed": 2
+  },
+  "browser_layout_suite": {
+    "passed": 8,
+    "palettes": 5,
+    "desktop_and_phone": true,
+    "atlas_hit_test": true
+  },
+  "speech_and_globe_suite": {
+    "passed": 22
+  },
+  "startup_greeting_suite": {
+    "passed": 8
+  },
+  "native_app": {
+    "reloaded": true,
+    "live_news_card_readable": true,
+    "screenshot_in_private_downloads": true
+  },
+  "live_sources": {
+    "whatsapp": "30 Mac-synced plain-text messages returned",
+    "messages": "503 macOS background-service source access blocked",
+    "markets": "Read-only quote bridge responds; zero fresh quotes and no publisher socket observed",
+    "bmw": "Connected dated measurements; no location report",
+    "profiles": "Kit and Enkidu saved profile definitions; tracking off"
+  },
+  "voice": {
+    "new_phrase_generation_seconds": 2.274,
+    "end_to_end_latency": "not_measured"
+  },
+  "character": {
+    "rest_and_weight_shift": "implemented",
+    "photorealistic": false
+  },
+  "paid_services_added": false,
+  "external_messages_sent": false,
+  "broker_execution_accessed": false
+}

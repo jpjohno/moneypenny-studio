@@ -1,0 +1,27 @@
+{
+  "scope": "Neutral local text question in actual owner workspace; browser AudioSource-start acknowledgement, no hardware microphone/speaker recording",
+  "final_ui_run": {
+    "first_text_ms": 2648,
+    "first_voice_ms": 5535,
+    "validated_final_ms": 7267,
+    "playback_finished": true,
+    "voice_busy_error": false
+  },
+  "intermediate_ui_run": {
+    "first_text_ms": 1555,
+    "first_voice_ms": 7094,
+    "validated_final_ms": 12533
+  },
+  "limitations": [
+    "Observed timings from two different neutral prompts, not a controlled speed comparison.",
+    "First speech still has noticeable latency.",
+    "Actual phone hardware installation and live acoustic barge-in were not verified."
+  ],
+  "ui_verified": [
+    "full_companion",
+    "small_icon_dashboard_return",
+    "restore_from_icon",
+    "connection_centre",
+    "live_readiness_states"
+  ]
+}

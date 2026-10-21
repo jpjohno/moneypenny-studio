@@ -1,0 +1,71 @@
+{
+  "date": "2026-10-21",
+  "status": "implemented_and_verified_in_live_studio_and_unlocked_native_app",
+  "motion": {
+    "elapsed_frame_time_preserved": true,
+    "queued_step_boundary_carry": true,
+    "short_step_relative_fades": true,
+    "preview_normal_speed_single_play": true,
+    "preview_backend_cancel_nonblocking": true,
+    "nominal_2s_sequence": {
+      "before_5fps_wall_seconds": 4.6,
+      "after_5fps_wall_seconds": 2,
+      "after_60fps_wall_seconds": 2
+    },
+    "evidence": "actual skeleton timing; no claim of captured human motion"
+  },
+  "speech": {
+    "aa_zero_index_event_repaired": true,
+    "stop_releases_active_viseme": true,
+    "interpolation_clock": "AudioContext currentTime, bounded 100 ms",
+    "repeated_mood_preserves_animation_tracks": true,
+    "confirmed_quiet_tail_trim": {
+      "maximum_ms": 350,
+      "retained_margin_ms": 80,
+      "threshold_db": -55,
+      "both_synthetic_greetings_trimmed_ms": 160,
+      "retained_and_leading_samples_unchanged": true,
+      "one_pcm_buffer_for_voice_and_mouth": true
+    },
+    "default_output_delay_ms": 100,
+    "delay_not_arbitrarily_changed": true
+  },
+  "appearance": {
+    "lightblonde_rose_fibre_grade": true,
+    "texture_geometry_alpha_morphs_preserved": true,
+    "face_or_body_shape_changed": false,
+    "skin_environment_change_rejected_no_visible_benefit": true,
+    "photographic_quality_achieved": false
+  },
+  "live_checks": {
+    "owner_unlocked_native_app": true,
+    "native_reloaded": true,
+    "native_spoken_reply_reached_speaking": true,
+    "native_replay_open_mouth_and_gesture_observed": true,
+    "active_replay_then_stop_verified": true,
+    "native_wave_verified": true,
+    "studio_saved_sequence_preview_started": true,
+    "studio_shader_errors": [],
+    "microphone_opened": false,
+    "acoustic_sync_certified": false,
+    "proxy_sources_current": 6,
+    "studio_saved_sequence_completed": true,
+    "studio_sequence_finished_seconds": 7,
+    "native_voice_help_false_match_found_and_repaired": true,
+    "native_exact_speech_request_verified": true,
+    "native_post_stop_badge_3d_ready_verified": true,
+    "literal_speech_utility_no_model_call": true
+  },
+  "checks": {
+    "studio_javascript_passed": 134,
+    "syntax": "passed",
+    "python": "not rerun; no Python change in Studio",
+    "broker_core_stream_intent_python_passed": 89,
+    "broker_presence_startup_interrupt_javascript_passed": 21
+  },
+  "limits": [
+    "Existing low-resolution hair cards and generic skin remain visibly CG.",
+    "Rendered smoothness remains limited by delivered frames under system load.",
+    "No unrestricted autonomous movement or new motion-capture engine was added."
+  ]
+}

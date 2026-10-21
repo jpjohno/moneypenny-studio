@@ -1,0 +1,61 @@
+{
+  "date": "2026-10-20",
+  "status": "implemented_local_native_verified",
+  "studio_python": {
+    "passed": 66,
+    "skipped": 2
+  },
+  "studio_node": {
+    "passed": 57
+  },
+  "workspace_browser": {
+    "passed": 29
+  },
+  "geometry_contract": "v32 passed with actual private GLB",
+  "face_preservation": {
+    "face_vertices_compared": 4160,
+    "maximum_coordinate_error_m": 2.384185791015625e-07,
+    "tolerance_m": 1e-06,
+    "rig_viseme_contract": "separately_passed"
+  },
+  "asset_budget": {
+    "revision": "v31",
+    "bytes": 27281396,
+    "triangles_before": 291992,
+    "triangles_after": 156031,
+    "hair_triangles": 8467,
+    "body_and_face_shape_keys_unchanged": true,
+    "photographic_realism_verified": false,
+    "source_v30_preserved": true,
+    "skin": "bobby_03 CC0",
+    "hair": "Ashley May hair by Elvaerwyn; CC-BY per original mhclo, version unspecified; hair02 pack. Geometry transformed to fit this private character."
+  },
+  "clothing_fit": {
+    "revision": "v32",
+    "maximum_chest_projection_reduction_m": 0.03499999674391944,
+    "vertices_adjusted": 6689,
+    "garment_vertices_before_weld": 35366,
+    "garment_vertices_after_weld": 33975,
+    "fabric_vertices_relaxed": 3148,
+    "face_and_viseme_geometry_unchanged": true,
+    "previous_v31_preserved": true,
+    "bytes": 27227236,
+    "photographic_realism_verified": false
+  },
+  "native_UI_verified": [
+    "style-v32 visible",
+    "v31 turn front to back",
+    "direct drag changed rear to side",
+    "v32 turn controller running",
+    "publisher image visible in public news briefing",
+    "microphone off when finished",
+    "v32 completed rear view captured"
+  ],
+  "live_app_control": "not exercised; fixed installed-app catalogue route retained",
+  "new_spoken_test": false,
+  "audio_crackle_resolved": "unverified",
+  "photographic_appearance": false,
+  "realistic_arbitrary_movement": false,
+  "unrestricted_computer_autonomy": false,
+  "published_runtime_model": false
+}

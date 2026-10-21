@@ -1,0 +1,55 @@
+{
+  "checked_at": "2026-10-19T01:33:07.317220+00:00",
+  "scope": "Owner browser UI, no new permissions or external messages",
+  "owner_viewport": {
+    "width": 566,
+    "height": 647,
+    "kind": "narrow desktop browser pane; not physical iPhone hardware"
+  },
+  "checks": {
+    "saved_midnight_palette_after_reload": true,
+    "no_horizontal_overflow": true,
+    "three_navigation_dropdowns": true,
+    "explore_menu_contained": true,
+    "five_publisher_headline_links": true,
+    "weather_forecast_and_retrieval_timestamps": true,
+    "device_details_and_voice_status": true,
+    "junomo_prospect_review_columns": [
+      "Company",
+      "Website evidence",
+      "Decision"
+    ],
+    "companion_fullscreen": true,
+    "companion_hides_overview_instruments": true,
+    "small_icon": true,
+    "hide_restore": true,
+    "return_dashboard": true,
+    "workbench_absent_until_opened": true,
+    "workbench_mounts_on_open": true,
+    "one_shared_hero_globe": true,
+    "duplicate_workbench_motion_control_removed": true,
+    "new_page_console_errors": 0,
+    "microphone_stopped_after_check": true
+  },
+  "layout_fixture_matrix": {
+    "viewports": [
+      "1280x800",
+      "1440x900",
+      "390x844"
+    ],
+    "palettes": [
+      "midnight",
+      "sky",
+      "pearl",
+      "sage",
+      "lavender"
+    ],
+    "passed": true
+  },
+  "limits": [
+    "Final desktop layout was verified in isolated production-CSS fixtures, not a full-width owner browser session.",
+    "No physical iPhone installation or native phone control acceptance.",
+    "Current avatar and hair remain CG, not photographic.",
+    "No new sign-ins, grants, invitations, message sends, trading actions or model downloads."
+  ]
+}

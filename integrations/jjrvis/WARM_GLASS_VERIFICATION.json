@@ -1,0 +1,25 @@
+{
+  "date": "2026-10-20",
+  "studio_node_passed": 60,
+  "studio_python_passed": 66,
+  "studio_python_skipped": 2,
+  "workspace_ui_passed": 15,
+  "workspace_proxy_passed": 36,
+  "geometry_contract": "actual_v33_passed",
+  "garment": {
+    "revision": "v33",
+    "garment_vertices_refitted": 3974,
+    "maximum_fabric_displacement_m": 0.05854140100864446,
+    "body_face_and_speech_shapes_unchanged": true,
+    "previous_v32_preserved": true,
+    "bytes": 27243356,
+    "photographic_realism_verified": false
+  },
+  "native_review": "Foreground character, Earth and clock visibly rendered. Public illustrated regional news cards automatically advanced; transparent panel showed Earth behind it. Close dismissed briefing with avatar retained. Checked in native JJRVIS on 20 October.",
+  "full_spoken_test": false,
+  "photographic": false,
+  "whole_app_memory_measured": false,
+  "runtime_model_published": false,
+  "studio_visual": "v33 clothed drape and slight smile visibly reviewed after callback-copy fix",
+  "proof": "Local Downloads/Moneypenny-warm-v33-20261020.png; not included in public repository"
+}

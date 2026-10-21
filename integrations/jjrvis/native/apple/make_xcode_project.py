@@ -1,0 +1,25 @@
+"""Generate a minimal shared Apple application project; does not sign in to Apple."""
+from pathlib import Path
+p=Path(__file__).resolve().parent/'JJRVIS.xcodeproj';p.mkdir(exist_ok=True)
+(p/'project.pbxproj').write_text('''// !$*UTF8*$!
+{ archiveVersion = 1; classes = {}; objectVersion = 56;
+objects = {
+A00000000000000000000001 = {isa = PBXProject; buildConfigurationList = A00000000000000000000010; compatibilityVersion = "Xcode 14.0"; developmentRegion = en; hasScannedForEncodings = 0; knownRegions = (en, Base); mainGroup = A00000000000000000000002; productRefGroup = A00000000000000000000003; projectDirPath = ""; projectRoot = ""; targets = (A00000000000000000000004);};
+A00000000000000000000002 = {isa = PBXGroup; children = (A00000000000000000000005,A00000000000000000000003); sourceTree = "<group>";};
+A00000000000000000000003 = {isa = PBXGroup; children = (A00000000000000000000006); name = Products; sourceTree = "<group>";};
+A00000000000000000000004 = {isa = PBXNativeTarget; buildConfigurationList = A00000000000000000000011; buildPhases = (A00000000000000000000007,A00000000000000000000008,A00000000000000000000009); buildRules = (); dependencies = (); name = JJRVIS; productName = JJRVIS; productReference = A00000000000000000000006; productType = "com.apple.product-type.application";};
+A00000000000000000000005 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JJRVISApp.swift; sourceTree = "<group>";};
+A00000000000000000000006 = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = JJRVIS.app; sourceTree = BUILT_PRODUCTS_DIR;};
+A00000000000000000000007 = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A0000000000000000000000A); runOnlyForDeploymentPostprocessing = 0;};
+A00000000000000000000008 = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0;};
+A00000000000000000000009 = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0;};
+A0000000000000000000000A = {isa = PBXBuildFile; fileRef = A00000000000000000000005;};
+A00000000000000000000010 = {isa = XCConfigurationList; buildConfigurations = (A00000000000000000000012,A00000000000000000000013); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release;};
+A00000000000000000000011 = {isa = XCConfigurationList; buildConfigurations = (A00000000000000000000014,A00000000000000000000015); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release;};
+A00000000000000000000012 = {isa = XCBuildConfiguration; name = Debug; buildSettings = {SWIFT_VERSION = 5.0;};};
+A00000000000000000000013 = {isa = XCBuildConfiguration; name = Release; buildSettings = {SWIFT_VERSION = 5.0;};};
+A00000000000000000000014 = {isa = XCBuildConfiguration; name = Debug; buildSettings = {PLACEHOLDER};};
+A00000000000000000000015 = {isa = XCBuildConfiguration; name = Release; buildSettings = {PLACEHOLDER};};
+}; rootObject = A00000000000000000000001; }
+'''.replace('PLACEHOLDER','''PRODUCT_NAME = JJRVIS; PRODUCT_BUNDLE_IDENTIFIER = com.jjrvis.client; CODE_SIGN_STYLE = Automatic; GENERATE_INFOPLIST_FILE = YES; SDKROOT = iphoneos; SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx"; IPHONEOS_DEPLOYMENT_TARGET = 17.0; MACOSX_DEPLOYMENT_TARGET = 13.0; TARGETED_DEVICE_FAMILY = "1,2"; SWIFT_VERSION = 5.0; ENABLE_HARDENED_RUNTIME = YES; ENABLE_USER_SCRIPT_SANDBOXING = YES; CURRENT_PROJECT_VERSION = 1; MARKETING_VERSION = 0.1.0; INFOPLIST_KEY_NSFaceIDUsageDescription = "Unlock your private JJRVIS workspace."; INFOPLIST_KEY_NSMicrophoneUsageDescription = "JJRVIS listens when you enable voice."; INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "JJRVIS transcribes questions on this device."; INFOPLIST_KEY_NSCameraUsageDescription = "Camera access is requested only when enabled."; INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES; INFOPLIST_KEY_UILaunchScreen_Generation = YES;'''))
+print(p)

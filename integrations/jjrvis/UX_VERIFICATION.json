@@ -1,0 +1,67 @@
+{
+  "prepared": "2026-10-18",
+  "scope": "Three-section daily board and quieter compact overview; unit/syntax checks and root desktop browser acceptance completed.",
+  "automated_checks": {
+    "daily_board_unit_tests": 10,
+    "combined_ux_unit_passed": 14,
+    "optional_browser_skipped": 2,
+    "combined_ux_seconds": 0.133,
+    "javascript_syntax": [
+      "daily-board.js",
+      "settings-panel.js",
+      "workspace.js"
+    ],
+    "application_python_tests_passed": 412,
+    "application_python_seconds": 16.95,
+    "application_python_scope": "tests/ only",
+    "root_focused_javascript_passed": 29,
+    "packaged_ux_unit_passed": 14,
+    "packaged_ux_optional_browser_skipped": 2,
+    "test_scope_note": "Focused root and packaged JavaScript checks overlap; their counts must not be added.",
+    "root_wide_collection": {
+      "state": "not_passed",
+      "errors": 2,
+      "cause": "Missing Pillow in unrelated legacy brand/colour test modules; dependency was not installed."
+    }
+  },
+  "data_access": {
+    "personal_sources": "Supplied brief and snapshot only; no new calendar, mail body, model or inference request.",
+    "news": "At most one initial read from the existing news-feeds endpoint, shared for 60 seconds across rerenders.",
+    "news_deadline_seconds": 8,
+    "background_polling": false,
+    "hidden_or_companion_news": "Deferred or aborted.",
+    "task_and_priority_dates": "Saved/read dates retained; historic priorities are not presented as new tasks.",
+    "permissions": "Setup buttons only; no automatic camera, microphone or provider verification."
+  },
+  "release": {
+    "prior_patch_chain_preserved": true,
+    "exact_patch_application_verified": true,
+    "full_private_source_included": false,
+    "credentials_or_private_counts_included": false
+  },
+  "browser_acceptance": {
+    "state": "completed_desktop_only",
+    "artifact": "UX_BROWSER_VERIFICATION.json",
+    "automatic_setup_dialog_on_reload": false,
+    "public_headline_links_visible": 5,
+    "weather_attribution_and_retrieval_time_visible": true,
+    "calendar_not_read_explicit": true,
+    "dated_saved_tasks_and_priorities_visible": true,
+    "task_management_collapsed": true,
+    "fullscreen_icon_hide_restore_dashboard": "passed",
+    "horizontal_overflow": false,
+    "new_console_errors_since_reload": 0,
+    "new_permissions_granted": false,
+    "iphone_hardware_tested": false,
+    "private_screenshot_included": false
+  },
+  "public_routes": {
+    "artifact": "UX_PUBLIC_ROUTES.json",
+    "new_public_helpers_status": 200,
+    "unauthenticated_renderer_status": 401,
+    "owner_renderer_status": 200,
+    "parent_unframeable": true,
+    "child_nonce_csp_and_capture_block": true,
+    "new_owner_cookie_issued": false
+  }
+}

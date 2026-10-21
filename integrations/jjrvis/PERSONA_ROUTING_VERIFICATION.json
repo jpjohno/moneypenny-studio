@@ -1,0 +1,43 @@
+{
+  "python_checks": 84,
+  "exact_replay_verified": true,
+  "ordinary_chat_probe_before_restart": {
+    "status": 503,
+    "elapsed_seconds": 45.124,
+    "mode": null,
+    "model": null,
+    "persona": null,
+    "reply_provenance": null,
+    "answer_characters": 0,
+    "answer_sha256": null,
+    "source_count": 0,
+    "actions_executed": null,
+    "probe": "harmless self-personality question",
+    "microphone_opened": false,
+    "audio_played": false
+  },
+  "routing_activation": "verified_after_broker_restart",
+  "limits": "The first successful reply took 18.18 seconds under continuing Mac memory pressure. No guarantee of response time or every model response.",
+  "after_competing_generations_cleared": {
+    "status": 200,
+    "elapsed_seconds": 18.18,
+    "answer_present": true,
+    "answer_length": 91,
+    "model": "uncensored-3b:latest",
+    "persona": {
+      "state": "saved",
+      "id": "4ceff3ea-d4ea-44de-a659-18588e2cd09d",
+      "name": "Moneypenny",
+      "source": "Moneypenny Studio \u00b7 saved on this Mac"
+    },
+    "mode": "local_conversation",
+    "provenance": "model_generated"
+  },
+  "competing_generation": {
+    "source": "existing_OpenWebUI_container",
+    "max_tokens": 40960,
+    "action": "restart_only_chat_container_preserving_volume",
+    "homeassistant_restarted": false,
+    "remaining_competing_connections": 0
+  }
+}

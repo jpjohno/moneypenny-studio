@@ -1,0 +1,59 @@
+{
+  "date": "2026-10-21",
+  "scope": "source and original editable adult base publication; private recorded4D workshop prepared locally",
+  "python_tests": {
+    "passed": 94,
+    "skipped": 2
+  },
+  "node_tests": {
+    "passed": 83
+  },
+  "launcher_tests": {
+    "passed": 4,
+    "embedded_scripts_disabled": true,
+    "no_controls_mode": true,
+    "path_check_does_not_launch_ui": true
+  },
+  "workshop": {
+    "path": ".runtime/scan-review/renderpeople-4d/workshop/Moneypenny-4D-Capture-Workshop.blend",
+    "bytes": 3426854,
+    "sha256": "4600fab30b9885119c95840afc4b8d78d39561c5548ec95a7f4f1b4bdf11916e",
+    "fps": 30,
+    "frame_range": [
+      1,
+      1112
+    ],
+    "verified_original_source_files": 1115,
+    "original_sources_unchanged": true,
+    "embedded_source_scripts_executed": false,
+    "new_scanner_installed": false,
+    "captured_data_published_to_git": false
+  },
+  "native_sequence_checks": [
+    {
+      "frame": 1,
+      "geometry_sha256": "a5e690094673c34b0183313fe75b70dc2928d001ab7af707a50219671a6aad3a",
+      "texture_file": "rp_aliyah_4d_004_dancing_dif_2k.0001.jpg",
+      "native_image_loading_observed": true
+    },
+    {
+      "frame": 100,
+      "geometry_sha256": "543fa8ba69cf838c8a5c69d5b1f2708ffe7f49d61fdf68b72b7d675882dd14ee",
+      "texture_file": "rp_aliyah_4d_004_dancing_dif_2k.0100.jpg",
+      "native_image_loading_observed": true
+    }
+  ],
+  "removed_source_text_blocks": [
+    "Blender_Pre_Process.py",
+    "Blender_Pre_Process.py.001"
+  ],
+  "saved_plain_notes": [
+    "READ_ME_4D_WORKSHOP.txt"
+  ],
+  "live_avatar_or_microphone_changed": false,
+  "gemini_session_connected": false,
+  "gemini_local_tool_access_required": true,
+  "photographic_character_finished": false,
+  "sends_or_account_changes": false,
+  "existing_blender_windows_or_unsaved_edits_modified": false
+}

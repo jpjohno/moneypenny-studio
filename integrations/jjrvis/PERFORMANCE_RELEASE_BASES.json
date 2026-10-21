@@ -1,0 +1,31 @@
+{
+  "prepared": "2026-10-18",
+  "status": "final_patch_applied_and_verified",
+  "patch_context_lines": 1,
+  "basis": "Independent exact before-source captures supplied for this performance, companion and Apple setup increment. Full private source captures are excluded.",
+  "apply_after": [
+    "jjrvis-integration.patch",
+    "jjrvis-release.patch",
+    "jjrvis-core-recovery.patch"
+  ],
+  "before_sha256": {
+    "workspace.js": "7cafd05acf1c9f13d5f0a9b787fe77b9f8c8b0535400c13724c7f873b2f714fc",
+    "workspace.css": "7f32cb206fd0955c956c703c19e6d13c3dc8ab67873c6b53ddd073fc9b9898cb",
+    "workspace.html": "29950394445d860316b169a49cdfaba19f99926089ae1e707286d5432fa27f85",
+    "jarvis_comm_broker.py": "b917cbafba03a2a5cd1129c30a73864ea971ff663c9d73fd1f708cfe0f004f43",
+    "jjrvis_core.py": "b73e407fd479d825a9d7bb612acb81c272230603197a4ebb8e061817e5239810",
+    "tests/test_answer_stream.py": "e167e6702e4dd44904178c6f15ba098f89fd8b4237736a22690ab7ae3e180cfb"
+  },
+  "after_sha256": {
+    "workspace.js": "92e80b0ff3fcf501b5f8325ad886beb7c349d1d771545aee9b09af9a64b7c572",
+    "workspace.css": "b503249380fe4751558525cf59af6864e367e17be7dbb3941e0be6cb2376108d",
+    "workspace.html": "ecae20c1f22428c501c6024026c6eab5382c500ac475323cad86bfe6da9212d2",
+    "jarvis_comm_broker.py": "ad6ba251f2ae5a856f525cc6a6ca8744b105d127e5396bf5f7228b0d94012fdb",
+    "jjrvis_core.py": "471e81c14fd2dc29936acda30fa21383f417f3f76487f0c343197571530ebf14",
+    "tests/test_answer_stream.py": "4c7acbd937fa3f96157f4b57a32c25b9baeae828c98e419cc6ec09a15b6d609a"
+  },
+  "capture_path_note": "The capture named latency-answer-stream.before.py is tests/test_answer_stream.py, not a separate answer_stream.py module.",
+  "final_patch": "jjrvis-performance.patch",
+  "patch_sha256": "def162c31426fdad03900219ee2eef6f2a3247ecb33928de1a20cfb56ef04f78",
+  "application_verification": "Ordinary git apply --check and git apply both succeeded against private temporary copies of all six exact bases. Every resulting file matched the final source SHA-256 byte for byte. Temporary private copies were removed."
+}

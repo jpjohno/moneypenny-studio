@@ -1,0 +1,84 @@
+diff --git a/workspace.js b/workspace.js
+--- a/workspace.js
++++ b/workspace.js
+@@ -67,0 +68 @@
++let conversationInvite=false;
+@@ -195 +196 @@
+- const talk=hub.querySelector('[data-presence-talk]');if(talk)talk.textContent=mode==='jarvis'?'Talk to Jarvis ↗':'Talk to Moneypenny ↗';
++ const talk=hub.querySelector('[data-presence-talk]');if(talk)talk.textContent='Start conversation';
+@@ -213 +214 @@
+- <header class="presence-heading"><div><p class="eyebrow">PERSONAL OPERATIONS / JJRVIS</p><h2>Your world.<br><em>At your command.</em></h2></div><span class="owner-chip"><i></i> JAMES · PRIVATE WORKSPACE</span></header>
++ <header class="presence-heading"><div><p class="eyebrow">PERSONAL OPERATIONS / JJRVIS</p><h2>What shall we tackle?<br><em>Ready when you are.</em></h2></div><span class="owner-chip"><i></i> JAMES · PRIVATE WORKSPACE</span></header>
+@@ -215 +216 @@
+- <div id="presence-atlas" class="presence-atlas" aria-label="Your interactive world"></div><div class="presence-scene-caption"><span>ONE CONVERSATION. YOUR CONNECTED WORLD.</span><p>Home, work and the day ahead.</p><button type="button" data-presence-talk>Talk to Moneypenny <span aria-hidden="true">↗</span></button><button type="button" class="quiet" data-access-centre aria-label="Connections & access">Connections</button></div></div>
++ <div id="presence-atlas" class="presence-atlas" aria-label="Your interactive world"></div><div class="presence-scene-caption"><span>ONE CONVERSATION. YOUR CONNECTED WORLD.</span><p>Home, work and the day ahead.</p><button type="button" data-presence-talk>Start conversation</button><button type="button" data-voice-stop hidden>Stop listening</button><span class="stage-voice-status" data-stage-voice role="status">Microphone off · click to start</span><button type="button" class="quiet" data-access-centre aria-label="Connections & access">Connections</button></div></div>
+@@ -235 +236 @@
+-  document.querySelector('[data-presence-talk]').onclick=()=>chooseAssistant(document.documentElement.dataset.presenceMode==='jarvis'?'english':'moneypenny');
++  document.querySelector('[data-presence-talk]').onclick=startConversation;
+@@ -251 +252 @@
+- commandBriefing=window.JJSceneLayout?.mountBriefing(hub,{api,navigate,
++ commandBriefing=window.JJSceneLayout?.mountBriefing(hub,{api,navigate,onOpen:()=>commandLayout?.close(false),
+@@ -264 +265,11 @@
+-  if(key==='devices')pane.append(strip,devices);
++  if(key==='devices'){
++   const intro=document.createElement('p');intro.className='map-drawer-intro';intro.textContent='Explore the map and plan a journey. Location sharing is optional; device pins use their own reported timestamps.';
++   const holder=document.createElement('div');holder.className='presence-atlas drawer-map-host';pane.append(intro,holder);
++   const journey=document.querySelector('#journey-form');if(journey){const disclosure=document.createElement('details');disclosure.className='journey-disclosure';const summary=document.createElement('summary');summary.textContent='Plan a journey';disclosure.append(summary,journey);pane.insertBefore(disclosure,holder);}
++   const button=document.createElement('button');button.type='button';button.textContent='Manage devices & location sharing';button.onclick=()=>navigate('home');pane.append(button);
++  }
++ },onChange(key){
++  if(key)commandBriefing?.close(false);
++  if(key==='devices'){
++   const holder=hub.querySelector('.drawer-map-host');if(holder){holder.append(world);if(world.querySelector('[data-map-toggle]').textContent==='Map')world.querySelector('[data-map-toggle]').click();}
++  }else if(world.parentElement!==atlas)atlas.append(world);
+@@ -265,0 +277 @@
++ hub.querySelector('[data-voice-stop]').onclick=stopAllVoice;
+@@ -543 +555,17 @@
+-function voiceState(message,active=false){const status=$('#voice-status');if(status)status.textContent=message;const read=$('#assistant-speak');if(read)read.classList.toggle('voice-active',active);}
++function updateStageVoice(message=''){
++ const label=document.querySelector('[data-stage-voice]'),stop=document.querySelector('[data-voice-stop]'),start=document.querySelector('[data-presence-talk]');
++ const listening=!!activeRecognition,denied=/permission.*(?:off|blocked)|access.*blocked|allow microphone/i.test(message);
++ if(label){label.textContent=denied?'Microphone access needs attention':activeUtterance?'Speaking · Stop is always available':listening?'Listening · microphone on':wakeEnabled&&!wakePaused?'Starting microphone…':'Microphone off · click to start';label.dataset.state=denied?'blocked':listening?'listening':'off';}
++ if(stop)stop.hidden=!activeUtterance&&!listening&&!(wakeEnabled&&!wakePaused);
++ if(start){start.textContent=listening?'Conversation is listening':'Start conversation';start.setAttribute('aria-pressed',String(listening));}
++}
++function startConversation(){
++ if(stopped){showAssistant();return;}
++ commandBriefing?.pause();commandLayout?.close(false);commandBriefing?.close(false);
++ if(activeRecognition){showAssistant();return;}
++ showAssistant();stopVoice();conversationInvite=true;wakeFailures=0;wakeEnabled=true;wakePaused=false;wakeArmedUntil=Date.now()+45000;
++ localStorage.setItem('jjrvis-wake-enabled','true');
++ voiceState('Starting microphone…');
++ if(wakeStarter)wakeStarter();else voiceState('Microphone access is unavailable in this browser.');
++}
++function voiceState(message,active=false){updateStageVoice(message);const status=$('#voice-status');if(status)status.textContent=message;const read=$('#assistant-speak');if(read)read.classList.toggle('voice-active',active);}
+@@ -554 +582 @@
+-function stopAllVoice(){assistantRequest++;assistantController?.abort();voiceReplyRequested=false;if($('#assistant-submit')){$('#assistant-submit').disabled=false;$('#assistant-submit').textContent='Ask';}const answer=$('#assistant-answer');if(answer?.getAttribute('aria-busy')==='true'){answer.removeAttribute('aria-busy');const note=document.createElement('small');note.textContent='Reply stopped — incomplete.';answer.append(note);}if($('#assistant-speak'))$('#assistant-speak').disabled=false;wakeEnabled=false;localStorage.setItem('jjrvis-wake-enabled','false');stopVoice();closeWakeMicrophone();const wake=$('#assistant-wake');if(wake){wake.textContent='◎ Wake off';wake.classList.remove('voice-active');}voiceState('Voice stopped. Tap Wake or Speak when you want the microphone.');}
++function stopAllVoice(){conversationInvite=false;assistantRequest++;assistantController?.abort();voiceReplyRequested=false;if($('#assistant-submit')){$('#assistant-submit').disabled=false;$('#assistant-submit').textContent='Ask';}const answer=$('#assistant-answer');if(answer?.getAttribute('aria-busy')==='true'){answer.removeAttribute('aria-busy');const note=document.createElement('small');note.textContent='Reply stopped — incomplete.';answer.append(note);}if($('#assistant-speak'))$('#assistant-speak').disabled=false;wakeEnabled=false;localStorage.setItem('jjrvis-wake-enabled','false');stopVoice();closeWakeMicrophone();const wake=$('#assistant-wake');if(wake){wake.textContent='◎ Wake off';wake.classList.remove('voice-active');}voiceState('Voice stopped. Tap Wake or Speak when you want the microphone.');}
+@@ -712 +740 @@
+-function openConnections(section='internet'){if(stopped){notify('Connect this browser first.');return;}window.JJAppleSetup?.open({api,pair:createPhoneLink,settings:openSettings,openAccount:id=>{pendingNativeSearch={source:'cloud:'+id,query:''};navigate('communications');}},section);}
++function openConnections(section='start'){if(stopped){notify('Connect this browser first.');return;}window.JJAppleSetup?.open({api,navigate,pair:createPhoneLink,settings:openSettings,openAccount:id=>{pendingNativeSearch={source:'cloud:'+id,query:''};navigate('communications');}},section);}
+@@ -922,0 +951,8 @@
++ const presentation=question.match(/^(show|read|bring up|give me|open)(?: me)?(?: my| the| a)? (news|headlines|markets|market briefing|inbox|emails?|messages|whatsapp)(?: briefing| cards)?[.!?]*$/i);
++ if(presentation||/^brief me[.!?]*$/i.test(question)){
++  const subject=(presentation?.[2]||'news').toLowerCase(),kind=/mail|inbox/.test(subject)?'mail':subject==='whatsapp'?'whatsapp':subject==='messages'?'messages':/market/.test(subject)?'markets':'news';
++  if(current!=='overview')await navigate('overview');commandBriefing?.open(kind,presentation?.[1].toLowerCase()==='read');input.value='';completeAssistantCommand('Here is your '+(kind==='mail'?'inbox':kind)+'. Choose an item or ask for more detail.',false);return;
++ }
++ if(/^(?:(?:open|show)(?: my| the)? (?:map|journeys)|plan (?:a |my )?journey)[.!?]*$/i.test(question)){
++  if(current!=='overview')await navigate('overview');commandLayout?.open('devices');input.value='';completeAssistantCommand('Your map is ready. Open Plan a journey to choose where to go.',shouldSpeak);return;
++ }
+@@ -951 +987 @@
+-  wakeStarter=async()=>{if(stopped||!$('#login')?.hidden||!wakeEnabled||wakePaused||activeRecognition||document.hidden)return;clearTimeout(wakeRestart);try{const r=new Recognition();activeRecognition=r;r.wakeMode=true;r.lang='en-GB';r.interimResults=true;r.continuous=true;r.maxAlternatives=1;r.onstart=()=>{wake.textContent=wakeArmedUntil>Date.now()?'◉ Yes, James?':'◉ Listening';wake.classList.add('voice-active');voiceState(wakeArmedUntil>Date.now()?'Listening for your question…':'Microphone ready — say “Moneypenny” or “Jarvis”…');};r.onresult=e=>{for(let i=e.resultIndex||0;i<e.results.length;i++){if(!e.results[i].isFinal){const partial=e.results[i]?.[0]?.transcript||'';if(r.nativeSpeech&&activeUtterance&&isVoiceInterruption(partial,activeUtterance.spokenText||''))interruptReply();continue;}const heard=e.results[i]?.[0]?.transcript?.trim()||'';if(!heard)continue;if(isVoiceStopCommand(heard)){stopAllVoice();wakeArmedUntil=0;return;}if(activeUtterance||Date.now()<speechEchoUntil)continue;r.heardAny=true;wakeFailures=0;const match=heard.match(/\b(?:hey\s+)?(?:jarvis|jjrvis|money\s*penny)\b[\s,:-]*(.*)/i);let question='';if(match){question=match[1].trim();if(!question){wakeArmedUntil=Date.now()+15000;wake.textContent='◉ Yes, James?';voiceState('Yes, James? I’m listening for your question…');continue;}}else if(wakeArmedUntil>Date.now()){question=heard;}else continue;if(!question)continue;$('#assistant-input').value=question;r.submitOnEnd=true;wakePaused=true;wakeArmedUntil=Date.now()+45000;voiceState('Got it. Asking JJRVIS…');try{r.stop();}catch{}}};r.onerror=e=>{if(r.nativeSpeech&&e.error==='service-not-allowed'){nativeSpeechAvailable=false;r.heardAny=true;r.lastError=null;voiceState('On-device English speech is unavailable. Using your configured transcription service.');return;}r.lastError=e.error;};r.onend=()=>{if(activeRecognition!==r)return;activeRecognition=null;if(r.submitOnEnd){voiceReplyRequested=true;form.requestSubmit();return;}if(!wakeEnabled||wakePaused)return;
++  wakeStarter=async()=>{if(stopped||!$('#login')?.hidden||!wakeEnabled||wakePaused||activeRecognition||document.hidden)return;clearTimeout(wakeRestart);try{const r=new Recognition();activeRecognition=r;r.wakeMode=true;r.lang='en-GB';r.interimResults=true;r.continuous=true;r.maxAlternatives=1;r.onstart=()=>{if(conversationInvite){conversationInvite=false;speak('What would you like to work on?');return;}wake.textContent=wakeArmedUntil>Date.now()?'◉ Yes, James?':'◉ Listening';wake.classList.add('voice-active');voiceState(wakeArmedUntil>Date.now()?'Listening for your question…':'Microphone ready — say “Moneypenny” or “Jarvis”…');};r.onresult=e=>{for(let i=e.resultIndex||0;i<e.results.length;i++){if(!e.results[i].isFinal){const partial=e.results[i]?.[0]?.transcript||'';if(r.nativeSpeech&&activeUtterance&&isVoiceInterruption(partial,activeUtterance.spokenText||''))interruptReply();continue;}const heard=e.results[i]?.[0]?.transcript?.trim()||'';if(!heard)continue;if(isVoiceStopCommand(heard)){stopAllVoice();wakeArmedUntil=0;return;}if(activeUtterance||Date.now()<speechEchoUntil)continue;r.heardAny=true;wakeFailures=0;const match=heard.match(/\b(?:hey\s+)?(?:jarvis|jjrvis|money\s*penny)\b[\s,:-]*(.*)/i);let question='';if(match){question=match[1].trim();if(!question){wakeArmedUntil=Date.now()+15000;wake.textContent='◉ Yes, James?';voiceState('Yes, James? I’m listening for your question…');continue;}}else if(wakeArmedUntil>Date.now()){question=heard;}else continue;if(!question)continue;$('#assistant-input').value=question;r.submitOnEnd=true;wakePaused=true;wakeArmedUntil=Date.now()+45000;voiceState('Got it. Asking JJRVIS…');try{r.stop();}catch{}}};r.onerror=e=>{if(r.nativeSpeech&&e.error==='service-not-allowed'){nativeSpeechAvailable=false;r.heardAny=true;r.lastError=null;voiceState('On-device English speech is unavailable. Using your configured transcription service.');return;}r.lastError=e.error;};r.onend=()=>{if(activeRecognition!==r)return;activeRecognition=null;if(r.submitOnEnd){voiceReplyRequested=true;form.requestSubmit();return;}if(!wakeEnabled||wakePaused)return;
+@@ -955 +991 @@
+-  const reasons={'local-engine':'Speech transcription failed. Check the API connection, then tap Retry microphone.','network':'Chrome’s speech service cannot connect. The microphone permission is allowed, but speech recognition is unavailable.','audio-capture':'Microphone audio could not be captured. Check the selected input device.','not-allowed':'Microphone permission is off. Allow access for JJRVIS in your device settings.','service-not-allowed':'Chrome has blocked its speech recognition service.'};
++  const reasons={'local-engine':'Speech transcription failed. Check the API connection, then tap Retry microphone.','network':'Chrome’s speech service cannot connect. The microphone permission is allowed, but speech recognition is unavailable.','audio-capture':'Microphone audio could not be captured. Check the selected input device.','not-allowed':'Microphone permission is off. Allow access for JJRVIS in your device settings.','service-not-allowed':'On-device speech is unavailable. Use Speak to try the configured transcription service.'};
+diff --git a/presence_proxy.py b/presence_proxy.py
+--- a/presence_proxy.py
++++ b/presence_proxy.py
+@@ -44 +44 @@
+-    if path in {'api/status', 'api/character/default', 'api/motion/library'}:
++    if path in {'api/status', 'api/appearance', 'api/character/default', 'api/motion/library'}:
+@@ -174 +174 @@
+-    expected = 'text/html' if not path else 'application/json' if path in {'api/status','api/motion/library'} else None
++    expected = 'text/html' if not path else 'application/json' if path in {'api/status','api/appearance','api/motion/library'} else None

@@ -1,0 +1,29 @@
+{
+  "packs": [
+    {
+      "name": "makehuman_system_assets",
+      "url": "https://files.makehumancommunity.org/asset_packs/makehuman_system_assets/makehuman_system_assets_cc0.zip",
+      "sha256": "b542127a8e25547c7c29c19f2d1d2adb9a664c80396ecd694095dbc8028a0107",
+      "licence": "CC0",
+      "catalogue": "https://static.makehumancommunity.org/assets/assetpacks/makehuman_system_assets.html"
+    },
+    {
+      "name": "bodyparts04",
+      "url": "https://files.makehumancommunity.org/asset_packs/bodyparts04/bodyparts04_cc0.zip",
+      "sha256": "60ae7536f143d087a7e3ae9b05ef86b628ccfbc63f0e3cd10694defb3974b025",
+      "licence": "CC0",
+      "catalogue": "https://static.makehumancommunity.org/assets/assetpacks/bodyparts04.html"
+    }
+  ],
+  "anatomy_source": {
+    "repository": "https://github.com/makehumancommunity/mhx2-makehuman-exchange.git",
+    "commit": "d31fa95ddf9c9e4c7e7c3f21a865c94dfec92131",
+    "path": "import_runtime_mhx2/data/hm8/genitalia/vulva.mxa",
+    "sha256": "1f2f344d4fd1ede034eb905d071e50de0dd72154b502550b5a046429895df2bd",
+    "author": "Thomas Larsson",
+    "embedded_licence": "AGPL3",
+    "author_clarification": "https://thomasmakehuman.wordpress.com/license-information/",
+    "commercial_redistribution_cleared": false,
+    "note": "The author site describes extra content as CC0; this asset embeds AGPL3. Preserve both notices. Local authoring only pending clarification; no asset included in public Git. Legacy addon is not installed or executed."
+  }
+}

@@ -1,0 +1,99 @@
+diff --git a/workspace.js b/workspace.js
+--- a/workspace.js
++++ b/workspace.js
+@@ -214,3 +214,3 @@
+  <header class="presence-heading"><div><p class="eyebrow">PERSONAL OPERATIONS / JJRVIS</p><h2>What shall we tackle?<br><em>Ready when you are.</em></h2></div><span class="owner-chip"><i></i> JAMES · PRIVATE WORKSPACE</span></header>
+- <div class="presence-scene"><section class="moneypenny-presence" aria-label="Moneypenny live 3D assistant"><div class="presence-top"><span>MONEYPENNY</span><b data-presence-state>PREPARING 3D</b></div><iframe id="moneypenny-presence" title="Live 3D Moneypenny" src="/presence/?embed=jarvis" allow="autoplay" loading="eager"></iframe><div class="presence-footer"><span>YOUR FRONT OF HOUSE</span><div><button type="button" data-presence-wave>Wave</button><button type="button" data-character-orbit aria-pressed="false">Rotate person</button><details class="presence-movement-menu"><summary>Move & view</summary><div>${[['turn around','Turn around'],['walk','Walk'],['dance','Dance'],['stretch','Stretch'],['full body','Full body'],['reset view','Reset view'],['move naturally','Move naturally'],['stop moving','Stop movement']].map(([value,label])=>`<button type="button" data-presence-movement="${value}">${label}</button>`).join('')}</div></details><small data-motion-feedback>Live M2 · drag to rotate</small>${['localhost','127.0.0.1'].includes(location.hostname)?'<a href="http://127.0.0.1:8090/" target="_blank" rel="noopener">Customise Moneypenny ↗</a>':'<button type="button" data-persona-options>Voice & persona</button>'}<button type="button" data-open-companion>Companion view</button></div></div></section>
++ <div class="presence-scene"><section class="moneypenny-presence" aria-label="Moneypenny live 3D assistant"><div class="presence-top"><span>MONEYPENNY</span><b data-presence-state>PREPARING 3D</b></div><iframe id="moneypenny-presence" title="Live 3D Moneypenny" src="/presence/?embed=jarvis" allow="autoplay" loading="eager"></iframe><div class="presence-footer"><span>YOUR FRONT OF HOUSE</span><div><button type="button" data-presence-wave>Wave</button><button type="button" data-character-orbit aria-pressed="false">Rotate person</button><details class="presence-movement-menu"><summary>Move & view</summary><div>${[['turn around','Turn around'],['walk','Walk'],['dance','Dance'],['stretch','Stretch'],['full body','Full body'],['reset view','Reset view'],['move naturally','Move naturally'],['stop moving','Stop movement']].map(([value,label])=>`<button type="button" data-presence-movement="${value}">${label}</button>`).join('')}${['localhost','127.0.0.1'].includes(location.hostname)?'<a href="http://127.0.0.1:8090/?panel=animation#animationBuilder" target="_blank" rel="noopener">Create animations ↗</a>':''}</div></details><small data-motion-feedback>Live M2 · drag to rotate</small>${['localhost','127.0.0.1'].includes(location.hostname)?'<a href="http://127.0.0.1:8090/" target="_blank" rel="noopener">Customise Moneypenny ↗</a>':'<button type="button" data-persona-options>Voice & persona</button>'}<button type="button" data-open-companion>Companion view</button></div></div></section>
+  <div id="presence-atlas" class="presence-atlas" aria-label="Your interactive world"></div><div class="presence-scene-caption"><span>ONE CONVERSATION. YOUR CONNECTED WORLD.</span><p>Home, work and the day ahead.</p><button type="button" data-presence-talk>Start conversation</button><button type="button" data-voice-stop hidden>Stop listening</button><span class="stage-voice-status" data-stage-voice role="status">Microphone off · click to start</span><button type="button" class="quiet" data-access-centre aria-label="Connections & access">Connections</button></div></div>
+@@ -618,5 +618,5 @@
+ function startSpokenReply(onStarted){
+- const previousStop=stopVoice(),requestId=String(++presenceSpeechSequence),marker={requestId,streaming:true};activeUtterance=marker;
++ const previousStop=stopVoice(),identity={...selectedAssistantIdentity()},requestId=String(++presenceSpeechSequence),marker={requestId,streaming:true};activeUtterance=marker;
+  const frame=document.querySelector('#moneypenny-presence');
+- const embedded=!!(frame?.contentWindow&&document.querySelector('[data-presence-state]')?.dataset.state==='ready'&&selectedAssistantIdentity().name==='Moneypenny'&&document.documentElement.dataset.presenceMode!=='jarvis');
++ const embedded=!!(frame?.contentWindow&&document.querySelector('[data-presence-state]')?.dataset.state==='ready'&&identity.name==='Moneypenny'&&document.documentElement.dataset.presenceMode!=='jarvis');
+  let sequence=0,session;
+@@ -634,5 +634,9 @@
+    await previousStop;if(!owns()||signal.aborted)throw new DOMException('Stopped','AbortError');
+-   const response=await fetch('/v1/workspace/voice/audio',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text}),signal});
++   const response=await fetch('/v1/workspace/voice/audio',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text,profile:identity.profile,speed:identity.speed}),signal});
+    if(!response.ok){const data=await response.json().catch(()=>({}));throw new Error(data.detail||'The selected voice is unavailable.');}
+-   return {text,blob:await response.blob(),provider:response.headers?.get('X-JJRVIS-Voice-Provider')||''};
++   const provider=response.headers?.get('X-JJRVIS-Voice-Provider')||'',profile=response.headers?.get('X-JJRVIS-Voice-Profile')||'',voice=response.headers?.get('X-JJRVIS-Voice-ID')||'',language=response.headers?.get('X-JJRVIS-Voice-Language')||'';
++   const british=identity.profile==='moneypenny'||identity.profile==='english';
++   const expectedVoice=identity.profile==='english'?'bm_george':identity.profile==='moneypenny'?'bf_emma':'coral';
++   if(profile!==identity.profile||voice!==expectedVoice||(british&&(provider!=='local-kokoro'||language!=='en-GB')))throw new Error('The selected voice could not be confirmed. No different voice was played.');
++   return {text,blob:await response.blob(),provider};
+   },
+@@ -640,3 +644,3 @@
+    if(!owns()||signal.aborted)return;marker.spokenText=text||'';
+-   const began=()=>{if(!owns())return;started();voiceState(`${selectedAssistantIdentity().name} speaking${provider==='local-kokoro'?' · British voice':''}`,true);wakePaused=false;wakeStarter?.();};
++   const began=()=>{if(!owns())return;started();voiceState(`${identity.name} speaking${provider==='local-kokoro'?' · British voice':''}`,true);wakePaused=false;wakeStarter?.();};
+    if(embedded){const audio=await blob.arrayBuffer();if(!owns()||signal.aborted)return;await waitForAvatar({type:'jjrvis-audio',requestId,sequence:sequence++,audio,first,final:false,onStarted:began},signal);return;}
+@@ -651,3 +655,3 @@
+  });
+- streamingSpeech=session;voiceState(`Preparing ${selectedAssistantIdentity().name}’s first phrase…`,true);return session;
++ streamingSpeech=session;voiceState(`Preparing ${identity.name}’s first phrase…`,true);return session;
+ }
+@@ -863,3 +867,3 @@
+ 
+-let voiceStartupInitialised=false,assistantIdentity={profile:'moneypenny',name:'Moneypenny'};
++let voiceStartupInitialised=false,assistantIdentity={profile:'moneypenny',name:'Moneypenny',speed:1.0};
+ function selectedAssistantIdentity(){return assistantIdentity;}
+@@ -869,3 +873,3 @@
+   const chosen=prefs.choices?.find(choice=>choice.id===prefs.profile);
+-  assistantIdentity={profile:prefs.profile,name:chosen?.name||(prefs.profile==='english'?'Jarvis':'Moneypenny')};
++  assistantIdentity={profile:prefs.profile,name:chosen?.name||(prefs.profile==='english'?'Jarvis':'Moneypenny'),speed:prefs.speed};
+   const name=assistantIdentity.name,heading=$('#assistant-heading');if(heading)heading.textContent=name;
+diff --git a/jarvis_comm_broker.py b/jarvis_comm_broker.py
+--- a/jarvis_comm_broker.py
++++ b/jarvis_comm_broker.py
+@@ -103,2 +103,4 @@
+     text: str = Field(min_length=1, max_length=2400)
++    profile: Literal['english', 'moneypenny', 'american'] | None = None
++    speed: float | None = Field(default=None, ge=.8, le=1.5)
+ 
+@@ -1148,5 +1150,14 @@
+ 
++    def voice_headers(profile):
++        return {'Cache-Control': 'no-store',
++                'X-JJRVIS-Voice-Provider': profile['provider'],
++                'X-JJRVIS-Voice': profile['name'],
++                'X-JJRVIS-Voice-ID': profile['voice'],
++                'X-JJRVIS-Voice-Profile': profile['profile'],
++                'X-JJRVIS-Voice-Language': profile['language']}
++
+     async def selected_speech(text, profile=None):
++        profile = profile or voice_profiles.for_speech()
+         try:
+-            return await cloud_ai.speech(text, **({'profile': profile} if profile else {}))
++            return await cloud_ai.speech(text, profile=profile)
+         except ValueError:
+@@ -1158,3 +1169,3 @@
+         except (local_voice.LocalVoiceUnavailable, httpx.HTTPError, OSError, asyncio.TimeoutError):
+-            raise HTTPException(503, "Your selected voice is unavailable. No different voice was substituted.")
++            raise HTTPException(503, "Your selected British voice is unavailable. No different voice was substituted." if profile.get("language") == "en-GB" else "Your selected voice is unavailable. No different voice was substituted.")
+ 
+@@ -1162,6 +1173,6 @@
+     async def preview_voice(preference: VoicePreference):
+-        profile={**voice_profiles.PROFILES[preference.profile], 'speed':preference.speed}
++        profile=voice_profiles.for_speech(preference.profile, preference.speed)
+         text='Hello James. '+profile['name']+' here, ready when you are. What shall we tackle first?'
+         audio=await selected_speech(text, profile)
+-        return Response(content=audio, media_type='audio/wav', headers={'Cache-Control':'no-store', 'X-JJRVIS-Voice-Provider':profile.get('provider','openai'), 'X-JJRVIS-Voice':profile['name']})
++        return Response(content=audio, media_type='audio/wav', headers=voice_headers(profile))
+ 
+@@ -1369,5 +1380,5 @@
+     async def cloud_voice(request: VoiceRequest):
+-        profile=voice_profiles.current()
++        profile=voice_profiles.for_speech(request.profile, request.speed)
+         audio = await selected_speech(request.text, profile)
+-        return Response(audio, media_type="audio/wav", headers={"Cache-Control":"no-store", "X-JJRVIS-Voice-Provider":profile.get("provider","openai"), "X-JJRVIS-Voice":profile["name"]})
++        return Response(audio, media_type="audio/wav", headers=voice_headers(profile))
+ 
+@@ -1378,3 +1389,3 @@
+         serial = app.state.say_serial
+-        audio = await selected_speech(request.text)
++        audio = await selected_speech(request.text, voice_profiles.for_speech(request.profile, request.speed))
+         if serial != app.state.say_serial:

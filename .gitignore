@@ -1,0 +1,13 @@
+.venv/
+.voice-venv/
+.runtime/
+node_modules/
+__pycache__/
+.pytest_cache/
+.DS_Store
+static/avatars/*.glb
+verification/
+*.wav
+*.log
+*.ses
+app 2.py

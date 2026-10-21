@@ -1,0 +1,226 @@
+{
+  "scope": "Saved local files only. Unsaved Blender edits are not included.",
+  "asset_contents_published_to_git": true,
+  "matching_published_source_copies": [
+    {
+      "local_path": ".runtime/character-workshop/Moneypenny-Adult-Body-Source.blend",
+      "source_copy": "Moneypenny-Adult-Body-Source.blend",
+      "sha256": "2b26290a38eeaae94f8e17df81d0ab1982624ba5b25885d24b2b88debbc5d4ae"
+    }
+  ],
+  "publication_note": "See CHARACTER_SOURCE_PROVENANCE.json. Only the original parametric base has a matching new public copy; the older tracked anatomy study differs from its runtime copy. Capture data and later exports remain local.",
+  "commercial_redistribution_cleared": false,
+  "rebuild": "See CHARACTER_WORKSHOP.md and Build Performance Character.command",
+  "files": [
+    {
+      "path": ".runtime/character-workshop/Moneypenny-Adult-Body-Source.blend",
+      "role": "Parametric body source",
+      "present": true,
+      "bytes": 56261576,
+      "sha256": "2b26290a38eeaae94f8e17df81d0ab1982624ba5b25885d24b2b88debbc5d4ae"
+    },
+    {
+      "path": ".runtime/character-workshop/Moneypenny-Adult-Anatomy-Study-v3.blend",
+      "role": "Earlier editable anatomical study",
+      "present": true,
+      "bytes": 71775432,
+      "sha256": "7ec8c1fbe21febbceacc950895c2f57d585bcd84fd17bd15203da99ae7e1741d"
+    },
+    {
+      "path": ".runtime/character-workshop/Moneypenny-Performance-Final-Fit-v3.blend",
+      "role": "Latest dressed performance source",
+      "present": true,
+      "bytes": 143134786,
+      "sha256": "242b89c32b58b3d718f7ab258c17b7a0e5fb1eab7a0bec6123b3c8475f432aca"
+    },
+    {
+      "path": ".runtime/character-workshop/Moneypenny-Performance-Export-v6.blend",
+      "role": "Baked export source",
+      "present": true,
+      "bytes": 147768464,
+      "sha256": "fe6d62f74611b63842c87a76a3b4b09627bb775b184defec604ce19f03f989e8"
+    },
+    {
+      "path": ".runtime/character-workshop/Moneypenny-Performance-Candidate-v6.glb",
+      "role": "Geometry-verified private character candidate",
+      "present": true,
+      "bytes": 40309488,
+      "sha256": "c1853fd244826d53dcf43239f9f8965f06c23d764faab981133756b4e8e9c557"
+    },
+    {
+      "path": ".runtime/character-workshop/performance-skin-roughness.png",
+      "role": "Baked procedural roughness",
+      "present": true,
+      "bytes": 2770945,
+      "sha256": "1d4c012883e0bba4da19fe47a6aa02b3d4f218dbbf5539645c69f531dbb6883d"
+    },
+    {
+      "path": ".runtime/character-workshop/performance-skin-normal.png",
+      "role": "Baked procedural surface normal",
+      "present": true,
+      "bytes": 1894535,
+      "sha256": "1ae7be54b1e9b7f77131b53d0466fdcea47cb353c2300a1b745601a4c02c55bf"
+    },
+    {
+      "path": ".runtime/character-workshop/Moneypenny-Surface-Look-v9.blend",
+      "role": "Procedural surface study source",
+      "present": true,
+      "bytes": 190843007,
+      "sha256": "f28b327ab36e9f4550a99b8bc9e3644aee45ee928ad33985ece094f7bc182570"
+    },
+    {
+      "path": ".runtime/character-workshop/Moneypenny-Performance-Candidate-v9.glb",
+      "role": "Reviewed procedural surface study",
+      "present": true,
+      "bytes": 51148284,
+      "sha256": "9234a6cb70919487650c845d653a385983bfa90b956e006421955a98543241db"
+    },
+    {
+      "path": ".runtime/character-workshop/Moneypenny-Free-Surface-v10.blend",
+      "role": "Unoptimised free CC0 character assembly",
+      "present": true,
+      "bytes": 155514678,
+      "sha256": "f8b29d485081c4f0ee0e8d6b13ed7d088456cfdf0bdde432765b25659a592a7e"
+    },
+    {
+      "path": ".runtime/character-workshop/Moneypenny-Free-Surface-v13.blend",
+      "role": "Free character browser source",
+      "present": true,
+      "bytes": 101850840,
+      "sha256": "67cbb1b1341256b1299aa0a998392cf021d27bbd24cc72f65f6b24b24e679f56"
+    },
+    {
+      "path": ".runtime/character-workshop/Moneypenny-Free-Surface-v13.glb",
+      "role": "Free character browser candidate",
+      "present": true,
+      "bytes": 60771900,
+      "sha256": "92720d802e69ef5a9fc9e9777ca32d9e3bcac7ebc9c9138f4d71e79ec8f650ba"
+    },
+    {
+      "path": ".runtime/character-workshop/Moneypenny-Free-Surface-v16.blend",
+      "role": "Rejected full-character prototype; CC0 bob source reused",
+      "present": true,
+      "bytes": 116038764,
+      "sha256": "77d050a800ae37c6ca5753b58ec40c5cd8a2a0e89063f85a580d36dfad76ccd3"
+    },
+    {
+      "path": ".runtime/character-workshop/Moneypenny-Style-v20.blend",
+      "role": "Complete local authoring source; styled clothed character",
+      "present": true,
+      "bytes": 233529254,
+      "sha256": "f37f4a3b071610ca7342f3f3aca637764d63d8d793d68c7da977647dffb53b54"
+    },
+    {
+      "path": ".runtime/character-workshop/Moneypenny-Style-v20.glb",
+      "role": "Clothed browser export with covered-torso face mask",
+      "present": true,
+      "bytes": 49636608,
+      "sha256": "bc49412ab3e4b2b9c6ab18afbad52d792b447a103c2e020457c1be3a8e9100cf"
+    },
+    {
+      "path": ".runtime/character-workshop/Moneypenny-Style-v22.blend",
+      "role": "Complete v22 local authoring source; cooler blonde bob and softened brows",
+      "present": true,
+      "bytes": 233443890,
+      "sha256": "61cac4af24de26eee0a8fc2b8e5c8e3bf2cf394875ca7ecaec248894696dd580"
+    },
+    {
+      "path": ".runtime/character-workshop/Moneypenny-Style-v22.glb",
+      "role": "Clothed v22 browser export; covered-torso face mask",
+      "present": true,
+      "bytes": 49432780,
+      "sha256": "cb5fb7ae5718c5bba0b3be9f6806ce12b56409c1ae1ce91907b00b98ff5b2b66"
+    },
+    {
+      "path": ".runtime/character-workshop/Moneypenny-Style-v23.blend",
+      "role": "Complete v23 local authoring source; longer warm blonde bob and slimmer cheeks",
+      "present": true,
+      "bytes": 233702340,
+      "sha256": "8fe0c6091fc88500a67704edce63db8f2662afbd94d43ca001985c739232580d"
+    },
+    {
+      "path": ".runtime/character-workshop/Moneypenny-Style-v23.glb",
+      "role": "Clothed v23 browser export; chest weights and torso coverage corrected",
+      "present": true,
+      "bytes": 49642856,
+      "sha256": "a02a5e3c80c277bebb81110f1a7c2578a280dfeb5f5c8c8e2482e46857bf7d3c"
+    },
+    {
+      "path": ".runtime/character-workshop/Moneypenny-Style-v24.blend",
+      "role": "v24 complete local styling source",
+      "present": true,
+      "bytes": 234741712,
+      "sha256": "25067acb37d62c899e962a347906bc1c1eae0ad7eec37b3c9b47f1313ca8e630"
+    },
+    {
+      "path": ".runtime/character-workshop/Moneypenny-Style-v24.glb",
+      "role": "v24 clothed browser export with cutout bob and scalp coverage",
+      "present": true,
+      "bytes": 49995700,
+      "sha256": "0e9f4ba692e1b33d098e0e84a883329e377823c868125cbe1bbfbd11eb06c540"
+    },
+    {
+      "path": ".runtime/character-workshop/Moneypenny-Style-v25.blend",
+      "role": "v25 complete local source with stronger cheekbone definition",
+      "present": true,
+      "bytes": 234741712,
+      "sha256": "7c7da350f0e7347ac971ec227de52ee7bd92369e2da8f6077a89cbf859441989"
+    },
+    {
+      "path": ".runtime/character-workshop/Moneypenny-Style-v25.glb",
+      "role": "v25 clothed browser candidate; natural eye atlas and cutout bob",
+      "present": true,
+      "bytes": 49883680,
+      "sha256": "03f917c59dfc1a2650f944b0e1ce7870cdd98e48ce796c8b117d9c3f5317bde0"
+    },
+    {
+      "path": ".runtime/character-workshop/Moneypenny-Style-v26.blend",
+      "role": "v26 complete source with balanced profile and refitted blouse",
+      "present": true,
+      "bytes": 229807082,
+      "sha256": "a090b49e9cfd10f8958e06a61942098395cbdc955a342d8d788842dd1423528e"
+    },
+    {
+      "path": ".runtime/character-workshop/Moneypenny-Style-v26.glb",
+      "role": "v26 clothed browser candidate; balanced profile and Jarvis presence source",
+      "present": true,
+      "bytes": 49895224,
+      "sha256": "1b1da4b2e234b83012b3e370258f09e1b6bb5119f082de881621aa79373c0cee"
+    },
+    {
+      "path": ".runtime/character-workshop/Moneypenny-Style-v27.blend",
+      "role": "v27 clothed garment-fit source; body and all morph coordinates preserved from v26",
+      "present": true,
+      "bytes": 229807076,
+      "sha256": "73e882fa5b012fae6121d026950f7b021f404ecbf32999b714c6b841a63caa7a"
+    },
+    {
+      "path": ".runtime/character-workshop/Moneypenny-Style-v27.glb",
+      "role": "v27 clothed browser candidate; corrected under-bust drape and Jarvis presence source",
+      "present": true,
+      "bytes": 49895220,
+      "sha256": "d9166e9e453cb9eb2f5047853cdaa4d8e7011e25493138979fe1e44c3fd4f9c4"
+    },
+    {
+      "path": ".runtime/character-workshop/Moneypenny-Style-v39.blend",
+      "role": "Clothed v39 look-development source; brows, restrained crown and cloth refinement",
+      "present": true,
+      "bytes": 51092334,
+      "sha256": "d3e2af8c4e64c5abbcc94bc80c4e6f714fd5d92e11865490ba6794d8e45f0a9a"
+    },
+    {
+      "path": ".runtime/character-workshop/Moneypenny-Style-v39.glb",
+      "role": "Current clothed v39 conversational candidate; same body, face and visemes as v38",
+      "present": true,
+      "bytes": 28688360,
+      "sha256": "61325c9943ede84db744a966ca13d206a24dcd89e86ab08f51b3ff0178e5eea6"
+    },
+    {
+      "path": ".runtime/character-workshop/Moneypenny-Style-v38.glb",
+      "role": "Current clothed conversational fallback; reviewed eyes, brows and hand/clothing repair",
+      "present": true,
+      "bytes": 27558660,
+      "sha256": "2e709d0e483fabc7b15c12b1211fb032037c0a78195a53486e955c1f6e20d027"
+    }
+  ]
+}

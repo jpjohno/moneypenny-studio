@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#eae9e4"><title>Moneypenny — Persona Studio</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='18' fill='%231b332f'/%3E%3Ctext x='12' y='47' font-size='44' fill='%23c7e3ad' font-family='serif'%3Em%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="./static/studio.css">
+  <script>if(new URLSearchParams(location.search).get('embed')==='jarvis')document.documentElement.classList.add('jarvis-embed')</script>
+  <script type="importmap">{"imports":{"three":"./vendor/three/build/three.module.js","three/addons/":"./vendor/three/examples/jsm/"}}</script>
+</head>
+<body class="studio-body">
+  <header class="topbar">
+    <a class="brand" href="./" aria-label="Moneypenny studio home"><span class="monogram">m.</span><span>MONEYPENNY<small>PERSONA STUDIO</small></span></a>
+    <div class="top-caption">A little more human.</div>
+    <div class="top-actions"><span class="local-label"><i></i> On this Mac</span><a class="quiet" href="/realism">Realism previews ↗</a><button class="quiet" id="exportPersona">Export persona ↗</button></div>
+  </header>
+  <main class="workspace">
+    <aside class="settings" aria-label="Persona settings">
+      <div class="panel-heading"><span class="eyebrow">01 / CREATE</span><h1>Make her<br><em>your own.</em></h1><p>A personality. A presence.<br>A conversation that feels natural.</p></div>
+      <details open><summary>Saved personas <span>＋</span></summary>
+        <label for="personaLibrary">Choose a saved persona</label><select id="personaLibrary"><option value="">Current draft</option></select>
+        <div class="control-pair"><button id="newPersona" class="text-button">New persona</button><button id="savePersona" class="text-button">Save persona</button></div>
+        <p class="hint" id="personaSource">Local persona library</p><button id="exportWebUI" class="text-button">Export for Open WebUI</button><a class="text-button" href="http://127.0.0.1:8080/workspace/models" target="_blank" rel="noreferrer">Manage in Open WebUI ↗</a>
+      </details>
+      <label for="personaName">Character name</label><input id="personaName" maxlength="60" value="Moneypenny">
+      <label for="personaPreset">Personality</label><select id="personaPreset"><option value="moneypenny">Moneypenny · witty & warm</option><option value="professional">Professional · calm & capable</option><option value="companion">Companion · curious & friendly</option><option value="playful">Playful · confident & flirtatious</option><option value="custom">Custom personality</option></select>
+      <label for="systemPrompt">In her own words</label><textarea id="systemPrompt" rows="5" maxlength="6000"></textarea>
+      <div class="setting-divider"></div>
+      <div class="label-line"><label for="movement">Body language</label><output id="movementValue">Natural</output></div><input id="movement" type="range" min="0" max="1" step=".05" value=".65">
+      <div class="range-ends"><span>Subtle</span><span>Expressive</span></div>
+      <label for="mood">Expression preview</label><div class="control-pair"><select id="mood"><option value="neutral">Relaxed · slight smile</option><option value="happy">Warm smile</option><option value="love">Affectionate</option><option value="sad">Thoughtful</option><option value="angry">Serious</option></select><button class="square" id="previewMood" title="Preview expression">↗</button></div>
+      <details open><summary>Independent movement <span>＋</span></summary>
+        <label class="toggle-label autonomy-toggle"><input id="autonomy" type="checkbox" checked> Let her choose how to move</label>
+        <label class="toggle-label autonomy-toggle"><input id="aiMotion" type="checkbox"> Generate original choreography with the model</label><p class="hint">Independent movement runs locally. Model choreography shares the answer engine and can slow replies while composing a new sequence.</p>
+        <label for="activity">Activity level</label><input id="activity" type="range" min="0" max="1" step=".05" value=".45">
+        <label for="behaviourPrompt">Movement personality</label><textarea id="behaviourPrompt" rows="3" maxlength="3000">Move naturally and attentively. Stay composed during work; be more expressive when relaxed. Choose occasional stretches, turns and small movements without waiting for a command.</textarea>
+        <label for="motionPrompt">Direct or choreograph movement</label><input id="motionPrompt" maxlength="2000" placeholder="Bend over for 8 seconds">
+        <button id="planMotion" class="file-button">Perform movement ↗</button><button id="stopMotion" class="text-button">Stop movement</button>
+        <div class="control-pair"><select id="seatPoseSide" aria-label="Foot to raise"><option value="right">Right foot</option><option value="left">Left foot</option></select><button id="previewSeatPose" class="text-button">Foot on seat</button></div>
+        <p class="hint">Clothed pose study with a closed seat support. Stop movement to lower the foot.</p>
+        <p class="hint" id="motionState" role="status">Independent body controller preparing…</p>
+      </details>
+      <details class="animation-builder" id="animationBuilder" open><summary>Create an animation <span>＋</span></summary>
+        <p class="hint">Choose movements, put them in order and preview them on Moneypenny. Runs on this Mac without an AI request.</p>
+        <label for="animationSaved">Open a saved animation</label><select id="animationSaved" data-animation="saved"><option value="">Choose a saved animation</option></select>
+        <label for="animationName">Animation name</label><input id="animationName" data-animation="name" maxlength="80" value="My animation">
+        <label for="animationAction">Add a movement</label><select id="animationAction" data-animation="action"><option value="wave">Wave hello</option></select>
+        <div class="animation-add"><label for="animationDuration">Seconds</label><input id="animationDuration" data-animation="duration" type="number" min="1" max="20" step=".5" value="4"><button type="button" class="file-button" data-animation="add">＋ Add step</button></div>
+        <ol class="animation-steps" data-animation="steps" aria-label="Animation steps"></ol>
+        <p class="hint" data-animation="empty">No movements yet. Add the first step above.</p>
+        <p class="animation-summary" data-animation="summary">0 / 8 movements · 0 seconds</p>
+        <div class="control-pair"><button type="button" class="preview-button animation-preview" data-animation="preview" disabled>▶ Preview</button><button type="button" class="text-button" data-animation="stop">■ Stop</button></div>
+        <div class="control-pair animation-save"><button type="button" class="file-button" data-animation="save" disabled>Save animation</button><button type="button" class="text-button" data-animation="new">New</button></div>
+        <div class="control-pair"><button type="button" class="text-button" data-animation="download" disabled>Export JSON</button><label class="text-button animation-import" for="animationImport">Open JSON</label><input id="animationImport" class="visually-hidden" data-animation="import" type="file" accept=".json,application/json"></div>
+        <p class="hint" role="status" aria-live="polite" data-animation="status">Build up to 8 steps. Preview and Stop work independently of conversation.</p>
+      </details>
+      <details open><summary>Motion library <span>＋</span></summary>
+        <label for="motionLibrary">Saved movement</label><select id="motionLibrary"></select>
+        <label for="motionClip">Animation clip</label><select id="motionClip"><option value="0">First clip</option></select>
+        <div class="control-pair"><button id="playMotion" class="file-button">Play movement</button><button id="pauseMotion" class="text-button">Pause movement</button></div><button id="stopLibraryMotion" class="text-button">Stop library movement</button>
+<label for="motionPosition">Animation position <output id="motionTime">0.0 s</output></label><input id="motionPosition" type="range" min="0" max="1" step=".05" value="0" disabled>
+        <label for="motionSpeed">Playback speed</label><input id="motionSpeed" type="range" min=".5" max="1.5" step=".05" value="1">
+        <label for="motionBlend">Transition time</label><input id="motionBlend" type="range" min=".2" max="1.5" step=".1" value=".6">
+        <label class="toggle-label"><input id="autoLibraryMotion" type="checkbox"> Include in independent movement</label>
+        <label class="toggle-label"><input id="loopMotion" type="checkbox"> Loop selected movement</label>
+        <label for="motionAliases">Words that request this movement</label><input id="motionAliases" maxlength="300" placeholder="For example: bow, take a bow"><button id="saveMotionAliases" class="text-button">Save movement words</button>
+        <details id="motionGarmentCues"><summary>Outfit changes with movement <span>＋</span></summary><label for="cueGarment">Garment</label><select id="cueGarment"></select><label for="cueTime">Change at (seconds)</label><input id="cueTime" type="number" min="0" max="120" step=".1" value="1"><label class="toggle-label"><input id="cueVisible" type="checkbox" checked> Garment visible after this point</label><button id="addGarmentCue" class="text-button">Add outfit change</button><button id="clearGarmentCues" class="text-button">Clear outfit changes</button><p class="hint" id="cueState">Use a dressing animation fitted to the garment. The sample's fixed coverage layer stays underneath.</p></details>
+        <label for="motionName">Name a new movement</label><input id="motionName" maxlength="80" placeholder="For example: relaxed sitting">
+        <label class="file-button" for="motionUpload">＋ Add animation <small>GLB · BVH · motion JSON</small></label><input class="visually-hidden" id="motionUpload" type="file" accept=".glb,.bvh,.json">
+        <p class="hint" id="libraryState" role="status">Loading the animation library…</p>
+        <details><summary>Animation bone mapping <span>＋</span></summary><p class="hint">Use this when a motion-capture skeleton has different bone names.</p><label for="mapTarget">Character bone</label><select id="mapTarget"><option>Hips</option><option>Spine</option><option>Spine1</option><option>Spine2</option><option>Neck</option><option>Head</option><option>LeftArm</option><option>RightArm</option><option>LeftForeArm</option><option>RightForeArm</option><option>LeftUpLeg</option><option>RightUpLeg</option><option>LeftLeg</option><option>RightLeg</option><option>LeftFoot</option><option>RightFoot</option></select><label for="mapSource">Name in the animation</label><input id="mapSource" maxlength="120" placeholder="For example: pelvis"><button id="saveBoneMap" class="text-button">Apply bone mapping</button></details>
+      </details>
+      <details><summary>Rig controls <span>＋</span></summary>
+        <label class="toggle-label"><input id="showRig" type="checkbox"> Show skeleton and drag handles</label>
+        <label for="rigTarget">Control</label><select id="rigTarget"><option value="RightHand">Right hand</option><option value="LeftHand">Left hand</option><option value="RightFoot">Right foot</option><option value="LeftFoot">Left foot</option><option value="Hips">Hips</option></select>
+        <label for="rigX">Side to side <output id="rigXValue"></output></label><input id="rigX" type="range" min="-1.5" max="1.5" step=".01" value="0">
+        <label for="rigY">Height <output id="rigYValue"></output></label><input id="rigY" type="range" min="0" max="2.2" step=".01" value="1">
+        <label for="rigZ">Forward and back <output id="rigZValue"></output></label><input id="rigZ" type="range" min="-1.5" max="1.5" step=".01" value="0">
+        <div class="control-pair"><button id="pinFeet" class="text-button">Plant both feet</button><button id="releaseTarget" class="text-button">Release this target</button></div><button id="resetRig" class="text-button">Reset all rig controls</button>
+        <p class="hint" id="rigState" role="status">Move a slider or drag a handle to hold a target. Distances are metres; targets beyond a limb's reach are clamped.</p>
+      </details>
+      <details class="character-details" open><summary>Character & appearance <span>＋</span></summary>
+        <p class="hint" id="avatarLabel">Studio character · CC0 sample</p><p class="hint" id="appearanceState" role="status">Checking shared appearance…</p>
+        <label for="eyeTone">Eye colour</label><select id="eyeTone"><option value="brightblue" selected>Brighter blue</option><option value="natural">Original blue</option></select>
+        <label for="hairTone">Hair colour</label><select id="hairTone"><option value="lightblonde" selected>Light blonde</option><option value="original">Original blonde</option><option value="warm">Warm blonde</option><option value="darkblonde">Dark blonde</option><option value="brunette">Soft brunette</option></select>
+        <label for="lightingLook">Lighting</label><select id="lightingLook"><option value="daylight">Soft daylight</option><option value="portrait">Portrait studio</option><option value="neutral">Neutral fitting light</option></select>
+        <label for="lightBrightness">Brightness</label><input id="lightBrightness" type="range" min=".65" max="1.25" step=".05" value="1">
+        <label for="blouseColor">Blouse colour</label><select id="blouseColor"><option value="petrol">Petrol blue</option><option value="navy">Midnight navy</option><option value="ivory">Soft ivory</option><option value="plum">Plum</option></select><label for="wardrobe">Outfit</label><select id="wardrobe"><option value="office">Office · waistcoat & skirt</option><option value="casual" selected>Casual · top & trousers</option><option value="dress">Evening · dress</option><option value="base">Base clothes · hide added layers</option><option value="original">Original sample outfit</option></select>
+        <label for="footwear">Footwear</label><select id="footwear"><option value="flats">Black flats</option><option value="heels">Dark shoes · raised heel</option><option value="trainers">Cream trainers</option><option value="original">Original footwear</option></select>
+        <p class="hint">Outer garments are separate prototype meshes. The sample's coverage layer stays underneath. Bespoke anatomy and photographic character detail need a production body asset.</p>
+        <label class="file-button" for="avatarUpload">＋ Import 3D character <small>.GLB</small></label><input class="visually-hidden" id="avatarUpload" type="file" accept=".glb">
+        <p class="hint">Use a TalkingHead-compatible character with a body rig and mouth shapes. Drag the stage to turn her.</p>
+        <button id="resetAvatar" class="text-button">Use studio character</button><button type="button" id="compareCharacter" class="text-button">Compare previous look</button>
+        <label class="file-button secondary" for="portraitUpload">＋ Add reference portrait</label><input class="visually-hidden" id="portraitUpload" type="file" accept="image/png,image/jpeg,image/webp">
+        <div id="portraitReference" hidden><img id="portraitImage" alt="Character reference portrait"><p class="hint">Visual reference only. A photograph needs modelling and rigging to become a 3D likeness.</p></div>
+      </details>
+      <details><summary>Voice & engine <span>＋</span></summary>
+        <label for="modelSelect">Answer model</label><select id="modelSelect"><option>Checking Ollama…</option></select>
+        <div class="voice-card"><span class="tiny-wave">▂▆▃▇▃▅</span><div>British Moneypenny<small>Kokoro · bf_emma · local</small></div></div>
+        <div class="label-line"><label for="speed">Voice speed</label><output id="speedValue">1.00×</output></div><input id="speed" type="range" min=".8" max="1.5" value="1" step=".05">
+        <div class="label-line"><label for="mouthTiming">Mouth timing</label><output id="mouthTimingValue">100 ms</output></div><input id="mouthTiming" type="range" min="0" max="240" value="100" step="10">
+        <p class="small-note">If the voice arrives before her lips move, increase this setting. If it arrives afterwards, decrease it.</p>
+        <div class="label-line"><label for="temperature">Creativity</label><output id="temperatureValue">0.70</output></div><input id="temperature" type="range" min=".1" max="1.5" value=".7" step=".05">
+        <label for="maxTokens">Reply length</label><select id="maxTokens"><option value="128">Brief</option><option value="256" selected>Conversational</option><option value="512">Detailed</option><option value="1024">Extended</option></select>
+        <p class="hint">Changing the answer model keeps her voice. The first reply may take longer while local models load.</p>
+      </details>
+      <div class="settings-footer"><button class="text-button" id="importPersona">Import persona</button><input class="visually-hidden" id="personaFile" type="file" accept="application/json,.json"><a href="https://github.com/jpjohno/moneypenny-studio" target="_blank" rel="noreferrer">Project ↗</a></div>
+    </aside>
+
+    <section class="stage-panel" aria-label="Live 3D character">
+      <div class="stage-top"><span class="eyebrow">02 / PRESENCE</span><span class="stage-kind">LIVE 3D STAGE</span></div>
+      <div class="stage" id="stage">
+        <div class="stage-halo"></div><div class="stage-grain"></div>
+        <div id="avatar" aria-label="Interactive 3D avatar"></div>
+        <div class="stage-loader" id="stageLoader"><div class="loader-ring"></div><span id="loadLabel">Preparing her entrance…</span></div>
+        <div class="stage-watermark">A presence,<br><em>not just a reply.</em></div>
+        <div class="stage-status"><span id="stateDot" class="state-dot"></span><span id="stageState">Loading character</span><span class="waveform" id="waveform"><i></i><i></i><i></i><i></i><i></i></span></div>
+        <div class="stage-bottom"><div><span class="character-title" id="characterTitle">Moneypenny</span><span class="character-subtitle">Your personal presence</span></div><button class="stage-icon" id="fullscreen" title="Expand stage" aria-label="Expand stage">⛶</button></div>
+      </div>
+      <div class="stage-controls"><div class="view-switch" role="group" aria-label="Camera framing"><button data-view="head">Portrait</button><button data-view="upper" class="selected">Upper body</button><button data-view="full">Full body</button></div><button class="quiet" id="wave">Wave hello <span>✧</span></button></div>
+      <div class="preview-card"><div class="preview-copy"><span class="eyebrow">MEET YOUR CHARACTER</span><p>Hear her voice. See her come to life.</p></div><button id="previewVoice" class="preview-button"><span>▶</span> Preview voice & movement</button></div>
+      <div class="stage-note"><span id="connectionNote">Checking local services…</span><span>3D · voice · expression</span></div>
+    </section>
+
+    <section class="conversation" aria-label="Conversation">
+      <div class="chat-header"><div><span class="eyebrow">03 / CONNECT</span><h2>Conversation</h2></div><button id="newChat" class="square" title="New conversation" aria-label="New conversation">＋</button></div>
+      <div class="live-panel"><button id="liveToggle" class="live-toggle">◉ Start live conversation</button><div class="live-status"><span id="liveState" role="status">Microphone off</span><meter id="micLevel" min="0" max="1" value="0" aria-label="Microphone speech level"></meter></div><div class="live-options"><button id="quietButton" class="text-button">Quiet for a bit</button><button id="resumeButton" class="text-button" hidden>Resume voice</button><span id="followupState"></span></div></div>
+      <div class="chat-scroll" id="chatScroll"><div class="welcome" id="welcome"><div class="welcome-symbol">✳</div><h3>Start with a hello.</h3><p>Talk things through, explore an idea,<br>or simply get to know her.</p><div class="suggestions"><button data-prompt="Hello! Tell me a little about yourself.">Introduce yourself ↗</button><button data-prompt="Help me organise my day. Ask me what I need to do.">Let's plan my day ↗</button><button data-prompt="Tell me something fascinating, in two sentences.">Surprise me ↗</button></div></div><div id="messages" aria-live="polite" aria-relevant="additions text"></div></div>
+      <div class="notice" id="notice" role="status" hidden></div>
+      <div class="composer-wrap"><form id="chatForm"><label class="visually-hidden" for="userInput">Message your character</label><textarea id="userInput" placeholder="Say something…" maxlength="4000" rows="2"></textarea><div class="composer-actions"><button type="button" class="mic-button" id="record" title="Record a note for review" aria-label="Record a message">◉ <span id="recordLabel">Record note</span></button><button type="button" id="stop" class="stop-button" hidden>■ Stop</button><button id="send" type="submit" class="send-button" aria-label="Send message">↑</button></div></form><div class="composer-footer"><label class="toggle-label"><input type="checkbox" id="autoSpeak" checked> Speak replies</label><span id="chatMetrics">Local conversation</span></div><p class="privacy-note">Live mode keeps the microphone open and sends each spoken turn automatically on this Mac. Speak to interrupt. Stop live mode to close the microphone.</p></div>
+    </section>
+  </main>
+  <script src="./vendor/vad/bundle.min.js"></script>
+  <script type="module" src="./static/studio.js"></script>
+</body>
+</html>

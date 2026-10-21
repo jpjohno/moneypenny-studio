@@ -1,0 +1,97 @@
+{
+  "checked_at": "2026-10-18T22:42:32Z",
+  "host": "app.jjrvis.com",
+  "scope": "Route metadata only. No credentials, invitation URLs, private payloads or asset bodies retained. No permission grants or model generation.",
+  "routes": [
+    {
+      "path": "/workspace",
+      "scope": "unauthenticated",
+      "status": 200,
+      "seconds": 0.203,
+      "content_type": "text/html",
+      "x_frame_options": "DENY",
+      "nosniff": true,
+      "csp_present": true,
+      "owner_cookie_issued": false
+    },
+    {
+      "path": "/daily-board.js",
+      "scope": "unauthenticated",
+      "status": 200,
+      "seconds": 0.178,
+      "content_type": "text/javascript",
+      "x_frame_options": "DENY",
+      "nosniff": true,
+      "csp_present": true,
+      "owner_cookie_issued": false
+    },
+    {
+      "path": "/daily-board.css",
+      "scope": "unauthenticated",
+      "status": 200,
+      "seconds": 0.183,
+      "content_type": "text/css",
+      "x_frame_options": "DENY",
+      "nosniff": true,
+      "csp_present": true,
+      "owner_cookie_issued": false
+    },
+    {
+      "path": "/workspace-polish.css",
+      "scope": "unauthenticated",
+      "status": 200,
+      "seconds": 0.183,
+      "content_type": "text/css",
+      "x_frame_options": "DENY",
+      "nosniff": true,
+      "csp_present": true,
+      "owner_cookie_issued": false
+    },
+    {
+      "path": "/presence/",
+      "scope": "unauthenticated",
+      "status": 401,
+      "seconds": 0.179,
+      "content_type": "application/json",
+      "x_frame_options": "DENY",
+      "nosniff": true,
+      "csp_present": true,
+      "owner_cookie_issued": false
+    },
+    {
+      "path": "/presence/?embed=jarvis",
+      "scope": "owner-render-only",
+      "status": 200,
+      "seconds": 0.09,
+      "content_type": "text/html",
+      "x_frame_options": "SAMEORIGIN",
+      "nosniff": true,
+      "csp_present": true,
+      "owner_cookie_issued": false,
+      "nonce_csp_present": true,
+      "child_capture_blocked": true
+    }
+  ],
+  "application_tests": {
+    "scope": "tests/ application suite",
+    "passed": 412,
+    "failed": 0,
+    "seconds": 16.95,
+    "warnings": 1
+  },
+  "repository_wide_collection": {
+    "completed": false,
+    "collection_errors": 2,
+    "reason": "Older standalone brand/colour tests require Pillow, which is absent from the broker environment. No dependencies were installed."
+  },
+  "read_only_review": {
+    "automatic_setup_readiness_modal_removed": true,
+    "startup_default_is_quiet": true,
+    "explicit_startup_choice_preserved": true,
+    "owner_authentication_preserved": true,
+    "same_origin_cookie_mutation_requirement_preserved": true,
+    "new_microphone_permission_still_requires_explicit_enable_action": true,
+    "provider_sign_in_flow_not_changed": true,
+    "source_or_git_changes_made": false
+  }
+}

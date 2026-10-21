@@ -1,0 +1,39 @@
+{
+  "date": "2026-10-21",
+  "revision": "style-v38",
+  "brow_fit": {
+    "revision": "v37",
+    "brow_strands": 760,
+    "maximum_root_gap_before_m": 0.0028343249578028917,
+    "maximum_root_gap_after_m": 0.0002001849061343819,
+    "brow_expression_targets": 5,
+    "body_face_and_speech_shape_coordinates_unchanged": true,
+    "previous_v36_preserved": true,
+    "bytes": 27527540,
+    "photographic_realism_verified": false
+  },
+  "eye_fringe": {
+    "revision": "v38",
+    "cards_refitted": 3,
+    "vertices_shifted": 103,
+    "maximum_side_sweep_m": 0.035,
+    "eye_band_vertices_before": 16,
+    "eye_band_vertices_after": 0,
+    "roots_above_1_54m_unchanged": true,
+    "body_face_and_speech_geometry_unchanged": true,
+    "previous_v37_preserved": true,
+    "bytes": 27558660,
+    "photographic_realism_verified": false
+  },
+  "studio_node_passed": 65,
+  "studio_python_passed": 66,
+  "studio_python_skipped": 2,
+  "actual_export_contract": "passed",
+  "native_visual": "style-v38 visibly reviewed in native JJRVIS: clear left eye, natural dark-blonde tone, brighter skin/light, wave with attached nails and matching cuff, autonomous present gesture. Background visibility suspension observed and normal foreground rendering resumed; no scheduler change.",
+  "photographic": false,
+  "full_spoken_test": false,
+  "whole_app_memory_measured": false,
+  "new_environment_maps": 0,
+  "runtime_models_published": false,
+  "proof": "Local Downloads/JJRVIS-portrait-motion-v38-20261021.png; not published"
+}

@@ -1,0 +1,12 @@
+{
+  "prepared": "2026-10-18",
+  "patch_context_lines": 1,
+  "basis": "Existing v27 JJRVIS front-of-house integration; latest source captures before this incremental release.",
+  "css_basis": "Reconstructed from current CSS by removing the final strict-CSP delay/room-plan block and restoring the prior sidebar status literal. No full owner baseline is included.",
+  "before_sha256": {
+    "jarvis_comm_broker.py": "028990992c8e72a7fd5c6dec2431e2cbcad4476d9c9de7b7a85d8bdd555d938c",
+    "workspace.js": "53fcb9522285238f00f52eecc44138b8381b267651f5527b1aef52801119ece1",
+    "workspace.html": "8cb66e244a8bf789708c9922cbf929e345badf59accb5d8dcf1bba3de165cfbc",
+    "workspace.css": "a6f6354a72affb0b179b2ad639b2b646c495b79d8549f10d45b14b07e7e7347a"
+  }
+}
