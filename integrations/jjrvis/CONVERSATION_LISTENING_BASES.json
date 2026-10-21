@@ -1,0 +1,24 @@
+{
+  "prepared": "2026-10-21",
+  "apply_after": [
+    "jjrvis-studio-persona.patch"
+  ],
+  "requires_exact_private_basis": true,
+  "before_sha256": {
+    "workspace.js": "375b01bf4b6036b410609c33a7ced4a960193a694cc530c9518f340e24bbd03d",
+    "tests/conversation-start.test.cjs": "8066be84a1e3fbf443a1ff765b189f0d1e901245d157812851b074dff0a57748",
+    "tests/presence-voice.test.cjs": "a83dabec861b9176cc2ff400a043db3e19d370858d0869a494d4978432ed499a",
+    "tests/test_voice_interrupt.cjs": "d05a3f7eb18e04f091911cbee2c9b79e3e73c5fc39b1ced9ba88f1e01b2cb855"
+  },
+  "after_sha256": {
+    "workspace.js": "38320dc897921e34bd7f0821bbb5a2c29407b8d6d3fc6d77a4771ff9e5a91596",
+    "tests/conversation-start.test.cjs": "7b609dafa9016ea15d53c0182a46381896d0f70a921368c2ba20d816cb268ed3",
+    "tests/presence-voice.test.cjs": "f426a233c42f74af5e136849e8a305aea0491a526577ca764d29196170f37ce7",
+    "tests/test_voice_interrupt.cjs": "c3d3225cd9ce5d8c28952dedf907677d784113ca78ced70f83061298b3995556"
+  },
+  "additional_files": {
+    "tests/conversation-listening.test.cjs": "34b9eb16c5793de68e0babcfae89c1ac3a452b4703bab1694dc5e3dc0d884d91"
+  },
+  "patch_sha256": "b068cbe3c1732c22e229d166c7cd9290195fdef86ae411528d3f61b7cf5c020a",
+  "exact_replay_verified": true
+}

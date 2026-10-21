@@ -120,7 +120,7 @@ async function run() {
     h.context.speak('Old answer'); await h.deliver(0);
     const audio = h.audios[0];
     h.context.stopVoice();
-    const newerRecognition = {};
+    const newerRecognition = {listenStarted:true};
     h.context.state.recognition = newerRecognition;
     h.context.voiceState('Listening to your new question');
     audio.onerror();
@@ -183,7 +183,7 @@ async function run() {
       ${workspace.slice(callbackStart, callbackEnd)}
       globalThis.dictationTest={r,dictation,get submits(){return submits;}};
     `, h.context);
-    const currentRecognition = {};
+    const currentRecognition = {listenStarted:true};
     h.context.state.recognition = currentRecognition;
     h.context.voiceState('Listening to the replacement question');
     h.context.dictationTest.r.onend();

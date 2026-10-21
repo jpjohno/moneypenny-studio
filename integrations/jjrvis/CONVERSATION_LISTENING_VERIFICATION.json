@@ -1,0 +1,80 @@
+{
+  "checked_on": "2026-10-21",
+  "implemented": true,
+  "basis_sha256": "375b01bf4b6036b410609c33a7ced4a960193a694cc530c9518f340e24bbd03d",
+  "workspace_sha256": "38320dc897921e34bd7f0821bbb5a2c29407b8d6d3fc6d77a4771ff9e5a91596",
+  "focused_javascript_checks": 41,
+  "focused_failed": 0,
+  "javascript_syntax": "passed",
+  "exact_patch_replay": "passed",
+  "backend_stream_probe": {
+    "status": 200,
+    "first_delta_seconds": 10.63,
+    "elapsed_seconds": 16.09,
+    "types": [
+      "status",
+      "status",
+      "delta",
+      "delta",
+      "delta",
+      "delta",
+      "delta",
+      "delta",
+      "delta",
+      "delta",
+      "delta",
+      "delta",
+      "delta",
+      "delta",
+      "delta",
+      "delta",
+      "delta",
+      "delta",
+      "delta",
+      "delta",
+      "final"
+    ],
+    "answer_present": true
+  },
+  "synthetic_service_probe": {
+    "synthetic_speech_not_microphone": true,
+    "transcription_engine": "vosk-local",
+    "transcript_present": true,
+    "answer_present": true,
+    "model": "uncensored-3b:latest",
+    "reply_audio_seconds": 0.40066666666666667,
+    "elapsed_seconds": 3.39,
+    "semantic_answer_correct": false,
+    "accuracy_note": "Synthetic arithmetic was transcribed with a two/to homophone; local model replied incorrectly. This probe establishes service transport only, not answer accuracy."
+  },
+  "native_test": {
+    "private_unlock_completed_by_user": true,
+    "site_microphone_permission_allowed_for_requested_test": true,
+    "actual_capture_status": "Listening \u00b7 microphone on",
+    "spoken_command_without_wake_name": "Show my map",
+    "map_opened": true,
+    "spoken_followup_without_wake_name": "Tell me a very short joke",
+    "generated_answer_visible": true,
+    "generated_model": "uncensored-3b:latest",
+    "British_voice_playback_visible": true,
+    "conversation_still_running_after_reply": true,
+    "no_native_rebuild": true,
+    "no_broker_restart": true
+  },
+  "verified_fixes": [
+    "Explicit Start conversation upgrades existing wake capture without a second microphone.",
+    "Unnamed follow-ups remain accepted beyond the old 45-second window.",
+    "Long normal quiet capture cycles keep an explicit conversation available; rapid repeated failures still pause.",
+    "Stop and Lock clear explicit mode and the old temporary wake window.",
+    "Wake-only mode and manual dictation retain their separate meanings.",
+    "Listening labels require an actual recognizer start."
+  ],
+  "additional_ui_cleanup": {
+    "hide_redundant_Enable_microphone_after_actual_capture": "implemented_and_handler_tested_available_on_next_reload"
+  },
+  "limits": [
+    "A successful reply does not establish model reasoning or general transcription accuracy.",
+    "Current native window was left running after the successful spoken tests; it was not reloaded just for the redundant-button cleanup.",
+    "Broad optional browser test runners require a newer Node runtime; an existing companion-only test fixture supplies an object without closest(). Those unrelated fixtures were not changed."
+  ]
+}

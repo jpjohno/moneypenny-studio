@@ -1,5 +1,9 @@
 # Moneypenny Studio handover
 
+## Latest conversation repair — 21 October 2026
+
+Explicit **Start conversation** now accepts follow-up questions until Stop, including when a wake listener already owns the microphone. The actual spoken map command and subsequent model-generated joke were verified in JJRVIS. See [the repair and tested scope](integrations/jjrvis/CONVERSATION_LISTENING_RELEASE.md).
+
 ## Latest continuation — 21 October 2026: saved persona and voice phonemes
 
 JJRVIS now binds the saved Studio Moneypenny style independently of the existing local uncensored-3b answer model and British voice. Kokoro mouth cues use actual generated phoneme timings, with bounded WAV metadata, delayed phrase handoff, Stop ownership and legacy analysis fallback. Random lip distortions yield during speech. Explicit shared environment strengths reduce skin/fabric washout without a new texture or render pass. Current CG appearance remains non-photographic.

@@ -1,5 +1,7 @@
 # Moneypenny Studio
 
+Explicit **Start conversation** now accepts follow-up questions until Stop, including when a wake listener already owns the microphone. The actual spoken map command and subsequent model-generated joke were verified in JJRVIS. See [the repair and tested scope](integrations/jjrvis/CONVERSATION_LISTENING_RELEASE.md).
+
 A local 3D conversation studio: a rigged human character with idle movement, blinking, eye contact, expressions, hand gestures and mouth shapes driven by the actual British voice recording. Ollama answers, Kokoro speaks and Whisper transcribes on your computer (with a Vosk fallback). No paid API or cloud account is required for the implemented path.
 
 The combined working version is on **`codex/live-3d-persona`**, in [PR #1](https://github.com/jpjohno/moneypenny-studio/pull/1). Open **Moneypenny.code-workspace** in VS Code for the complete web app and Blender tools. The separate Desktop checkout is preserved; its `app.py` is a Blender script, not the web server. See the latest section of [SESSION_HANDOFF.md](SESSION_HANDOFF.md) before continuing development.

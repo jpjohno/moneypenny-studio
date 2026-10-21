@@ -13,5 +13,5 @@ test('a locked workspace cannot open the microphone or change its opt-out',()=>{
  const h=harness(true);h.ctx.startConversation();assert.deepEqual(h.calls,['show']);assert.equal(h.storage.size,0);
 });
 test('opening an already listening conversation does not capture twice',()=>{
- const h=harness();h.ctx.activeRecognition={};h.ctx.startConversation();assert.equal(h.calls.includes('start'),false);assert.equal(h.calls.includes('stop-old-voice'),false);
+ const h=harness();h.ctx.activeRecognition={wakeMode:true,listenStarted:true};h.ctx.startConversation();assert.equal(h.calls.includes('start'),false);assert.equal(h.calls.includes('stop-old-voice'),false);
 });

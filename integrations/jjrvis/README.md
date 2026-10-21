@@ -1,3 +1,7 @@
+# Latest conversation listening repair
+
+See [CONVERSATION_LISTENING_RELEASE.md](CONVERSATION_LISTENING_RELEASE.md) for the previously ignored spoken questions, continuing explicit sessions, truthful capture status and successful live map/joke tests.
+
 # Latest phoneme timing and saved personality
 
 See [PHONEME_TIMING_RELEASE.md](PHONEME_TIMING_RELEASE.md) for voice-generated mouth cues, Stop/phrase timing and reduced skin/fabric washout. [STUDIO_PERSONA_RELEASE.md](STUDIO_PERSONA_RELEASE.md) and [PERSONA_ROUTING_RELEASE.md](PERSONA_ROUTING_RELEASE.md) cover the separate saved style and answer routing overlays.
