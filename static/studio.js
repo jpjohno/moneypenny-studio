@@ -3,7 +3,7 @@ import { TalkingHead } from './vendor/talkinghead/talkinghead.mjs';
 import { HeadAudio } from './vendor/headaudio/headaudio.min.mjs';
 import { Recorder } from './recorder.js';
 import * as THREE from 'three';
-import { MotionDirector, movementFromText } from './motion.js';
+import { MotionDirector, movementFromText, queueConversationGesture } from './motion.js';
 import { Wardrobe } from './wardrobe.js';
 import { LiveSession, SpeechSegmenter, SpeechPipeline, controlIntent } from './live.js';
 
@@ -18,7 +18,7 @@ import { actionOnly, movementAcknowledgement, wardrobeCommand } from './action-c
 import { chooseModel } from './model-choice.js';
 import { renderProfile,StageActivity } from './render-budget.js';
 import { studioFetch as fetch,studioURL,parentOrigins,STUDIO_BASE } from './studio-paths.js';
-import {PresenceAudio,connectSpeechSource} from './presence-audio.js';
+import {PresenceAudio,connectSpeechSource,fadeSpeechGain,openSpeechGate} from './presence-audio.js';
 
 const $ = id => document.getElementById(id);
 const jarvisEmbed=new URLSearchParams(location.search).get('embed')==='jarvis';
@@ -36,7 +36,7 @@ const presets = {
 };
 const settingIds = ['personaName','personaPreset','systemPrompt','movement','mood','wardrobe','footwear','blouseColor','hairTone','lightingLook','lightBrightness','autonomy','aiMotion','activity','behaviourPrompt','modelSelect','speed','mouthTiming','temperature','maxTokens','autoSpeak'];
 let head, lips, analyser, visualizer, avatarReady = false, lipReady = false;
-let generation = 0, controller = null, busy = false, currentSource = null, currentEnvelope=null, speechEnded = null;
+let generation = 0, controller = null, busy = false, currentSource = null, currentEnvelope=null, speechEnded = null, speechStopAt=0;
 let history = [], statusData = {}, avatarURL = null, portraitURL = null, recordingPending = false;
 let studioOutfit = [],disposeAppearance=null;
 let actionTimers=[];
@@ -189,7 +189,7 @@ async function showAvatar(file=null, localCharacter=null) {
     const fitted=!!file||!!localCharacter;
     $('wardrobe').disabled=fitted;$('footwear').disabled=fitted;
     $('avatarLabel').textContent=file ? `Your character · ${file.name||'imported GLB'}` : localCharacter?.label||'Studio character · CC0 sample';
-    activeCharacterRevision=file?'imported':localCharacter?(localCharacter.url.includes('previous')?'style-v30':statusData.character_revision):'sample';
+    activeCharacterRevision=file?'imported':localCharacter?(localCharacter.url.includes('previous')?statusData.previous_character_revision:statusData.character_revision):'sample';
     avatarReady=true; $('stageLoader').hidden=true; frameCharacter('upper');
     stageActivity?.update();
     document.querySelectorAll('[data-view]').forEach(x=>x.classList.toggle('selected',x.dataset.view==='upper'));
@@ -243,7 +243,7 @@ async function initializeStage() {
     let saved=null; try {saved=await asset('avatar');}catch{}
     if(saved) { try{await showAvatar(saved);}catch{notify('The saved character is incompatible. The studio character has been restored.'); await showAvatar();} }
     else if(statusData.character_candidate_ready) {
-      try{await showAvatar(null,{url:'/api/character/default',label:statusData.character_revision==='style-v38'?'Moneypenny · clear eyes & natural portrait v38':statusData.character_revision==='style-v30'?'Moneypenny · softened fabric fit':statusData.character_revision==='style-v29'?'Moneypenny · fitted crepe blouse':statusData.character_revision==='style-v28'?'Moneypenny · crepe blouse':statusData.character_revision==='style-v27'?'Moneypenny · tailored fit v27':statusData.character_revision==='style-v26'?'Moneypenny · balanced character v26':statusData.character_revision==='free-surface-reviewed'?'Moneypenny · free character study':statusData.character_revision==='surface-v9'?'Moneypenny · surface study v9':'Moneypenny · local performance candidate'});}
+      try{await showAvatar(null,{url:'/api/character/default',label:statusData.character_revision==='style-v39'?'Moneypenny · refined brows & fabric v39':statusData.character_revision==='style-v38'?'Moneypenny · clear eyes & natural portrait v38':statusData.character_revision==='style-v30'?'Moneypenny · softened fabric fit':statusData.character_revision==='style-v29'?'Moneypenny · fitted crepe blouse':statusData.character_revision==='style-v28'?'Moneypenny · crepe blouse':statusData.character_revision==='style-v27'?'Moneypenny · tailored fit v27':statusData.character_revision==='style-v26'?'Moneypenny · balanced character v26':statusData.character_revision==='free-surface-reviewed'?'Moneypenny · free character study':statusData.character_revision==='surface-v9'?'Moneypenny · surface study v9':'Moneypenny · local performance candidate'});}
       catch{notify('The local performance character could not load. The studio sample has been restored.');await showAvatar();}
     } else await showAvatar();
     if(!jarvisEmbed){const floor=new THREE.Mesh(new THREE.PlaneGeometry(6,6),new THREE.ShadowMaterial({opacity:.22}));floor.rotation.x=-Math.PI/2;floor.position.y=-.003;floor.receiveShadow=true;head.scene.add(floor);}
@@ -292,12 +292,21 @@ async function stopAll(clearNotice=true,cancelLocalVoice=true) {
   const cancelled=generation;
   generation++; controller?.abort(); controller=null;motionLibrary?.stop();
   const stopGeneration=generation;
-  if(speechGate)speechGate.gain.setValueAtTime(0,head.audioCtx.currentTime);
+  if(speechGate)fadeSpeechGain(speechGate.gain,head.audioCtx.currentTime,0);
   if(activeReply){activeReply.body.textContent=activeReply.body.textContent==='…'?'Reply stopped.':`${activeReply.body.textContent}\n\n[Stopped]`;activeReply=null;}
   recorder.cancel(); recordingPending=false; $('record').classList.remove('recording'); $('recordLabel').textContent='Record note';
-  if(currentSource) {currentSource.onended=null;try{currentSource.stop();}catch{} currentSource.disconnect();currentSource=null;}
-  currentEnvelope?.disconnect();currentEnvelope=null;
-  speechEnded?.(); speechEnded=null;
+  const stoppedSource=currentSource,stoppedEnvelope=currentEnvelope,stoppedResolve=speechEnded;
+  currentSource=null;currentEnvelope=null;speechEnded=null;
+  if(stoppedSource){
+    // This callback belongs only to the interrupted source. It must never clear
+    // a replacement reply's speaking state, visualizer or completion handler.
+    const cleanup=()=>{stoppedSource.disconnect();stoppedEnvelope?.disconnect();};
+    stoppedSource.onended=cleanup;
+    const stopAt=stoppedEnvelope?fadeSpeechGain(stoppedEnvelope.gain,head.audioCtx.currentTime,0):head.audioCtx.currentTime;
+    speechStopAt=stopAt;
+    try{stoppedSource.stop(stopAt);}catch{cleanup();}
+  }else stoppedEnvelope?.disconnect();
+  stoppedResolve?.();
   head?.stopSpeaking();if(head)head.isSpeaking=false;head?.stopGesture(150); lips?.resetAll();
   if(visualizer)cancelAnimationFrame(visualizer);
   actionTimers.forEach(clearTimeout);actionTimers=[];
@@ -313,7 +322,8 @@ function performActions(performance={}) {
   if(directed)return;
   const movement=Number($('movement').value);
   if(movement<.05)return;
-  if(performance.gesture&&movement>.2)head.playGesture(performance.gesture,3);
+  if(head.studioNeutral)queueConversationGesture(motion,performance,movement);
+  else if(performance.gesture&&movement>.2)head.playGesture(performance.gesture,3);
   else if(movement>.45)head.speakWithHands(0,.35);
   const actions=(performance.actions||'').toLowerCase();
   const plan=movementFromText(actions);if(plan)motion?.plan(plan,'conversation');
@@ -336,7 +346,6 @@ async function prepareSpeech(value, token) {
 }
 async function playPrepared(audio, token, performance={}) {
   if(token!==generation)return;
-  if(speechGate)speechGate.gain.setValueAtTime(1,head.audioCtx.currentTime);
   setState('Speaking','speaking');
   if(turnStarted&&!firstVoiceAt){firstVoiceAt=(performanceNow()-turnStarted)/1000;$('chatMetrics').dataset.firstVoiceSeconds=firstVoiceAt.toFixed(2);$('chatMetrics').textContent=`Voice in ${firstVoiceAt.toFixed(1)}s`;}
   performActions(performance);
@@ -344,7 +353,6 @@ async function playPrepared(audio, token, performance={}) {
   // guessing at phonemes. A short audio delay compensates for processing time.
   await new Promise(resolve=>{
     const source=head.audioCtx.createBufferSource(); source.buffer=audio;
-    const envelope=connectSpeechSource(head.audioCtx,source,head.audioSpeechGainNode); currentSource=source;currentEnvelope=envelope; speechEnded=resolve;
     head.isSpeaking=true; head.lookAtCamera(2000);
     const values=new Uint8Array(analyser.frequencyBinCount);
     function draw(){
@@ -353,13 +361,24 @@ async function playPrepared(audio, token, performance={}) {
       visualizer=requestAnimationFrame(draw);
     }
     if(!jarvisEmbed&&!document.hidden)draw();
+    // Schedule the PCM and its envelope on the same clock, after DOM/gaze work.
+    const startAt=Math.max(head.audioCtx.currentTime+.004,speechStopAt);
+    // Reopen at the delayed output's arrival, keeping the interrupted reply's
+    // buffered tail muted during rapid replacement.
+    if(speechGate)openSpeechGate(speechGate.gain,startAt+(speechDelay?.delayTime.value||0));
+    const envelope=connectSpeechSource(head.audioCtx,source,head.audioSpeechGainNode,startAt);
+    currentSource=source;currentEnvelope=envelope;speechEnded=resolve;
     source.onended=()=>{
-      source.disconnect();envelope.disconnect();if(currentEnvelope===envelope)currentEnvelope=null; if(currentSource===source)currentSource=null;
-      head.isSpeaking=false; speechEnded=null; cancelAnimationFrame(visualizer);
+      source.disconnect();envelope.disconnect();
+      if(currentSource===source){
+        currentSource=null;if(currentEnvelope===envelope)currentEnvelope=null;
+        head.isSpeaking=false;if(speechEnded===resolve)speechEnded=null;
+        cancelAnimationFrame(visualizer);
+      }
       // Let the delayed audio and mouth closure drain before reporting idle.
       resolve();
     };
-    source.start();performance.onStarted?.();
+    source.start(startAt);performance.onStarted?.();
   });
   if(token===generation) {setState(liveSession?.active?'Listening':'Here with you');setPersonaMood(head,$('mood').value||'neutral');}
 }

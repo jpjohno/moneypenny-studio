@@ -43,3 +43,14 @@ test('alpha cutout facial hair cannot cast triangular face shadows',()=>{
  assert.equal(lashes.transparent,false);assert.equal(lashes.alphaTest,.35);
  assert.equal(lashes.alphaToCoverage,true);assert.equal(lashes.depthWrite,true);
 });
+
+test('authored v39 blonde is not double-tinted while other choices stay reversible',()=>{
+ const material=new THREE.MeshStandardMaterial({name:'VitHair'});material.color.setRGB(.78,.88,.72);
+ const hair=new THREE.Mesh(new THREE.BufferGeometry(),material);hair.userData.groom_revision='v39 — conservative crown refit; existing atlas retained';
+ const root=new THREE.Group();root.add(hair);const authored=material.color.clone();
+ setHairTone(root,'darkblonde');assert.deepEqual(material.color.toArray(),authored.toArray());
+ setHairTone(root,'brunette');assert.ok(material.color.r<authored.r);
+ setHairTone(root,'darkblonde');assert.deepEqual(material.color.toArray(),authored.toArray());
+ setHairTone(root,'warm');assert.notDeepEqual(material.color.toArray(),authored.toArray());
+ setHairTone(root,'original');assert.deepEqual(material.color.toArray(),authored.toArray());
+});

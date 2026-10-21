@@ -1,0 +1,55 @@
+{
+  "date": "2026-10-21",
+  "status": "implemented_and_verified_locally",
+  "character_revision": "style-v39",
+  "previous_character_revision": "style-v38",
+  "candidate_sha256": "61325c9943ede84db744a966ca13d206a24dcd89e86ab08f51b3ff0178e5eea6",
+  "candidate_bytes": 28688360,
+  "body_face_basis_and_all_76_targets_unchanged": true,
+  "humanoid_bones": 54,
+  "named_visemes": 15,
+  "cloth_uv_weights_topology_metadata_retained": true,
+  "new_photographic_source_asset": false,
+  "fixed_browser_geometry": {
+    "draw_calls": 23,
+    "v38_triangles": 185335,
+    "v39_triangles": 179095
+  },
+  "live_checks": {
+    "native_revision_label": "style-v39",
+    "native_wave": "visibly_performed",
+    "studio_preview": "Speaking with present gesture, then idle without playback error",
+    "native_mic_retested": false,
+    "acoustic_lip_timing_certified": false,
+    "live_stop_click": "not_observed_during_audio; covered_by_lifecycle_tests",
+    "broker_proxy_status": 200,
+    "proxy_sources_match": [
+      "studio.js",
+      "appearance.js",
+      "persona-expression.js",
+      "presence-audio.js",
+      "motion.js"
+    ]
+  },
+  "automated_checks": {
+    "python_passed": 95,
+    "python_skipped": 2,
+    "javascript_passed": 97,
+    "syntax": "passed"
+  },
+  "quality_limit": "Still CG: coarse hair cards, baked highlights in 1K diffuse, generic existing skin maps. Photographic appearance not achieved.",
+  "changes": [
+    "Surface-following brow groom and shallow blouse relaxation",
+    "Prevent duplicate blonde tint",
+    "Release resting smile during WAV speech",
+    "Conversation gestures survive authored-body reset",
+    "Shared source/envelope clock and fades on Stop",
+    "Keep interrupted delayed audio muted during replacement",
+    "Retain v38 fallback and truthful comparison revision"
+  ],
+  "publication": {
+    "new_runtime_binaries": "local_only",
+    "scope": "source,tests,build_script,manifests,documentation",
+    "standing_source_exceptions": "Original parametric body and older anatomy study already tracked; see CHARACTER_SOURCE_PROVENANCE.json"
+  }
+}

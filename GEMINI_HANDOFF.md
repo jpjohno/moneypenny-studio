@@ -23,8 +23,8 @@ autonomy has been achieved.
   19,158-vertex adult body, five keys including Basis and a 52-bone body rig.
   Its main body does not have the finished speaking face, production hair, eyes
   or wardrobe. A hidden clothed sample is a reference, not the body to edit.
-- **Existing live assistant:** `.runtime/character-workshop/Moneypenny-Style-v38.glb`.
-  Preserve this working fallback while developing the replacement. It contains
+- **Existing live assistant:** `.runtime/character-workshop/Moneypenny-Style-v39.glb`.
+  The v38 export remains the previous-look comparison and loading fallback. v39 contains
   15 named viseme slots, body controls and expressions. Keep its existing voice
   interruption, microphone permissions, Stop and persona behaviour working.
 - **Older anatomy study:** root-level `Moneypenny-Adult-Anatomy-Study-v3.blend`
@@ -38,7 +38,7 @@ autonomy has been achieved.
   captured clothing cannot turn it into a complete new person.
 - **Claudia scanned study:** a separate clothed scan with an experimental facial
   bake. Its 14 approximate articulating shapes plus unchanged neutral silence
-  are specific to that study; do not conflate them with the live v38 face.
+  are specific to that study; do not conflate them with the live v39 face.
 
 ## Local launchers and files
 
@@ -62,7 +62,7 @@ authoring preparation, not hardware or software that records a new 4D person.
 ## Work in the existing architecture
 
 Use Blender's actual mesh/material/rig tools and inspect the saved scene before
-editing. Save a new version, preserving the original base and live v38. Develop
+editing. Save a new version, preserving the original base and working v38/v39 exports. Develop
 body proportions and a convincing face first, then skin/eyes/hair, speaking face
 controls, garment fit, corrective deformation and tested animation clips. A
 still image, shader colour change or higher render-sample count is not a complete
@@ -97,3 +97,30 @@ of the captured/legacy assets is not cleared by this handover.
 Gemini needs real local file and Blender execution access to perform these edits.
 A web-only chat cannot inspect or modify a Mac file merely from its written path.
 State a missing input or tool clearly instead of claiming an edit or render ran.
+
+## Latest verified refinement, 21 October 2026
+
+`refine_look_v39.py` builds the local clothed v39 candidate from v38. It replaces
+sparse brow filaments with a short surface-following groom, reduces the crown
+height and relaxes shallow blouse dents. Original face/body Basis and all 76
+body target coordinates, hand/eye/teeth geometry, 54 bones and garment
+UVs/weights/topology are retained. The default app and previous-look comparison
+now report their actual revisions instead of hard-coding the older comparison.
+
+The runtime resting smile now releases during speech instead of adding a held
+smile to closed consonants. Conversational open-palm gestures use the local rig
+controller so the neutral-body reset does not erase them. PCM/envelope start
+clocks are shared; interruption fades remain connected until the scheduled
+stop; delayed old audio stays muted during fast replacement. Explicit movement
+commands retain priority. Hair tint no longer duplicates v39's authored colour.
+
+The installed Mac app visibly loaded `style-v39` and performed the wave. The
+Studio preview visibly reached Speaking with an open-palm movement and returned
+to idle without a playback error. Acoustic quality and exact lip timing have
+not been certified from that visual check. See `PORTRAIT_SPEECH_VERIFICATION.json`.
+
+**Photographic appearance is still unfinished.** Coarse hair cards, broad baked
+highlights in the 1K atlas and the existing generic skin maps remain. Do not
+claim that more samples or hundreds of parameter variations resolve those
+source limitations. New runtime binaries remain private; the build and fixes
+are published as source. No new photographic character was downloaded.

@@ -32,6 +32,8 @@ FILES = {
     'Moneypenny-Style-v26.glb': 'v26 clothed browser candidate; balanced profile and Jarvis presence source',
     'Moneypenny-Style-v27.blend': 'v27 clothed garment-fit source; body and all morph coordinates preserved from v26',
     'Moneypenny-Style-v27.glb': 'v27 clothed browser candidate; corrected under-bust drape and Jarvis presence source',
+    'Moneypenny-Style-v39.blend': 'Clothed v39 look-development source; brows, restrained crown and cloth refinement',
+    'Moneypenny-Style-v39.glb': 'Current clothed v39 conversational candidate; same body, face and visemes as v38',
     'Moneypenny-Style-v38.glb': 'Current clothed conversational fallback; reviewed eyes, brows and hand/clothing repair',
 }
 

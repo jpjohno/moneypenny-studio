@@ -201,3 +201,47 @@ The user then preferred warmer, longer blonde hair and accepted the bust size. v
 v24 adds root coverage under the bob and exports it with alpha MASK rather than BLEND to prevent card self-sorting gaps. The default local wave uses IK on one hand and retains the authored clavicles. Library clips remain available but are not certified for the enlarged outfit. Photographic quality has not been achieved.
 
 Latest v25 adds cheekbone definition and exposes saved hair shades in Character & appearance. Voice & engine → Mouth timing adjusts audible delay from 0–240 ms (100 ms default), for human calibration against this Mac audio output. Natural lip-licking still requires an authored tongue/face clip. The existing 1,000-preview sweep remains the only completed 1,000-render batch; no new sweep or photographic-quality acceptance is claimed.
+
+
+## Clothed portrait and speech refinement v39, 21 October 2026
+
+The live local default is `Moneypenny-Style-v39.glb`; the previous-look control
+and validated loading fallback retain v38. Build source:
+`scripts/character/refine_look_v39.py`. It refuses to overwrite an existing
+candidate/source. It requires the existing private v38 GLB and the installed
+Blender, and creates a separate source/export plus review renders.
+
+The accepted changes are a denser short brow groom, a restrained crown refit,
+neutral authored blonde factor and shallow blouse relaxation. The original
+body/face Basis and 76 body target coordinates are byte-identical; garment UVs,
+weights, topology and metadata remain. The neutral mouth is unchanged so the
+speech engine can close the lips. Runtime speech-aware smile and director-owned
+speaking gestures are separate reversible code changes. The source export is
+28,688,360 bytes, with 179,095 rendered triangles versus v38's 185,335; 23 draw
+calls in the fixed browser comparison. These are geometry/presentation counts,
+not a claim about whole-app memory consumption.
+
+The 1K hair atlas contains broad baked highlights; the existing generic 2K skin
+normal has very little surface detail. Current native app screenshots still
+read as CG. No photographic-quality acceptance or 200 new revisions is claimed.
+The actual next production input is a better groom and captured-quality skin/
+face assets with compatible facial controls and redistribution rights.
+
+Free-source routes were checked against their primary documentation:
+
+- [MetaHuman licence](https://www.metahuman.com/license?lang=en-US) allows other
+  engines and is free below its stated revenue threshold. The [current hardware
+  requirements](https://dev.epicgames.com/documentation/metahuman/metahuman-hardware-requirements-in-unreal-engine?lang=en-US)
+  recommend 32 GB RAM, warn of higher assembly memory, and state that M1 Macs
+  cannot render strands. This Mac is an M1 with 16 GB. No Unreal install was
+  attempted and no new licence accepted.
+- [Microsoft Rocketbox](https://github.com/microsoft/Microsoft-Rocketbox) has
+  rigged facial avatars under MIT, but its creators describe sculpted low-poly
+  assets in their [paper](https://www.frontiersin.org/journals/virtual-reality/articles/10.3389/frvir.2020.561558/full).
+  It is not a newly verified photographic replacement for this face.
+- The existing Renderpeople captures remain private reference/playback assets;
+  customer redistribution and conversion into a new talking identity are not
+  established. They were not promoted as the assistant.
+
+No paid service, photo upload, new rendering daemon or cloud GPU was introduced.
+The temporary review server was stopped after checking the candidate.

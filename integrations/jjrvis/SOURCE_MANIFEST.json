@@ -165,7 +165,7 @@
   },
   "studio_review_files": {
     "README.md": "ae8698b702553af4a742d56671598255c2178ec2b353419392e63bd7be0a9d18",
-    "app.py": "809604a1f23a253c789b3d7d9a64dd3e1514f86dd28959937bf2f8e095a0fb26",
+    "app.py": "386ff32da50fccb27acf0660d75fa64b09a90d395712f22bf7a72a007ed0ab12",
     "package.json": "924817c5fc1b753443501130461a0bce2f495a4132eea64e40a2193029cd1aa8",
     "templates/index.html": "2bf3a2e2749b2d808e36dd0fc1dc6335b1ac1e4af505d747a21c1d3db51b729c",
     "templates/realism.html": "750a7b01e8c1f9d8defe575a4438f38368f9eb5d54a3d09556b06985c91caffe",
@@ -179,18 +179,35 @@
     "tests/test_realism_review.py": "68b6b6ac3720135ce2aef1b2a4cacde9c34c603586ca4b6e740987538214f6ab"
   },
   "studio_handoff_files": {
-    "GEMINI_HANDOFF.md": "183703dd0e707582c0811972532444763ae9558ad259e8d8396e97c5cd15c352",
+    "GEMINI_HANDOFF.md": "84f11244275d7f1bba796eb337a957c2cc9bfc27570766ce6763611f08e9fc76",
     "CHARACTER_SOURCE_PROVENANCE.json": "1fb4750c0e01e74bb1b32105ac0966a1c4423ef22501dbbdb8354edbe9f081e5",
     "Moneypenny-Adult-Body-Source.blend": "2b26290a38eeaae94f8e17df81d0ab1982624ba5b25885d24b2b88debbc5d4ae",
     "Open 4D Capture Workshop.command": "17549094e7c7b00da4627a4ded20c2937373b7228622e9d5378048a8183e8b44",
     "Open Moneypenny Body Source.command": "72ec58ee8d0de508e6cde10ed8acb8c16b483201b9a23e1b55bb1672ce5dc887",
     "Moneypenny.code-workspace": "be626671a3ce72f0ebf03d20fac636c41715906520ca97cbc76124bf47cf327e",
     "SESSION_HANDOFF.md": "5e1b6f0cd42ce94c18b28264fa79c64042457df5a0c106129eb5d74610e06c64",
-    "LOCAL_CHARACTER_ASSETS.json": "44de4620e52069bdf8c7d9a5a74b648938254fe3dfb67825d0fbb24bfe6ae957",
+    "LOCAL_CHARACTER_ASSETS.json": "a9f9977ea67a7428f89389b513fb9a30db8473e036336fd4b0d28729acf4f904",
     ".continue/rules/moneypenny.md": "d96756ed2d76117c6381281622db7d0df55d6e886396b5e81a6cc013830a4b0f",
     "scripts/launch_blender.py": "5648bf7f9997fd7709cd8591418135eb15eff5c44e1b8f07afa70586232f4755",
-    "scripts/character/inventory_local_assets.py": "a09695f8a76f0f313b8dd2d698524669ac29c2b2c517d9dc6e9009e0ad08275b",
+    "scripts/character/inventory_local_assets.py": "3e08d51cf1e9a29dc8107f81157bb4854d096712088eafc5a4dd8744c4f512c0",
     "scripts/character/prepare_4d_workshop.py": "8b862810278dc20248c78e5a0c0e5d9fc1054dec4407e05cc9c481fd74355deb",
     "tests/test_blender_launcher.py": "e379ae7ae5232838251041f61ea5c9f07bf0e899b9c11e62ded1c6556f5a0d56"
+  },
+  "studio_portrait_speech_release": {
+    "app.py": "386ff32da50fccb27acf0660d75fa64b09a90d395712f22bf7a72a007ed0ab12",
+    "static/studio.js": "9f3fdfa7a39ebffd256dae1c8fcd10adc56bafa5fc47e08692819f8cd4de99e4",
+    "static/appearance.js": "a5dbfe1b6ac56724433babdc42c5695dd59d340b03f549ee800fdd6885bc26b0",
+    "static/persona-expression.js": "7250ab1b4b03a94c5716b7da2b641abbf18e4ebf3c8bcc438f66628f38b34f9a",
+    "static/presence-audio.js": "21b0fed015d400973ec9d4738fda35e61057b97b84a8b22480f335df205c0e02",
+    "static/motion.js": "939ecc48ec09c0859f8beeac0b30c2c5fae10fa30e360e558a2d0d07d0412a34",
+    "scripts/character/refine_look_v39.py": "71c5458e26be07ef2a4cc7a663e7989f013fa555aa56fe8bea5b74e7bdd22134",
+    "tests/conversation-motion.test.mjs": "ec178db870a254c6068af7b8b1c0b4ec73a3a91634ea12593cff01b198cb9419",
+    "tests/studio-playback.test.mjs": "bbc6a9944e04aa9ec6dac8294689b212fe235e3d67a1659ef3466d70054dc54e",
+    "tests/appearance.test.mjs": "5400433f4bb2d6c70d0b9f70a844d45dfd73ba405110b6e7b96c6d401dcaaca4",
+    "tests/persona-expression.test.mjs": "c96eddaed978b859d1a034aa26b92bc1dea54caad9d41be2a5a191a4b8aac97a",
+    "tests/presence-audio.test.mjs": "cb4f9b8f87f0a06b0d2b6830a312fd780d7a9355fb4faad00760aa4738483225",
+    "tests/test_studio.py": "72bc5439ef5894ea89ad60da53e29c8eaaf7d275ee815c4fef2a796b366300c4",
+    "CHARACTER_WORKSHOP.md": "41f3b396db1093734386cb3cfff11917e791572795427eb998df0e3478bed539",
+    "PORTRAIT_SPEECH_VERIFICATION.json": "0eec5cc10a70ace13b2f857b601f8999737320b9fa32e57bf04e1176e4b1b0d4"
   }
 }

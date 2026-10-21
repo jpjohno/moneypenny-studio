@@ -202,6 +202,20 @@
       "sha256": "d9166e9e453cb9eb2f5047853cdaa4d8e7011e25493138979fe1e44c3fd4f9c4"
     },
     {
+      "path": ".runtime/character-workshop/Moneypenny-Style-v39.blend",
+      "role": "Clothed v39 look-development source; brows, restrained crown and cloth refinement",
+      "present": true,
+      "bytes": 51092334,
+      "sha256": "d3e2af8c4e64c5abbcc94bc80c4e6f714fd5d92e11865490ba6794d8e45f0a9a"
+    },
+    {
+      "path": ".runtime/character-workshop/Moneypenny-Style-v39.glb",
+      "role": "Current clothed v39 conversational candidate; same body, face and visemes as v38",
+      "present": true,
+      "bytes": 28688360,
+      "sha256": "61325c9943ede84db744a966ca13d206a24dcd89e86ab08f51b3ff0178e5eea6"
+    },
+    {
       "path": ".runtime/character-workshop/Moneypenny-Style-v38.glb",
       "role": "Current clothed conversational fallback; reviewed eyes, brows and hand/clothing repair",
       "present": true,

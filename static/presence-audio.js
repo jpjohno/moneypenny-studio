@@ -33,10 +33,27 @@ export class PresenceAudio {
 }
 
 // Short edge ramps prevent discontinuities when independently prepared phrases meet.
-export function connectSpeechSource(context,source,destination){
-  const envelope=context.createGain(),now=context.currentTime,duration=source.buffer.duration;
+export function connectSpeechSource(context,source,destination,startAt=context.currentTime){
+  const envelope=context.createGain(),now=Math.max(context.currentTime,startAt),duration=source.buffer.duration;
   const fade=Math.min(.004,Math.max(0,duration)/2);
   envelope.gain.setValueAtTime(0,now);envelope.gain.linearRampToValueAtTime(1,now+fade);
   envelope.gain.setValueAtTime(1,now+Math.max(fade,duration-fade));envelope.gain.linearRampToValueAtTime(0,now+duration);
   source.connect(envelope);envelope.connect(destination);return envelope;
+}
+
+// Hold the instantaneous gain before changing it, including an interrupted ramp.
+// Keep the source connected until its scheduled stop so the fade reaches output.
+export function fadeSpeechGain(param,now,target,duration=.006){
+  if(typeof param.cancelAndHoldAtTime==='function')param.cancelAndHoldAtTime(now);
+  else {const held=param.value;param.cancelScheduledValues(now);param.setValueAtTime(held,now);}
+  param.linearRampToValueAtTime(target,now+duration);
+  return now+duration;
+}
+
+// The new source begins at zero after the old delayed source has drained.
+// An explicit zero avoids sampling today's gain for a future output time on
+// older Web Audio implementations without cancelAndHoldAtTime.
+export function openSpeechGate(param,at){
+  param.cancelScheduledValues(at);param.setValueAtTime(0,at);
+  param.linearRampToValueAtTime(1,at+.004);
 }

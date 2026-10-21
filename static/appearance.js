@@ -14,7 +14,11 @@ export function setHairTone(root,tone='darkblonde'){
     for(const material of [node.material].flat()){
       if(!material?.color||!['VitHair','Soft blonde root underlayer'].includes(material.name))continue;
       if(!hairOriginals.has(material))hairOriginals.set(material,material.color.clone());
-      material.color.copy(hairOriginals.get(material)).multiply(tint);
+      // This groom already carries its authored dark-blonde colour in glTF.
+      // Applying the older green-grey sample tint again gives an olive cast.
+      const authoredBlonde=tone==='darkblonde'&&/^v39\b/.test(node.userData?.groom_revision||'');
+      material.color.copy(hairOriginals.get(material));
+      if(!authoredBlonde)material.color.multiply(tint);
     }
   });
 }

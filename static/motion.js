@@ -148,6 +148,27 @@ export class MotionDirector {
   }
 }
 
+// The authored character resets generic upstream body poses each frame. Queue
+// speaking gestures in its own director so they survive that reset, while
+// imported characters can retain TalkingHead's original gesture implementation.
+export function queueConversationGesture(director,performance={},movement=.5){
+  if(!director?.head?.studioNeutral)return false;
+  const amount=Number(movement),gesture=typeof performance.gesture==='string'?performance.gesture.trim().toLowerCase():'';
+  if(!Number.isFinite(amount)||amount<=.2||(!gesture&&amount<=.45))return false;
+  const pending=[director.active,...director.queue].filter(Boolean);
+  if(pending.some(step=>!['persona','conversation'].includes(step.source)))return false;
+  // One response may arrive in many speech phrases. Keep the current eased
+  // movement instead of repeatedly restarting its fade-in on every phrase.
+  if(pending.some(step=>step.source==='conversation'&&step.release===undefined))return true;
+  const side=director.lastConversationSide==='left'?'right':'left';
+  // Finger-specific hints such as thumbup/ok are acknowledged with a supported
+  // open palm; this does not claim those individual finger poses are authored.
+  const accepted=director.plan({steps:[{skill:'present',side,duration:3,
+    intensity:.18+.16*clamp(amount,0,1)}]},'conversation');
+  if(accepted)director.lastConversationSide=side;
+  return accepted;
+}
+
 export function movementFromText(value) {
   const lower=value.toLowerCase(),found=[];
   if(/\b(?:don't|do not|avoid|without|stop)\b/.test(lower))return null;

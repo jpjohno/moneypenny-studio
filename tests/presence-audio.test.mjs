@@ -48,3 +48,58 @@ test('phrase edge ramps are bounded and do not overlap for short audio',async()=
   assert.ok(events.every((e,i)=>!i||e[1]>=events[i-1][1]));
  }
 });
+
+// Evaluate gain over a sustained nonzero signal, rather than just checking API calls.
+function gainFixture(value=1){
+ const points=[{time:0,value}],param={value,
+  setValueAtTime(value,time){points.push({time,value});},
+  linearRampToValueAtTime(value,time){points.push({time,value,ramp:true});},
+  cancelScheduledValues(time){for(let i=points.length-1;i>=0;i--)if(points[i].time>=time)points.splice(i,1);},
+  cancelAndHoldAtTime(time){const value=at(time);for(let i=points.length-1;i>=0;i--)if(points[i].time>=time)points.splice(i,1);points.push({time,value});},
+ };
+ function at(time){
+  const sorted=[...points].sort((a,b)=>a.time-b.time);let previous=sorted[0];
+  for(const point of sorted.slice(1)){
+   if(point.time>time)return point.ramp?previous.value+(point.value-previous.value)*(time-previous.time)/(point.time-previous.time):previous.value;
+   previous=point;
+  }
+  return previous.value;
+ }
+ return {param,at,points};
+}
+test('a slow setup does not consume the phrase fade or truncate its last samples',async()=>{
+ const {connectSpeechSource}=await import('../static/presence-audio.js');
+ const envelope=gainFixture(),context={currentTime:5.020,createGain:()=>({gain:envelope.param,connect(){}})};
+ // Twenty milliseconds of gaze/DOM work has elapsed; use one future start for
+ // source.start(startAt) and the gain envelope, preserving the full 100 ms PCM.
+ const startAt=context.currentTime+.004;
+ connectSpeechSource(context,{buffer:{duration:.1},connect(){}},{},startAt);
+ assert.equal(envelope.at(startAt),0);
+ assert.ok(envelope.at(startAt+.002)>.49&&envelope.at(startAt+.002)<.51);
+ assert.equal(envelope.at(startAt+.080),1);
+ assert.ok(envelope.at(startAt+.098)>.49);
+ assert.ok(Math.abs(envelope.at(startAt+.1))<1e-10);
+});
+test('interrupting a phrase fades its sustained signal and can reopen during that fade',async()=>{
+ const {fadeSpeechGain}=await import('../static/presence-audio.js');
+ const gain=gainFixture();const stopAt=fadeSpeechGain(gain.param,2,0);
+ assert.equal(gain.at(2),1);assert.ok(Math.abs(gain.at(2.003)-.5)<1e-10);assert.equal(gain.at(stopAt),0);
+ // A replacement cancels the old scheduled mute, even when it arrives early.
+ const replacement=gainFixture();fadeSpeechGain(replacement.param,2,0);
+ fadeSpeechGain(replacement.param,2.003,1,.004);
+ assert.ok(Math.abs(replacement.at(2.003)-.5)<1e-10);
+ assert.equal(replacement.at(2.007),1);assert.equal(replacement.at(2.02),1);
+});
+test('older Web Audio fallback captures gain before cancelling automation',async()=>{
+ const {fadeSpeechGain}=await import('../static/presence-audio.js');let held;
+ const param={value:.4,cancelScheduledValues(){this.value=1;},setValueAtTime(value){held=value;},linearRampToValueAtTime(){}};
+ fadeSpeechGain(param,1,0);assert.equal(held,.4);
+});
+
+test('future output gate opening preserves the interruption fade and stays muted until arrival',async()=>{
+ const {fadeSpeechGain,openSpeechGate}=await import('../static/presence-audio.js');
+ const gain=gainFixture();fadeSpeechGain(gain.param,2,0);openSpeechGate(gain.param,2.15);
+ assert.ok(Math.abs(gain.at(2.003)-.5)<1e-10);
+ assert.equal(gain.at(2.1),0);assert.equal(gain.at(2.15),0);
+ assert.ok(Math.abs(gain.at(2.152)-.5)<1e-10);assert.equal(gain.at(2.154),1);
+});

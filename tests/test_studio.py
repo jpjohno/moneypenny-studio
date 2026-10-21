@@ -16,6 +16,7 @@ HEADERS = {'X-Studio-Client': 'moneypenny'}
 @pytest.fixture
 def client(monkeypatch, tmp_path):
     monkeypatch.setattr(studio.appearance_settings, 'PATH', tmp_path / 'appearance.json')
+    monkeypatch.setattr(studio, 'GROOMED_CHARACTER', tmp_path / 'missing-groomed.glb')
     monkeypatch.setattr(studio, 'NATURAL_CHARACTER', tmp_path / 'missing-natural.glb')
     monkeypatch.setattr(studio, 'REFRESHED_CHARACTER', tmp_path / 'missing-refresh.glb')
     monkeypatch.setattr(studio, 'FITTED_CHARACTER', tmp_path / 'missing-fit.glb')
@@ -276,3 +277,22 @@ def test_latest_character_and_previous_comparison_are_distinct(client, monkeypat
     assert client.get('/api/character/default').data == latest.read_bytes()
     assert client.get('/api/character/default?look=previous').data == previous.read_bytes()
     assert client.get('/api/character/default?look=../../private').status_code == 400
+
+
+def test_groomed_revision_keeps_v38_comparison_and_falls_back_if_damaged(client, monkeypatch, tmp_path):
+    def make(name, marker):
+        payload = json.dumps({'asset': {'version': '2.0'}, 'extras': marker}).encode()
+        payload += b' ' * ((-len(payload)) % 4)
+        path = tmp_path / name
+        path.write_bytes(b'glTF' + struct.pack('<IIII', 2, 20 + len(payload), len(payload), 0x4e4f534a) + payload)
+        return path
+    latest, previous = make('v39.glb', 'groomed'), make('v38.glb', 'fallback')
+    monkeypatch.setattr(studio, 'GROOMED_CHARACTER', latest)
+    monkeypatch.setattr(studio, 'NATURAL_CHARACTER', previous)
+    assert client.get('/api/status?quick=1').json['character_revision'] == 'style-v39'
+    assert client.get('/api/status?quick=1').json['previous_character_revision'] == 'style-v38'
+    assert client.get('/api/character/default').data == latest.read_bytes()
+    assert client.get('/api/character/default?look=previous').data == previous.read_bytes()
+    latest.write_bytes(b'incomplete export')
+    assert client.get('/api/status?quick=1').json['character_revision'] == 'style-v38'
+    assert client.get('/api/character/default').data == previous.read_bytes()
