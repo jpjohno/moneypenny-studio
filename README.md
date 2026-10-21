@@ -120,6 +120,29 @@ Use **Import 3D character** with a self-contained GLB 2.0 file under 80 MB. The 
 
 **A reference photograph does not automatically become a 3D likeness.** The portrait control is a visual reference only. The bundled character is a CC0 sample, not a finished bespoke or photorealistic Moneypenny. For an original free character, use Blender + MPFB, build the face/hair/clothes, export the TalkingHead rig and shapes, and import the resulting GLB. See [RESEARCH_AND_REUSE.md](RESEARCH_AND_REUSE.md) for the free tools and existing work that were inspected.
 
+## Create and replay animations
+
+Open **Move & view → Create animations** in the local JJRVIS workspace, or open
+http://127.0.0.1:8090/?panel=animation#animationBuilder .
+
+1. Name the animation and add movements such as Wave, Bow, Stretch, Turn or Dance.
+2. Change their order, duration and waving hand. A sequence holds up to eight steps.
+3. Use Preview and Stop to review the actual character, then Save animation.
+4. Reopen it under Open a saved animation; Export JSON/Open JSON transfers the
+   editable sequence. Save again creates another library item so the original remains.
+
+The builder uses the existing local body controller and makes no language-model
+request. Sequence playback supports Play/Stop and speed; pause, timeline seeking
+and clothing cues apply to imported/baked clips. Blender remains the separate
+free authoring tool for new mesh, rig and captured-motion work. The builder does
+not invent arbitrary realistic motion or turn the current CG asset into a scan.
+
+Appearance choices are shared with JJRVIS. Light blonde and Brighter blue can be
+changed back in Character & appearance; the iris adjustment preserves pupils,
+eye whites and the original eye texture. Voice & engine keeps the local British
+Moneypenny voice. The JJRVIS integration now pins voice identity for each reply
+instead of re-reading mutable settings for every phrase.
+
 ## Verification
 
 ```sh

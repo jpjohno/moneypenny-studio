@@ -26,7 +26,7 @@ STATIC_FILES = frozenset({
     'studio-tools.js', 'appearance.js', 'persona-expression.js', 'studio.js', 'record-worklet.js',
     'presence-audio.js', 'action-commands.js', 'model-choice.js', 'studio.css',
     'correctives.js', 'rig.js', 'motion-library.js', 'render-budget.js',
-    'recorder.js', 'wardrobe.js',
+    'recorder.js', 'wardrobe.js', 'animation-builder.js',
 })
 ASSET_SUFFIXES = frozenset({'.js', '.mjs', '.css', '.wasm', '.bin', '.onnx',
                            '.glb', '.gltf', '.png', '.jpg', '.jpeg', '.webp',

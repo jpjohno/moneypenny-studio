@@ -206,6 +206,81 @@ input[type=range] {
   display:flex;
   gap:7px
 }
+.animation-add,.animation-step-controls {
+  display:flex;
+  align-items:center;
+  gap:6px
+}
+.animation-add {
+  margin-top:10px
+}
+.animation-add label {
+  margin:0
+}
+.animation-add input,.animation-step-controls input {
+  width:58px;
+  min-width:0;
+  padding:7px
+}
+.animation-add .file-button {
+  margin-left:auto
+}
+.animation-steps {
+  list-style:none;
+  padding:0;
+  margin:12px 0
+}
+.animation-step {
+  border:1px solid var(--line);
+  border-radius:7px;
+  padding:9px;
+  margin:7px 0;
+  background:var(--panel)
+}
+.animation-step-title {
+  display:block;
+  font-size:11px;
+  margin-bottom:7px
+}
+.animation-step-controls {
+  flex-wrap:wrap;
+  font-size:9px;
+  color:var(--muted)
+}
+.animation-step-controls select {
+  width:auto;
+  min-width:0;
+  max-width:100%;
+  padding:7px;
+  font-size:9px
+}
+.animation-step-button {
+  border:1px solid var(--line);
+  border-radius:5px;
+  min-width:27px;
+  min-height:29px;
+  padding:3px;
+  background:transparent;
+  color:var(--ink)
+}
+.animation-summary {
+  font-size:10px;
+  color:var(--muted)
+}
+.animation-preview {
+  padding:10px 14px;
+  flex:1;
+  justify-content:center
+}
+.animation-save {
+  margin-top:8px
+}
+.animation-save .file-button {
+  flex:1
+}
+.animation-import {
+  cursor:pointer
+}
 .square {
   border:1px solid var(--line);
   background:transparent;

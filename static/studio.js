@@ -1,3 +1,4 @@
+import {AnimationBuilder} from './animation-builder.js';
 import {installWarmExpression,setPersonaMood} from './persona-expression.js';
 import { TalkingHead } from './vendor/talkinghead/talkinghead.mjs';
 import { HeadAudio } from './vendor/headaudio/headaudio.min.mjs';
@@ -11,7 +12,7 @@ import { RigController, authoredNeutral } from './rig.js';
 import { RigView } from './rig-view.js';
 import { MotionLibrary } from './motion-library.js';
 import { StudioTools } from './studio-tools.js';
-import { prepareSampleMaterials, prepareCharacterMaterials, setLook, setHairTone } from './appearance.js';
+import { prepareSampleMaterials, prepareCharacterMaterials, setLook, setHairTone, setEyeTone } from './appearance.js';
 import { PoseCorrectives } from './correctives.js';
 import { SeatSupport } from './seat-support.js';
 import { actionOnly, movementAcknowledgement, wardrobeCommand } from './action-commands.js';
@@ -34,7 +35,7 @@ const presets = {
   companion: 'You are Moneypenny, a friendly adult British conversation companion. Be curious, thoughtful and warm. Listen carefully, remember what has been said within this conversation and ask natural follow-up questions. Use gentle humour and a relaxed manner.',
   playful: 'You are Moneypenny, an adult British woman with a confident, witty and subtly flirtatious personality. Use warm smiles, gentle teasing and clever wordplay when welcome. Keep flirtation non-explicit and responsive. Shift to a clear, considerate manner when the topic calls for it. Speak like a natural conversation.',
 };
-const settingIds = ['personaName','personaPreset','systemPrompt','movement','mood','wardrobe','footwear','blouseColor','hairTone','lightingLook','lightBrightness','autonomy','aiMotion','activity','behaviourPrompt','modelSelect','speed','mouthTiming','temperature','maxTokens','autoSpeak'];
+const settingIds = ['personaName','personaPreset','systemPrompt','movement','mood','wardrobe','footwear','blouseColor','hairTone','eyeTone','lightingLook','lightBrightness','autonomy','aiMotion','activity','behaviourPrompt','modelSelect','speed','mouthTiming','temperature','maxTokens','autoSpeak'];
 let head, lips, analyser, visualizer, avatarReady = false, lipReady = false;
 let generation = 0, controller = null, busy = false, currentSource = null, currentEnvelope=null, speechEnded = null, speechStopAt=0;
 let history = [], statusData = {}, avatarURL = null, portraitURL = null, recordingPending = false;
@@ -45,7 +46,7 @@ let motion=null,wardrobe=null,liveSession=null,speechGate=null,speechDelay=null,
 let quietUntil=Number(localStorage.getItem('moneypenny-quiet-until')||0),reminderPolling=false;
 let turnStarted=0,firstVoiceAt=0;
 let rig=null,rigView=null,motionLibrary=null,tools=null,poseCorrectives=null,seatSupport=null;
-let stageActivity=null,parentStageVisible=true,renderFrames=0;
+let stageActivity=null,parentStageVisible=true,renderFrames=0,animationBuilder=null;
 let presenceAudio=null,activeCharacterRevision=null,previousLook=false;
 const recorder = new Recorder();
 
@@ -56,6 +57,7 @@ function setState(label, state='ready') {
 }
 function setBusy(value) {
   for(const id of ['playMotion','pauseMotion','stopLibraryMotion','pinFeet','releaseTarget','resetRig','planMotion','stopMotion','previewSeatPose'])$(id).disabled=!avatarReady;
+  if(motionLibrary?.canPause===false||motionLibrary?.items.find(item=>item.id===$('motionLibrary').value)?.format==='sequence'){$('pauseMotion').disabled=true;$('motionPosition').disabled=true;}
   busy = value; $('send').disabled = value || !statusData.models?.length || recorder.active || recordingPending;
   stageActivity?.update({active:value||!!head?.isSpeaking||!!motion?.active||!!motionLibrary?.playing});
   $('stop').hidden = !value && !recorder.active && !recordingPending;
@@ -91,7 +93,7 @@ function updateSettings() {
     head.opt.avatarIdleHeadMove = movement * .16;
     head.opt.avatarSpeakingHeadMove = movement * .26;
     setLook(head,$('lightingLook').value,$('lightBrightness').value);
-    if(head.studioNeutral&&head.armature)setHairTone(head.armature,$('hairTone').value);
+    if(head.studioNeutral&&head.armature){setHairTone(head.armature,$('hairTone').value);setEyeTone(head.armature,$('eyeTone').value);}
   }
   if(statusData.models?.length)$('connectionNote').textContent=`${$('modelSelect').value} · ${statusData.voice_ready?'British voice connected':'voice needs setup'}`;
   wardrobe?.set($('wardrobe').value,$('footwear').value);
@@ -158,11 +160,12 @@ async function showAvatar(file=null, localCharacter=null) {
     rig=new RigController(head,value=>{$('rigState').textContent=value;});
     rigView=new RigView(head,rig,(name,target,held)=>tools?.rigChanged(name,target,held));
     rigView.show($('showRig').checked);rigView.select($('rigTarget').value);
-    motionLibrary=new MotionLibrary(head,rig,value=>{$('libraryState').textContent=value;});
+    motionLibrary=new MotionLibrary(head,rig,value=>{$('libraryState').textContent=value;if(motionLibrary?.currentSource==='animation-builder')animationBuilder?.say(value);const sequence=motionLibrary?.canPause===false||motionLibrary?.items.find(item=>item.id===$('motionLibrary').value)?.format==='sequence';$('pauseMotion').disabled=sequence;$('motionPosition').disabled=sequence||!motionLibrary?.current;});
     poseCorrectives=new PoseCorrectives(head.armature);
     seatSupport=new SeatSupport(head.scene,rig);
     try{motionLibrary.mapping=JSON.parse(localStorage.getItem('moneypenny-bone-map')||'{}');}catch{}
     motion=new MotionDirector(head,value=>{$('motionState').textContent=value;postPresence('moneypenny-motion-state',{state:value});},rig);
+    motionLibrary.onSequence=(plan,source)=>{motion.stop();rig.clear();return motion.plan(plan,source)?motion:null;};
     tools?.refreshMotions().catch(error=>notify(error.message));
     motion.onChoosePlan=async()=>{
       if(busy||userSpeaking||document.hidden||!$('autonomy').checked)return;
@@ -177,7 +180,7 @@ async function showAvatar(file=null, localCharacter=null) {
       }catch{};
     };
     wardrobe=new Wardrobe(head);
-    motionLibrary.onProgress=(time,duration)=>{$('motionPosition').disabled=false;$('motionPosition').max=String(duration);if(document.activeElement!==$('motionPosition'))$('motionPosition').value=String(time);$('motionTime').textContent=`${time.toFixed(1)} / ${duration.toFixed(1)} s`;};
+    motionLibrary.onProgress=(time,duration)=>{$('motionPosition').disabled=motionLibrary.canPause===false;$('pauseMotion').disabled=motionLibrary.canPause===false;$('motionPosition').max=String(duration);if(document.activeElement!==$('motionPosition'))$('motionPosition').value=String(time);$('motionTime').textContent=`${time.toFixed(1)} / ${duration.toFixed(1)} s`;};
     motionLibrary.onCue=cue=>{try{wardrobe.setGarment(cue.garment,cue.visible);const garment=wardrobe.garments().find(item=>item.id===cue.garment);$('cueState').textContent=`${garment?.name||cue.garment} ${cue.visible?'visible':'removed'} at ${cue.at}s`;}catch(error){notify(error.message);}};
     try{motionLibrary.autoIds=JSON.parse(localStorage.getItem('moneypenny-autonomous-clips')||'["studio-stretch"]');motionLibrary.aliasOverrides=JSON.parse(localStorage.getItem('moneypenny-motion-aliases')||'{}');motionLibrary.cueOverrides=JSON.parse(localStorage.getItem('moneypenny-garment-cues')||'{}');}catch{}
     tools?.refreshGarments();
@@ -201,17 +204,20 @@ async function showAvatar(file=null, localCharacter=null) {
     setState('Character unavailable',''); throw e;
   } finally { setBusy(busy); }
 }
-const appearanceIds=['blouseColor','hairTone','lightingLook','lightBrightness'];
+const appearanceIds=['blouseColor','hairTone','eyeTone','lightingLook','lightBrightness'];
 let appearanceSnapshot='',appearanceSaveTimer=null;
-async function syncAppearance(){
+async function syncAppearance(force=false){
  try{
-  const next=await(await api('/api/appearance')).json(),key=JSON.stringify(next);if(key===appearanceSnapshot)return;appearanceSnapshot=key;
+  const response=await fetch('/api/appearance');
+  if(!response.ok)throw new Error('Shared appearance unavailable.');
+  const next=await response.json(),key=JSON.stringify(next);if(!force&&key===appearanceSnapshot)return;
   for(const id of appearanceIds)if(typeof next[id]==='string')$(id).value=next[id];
-  if(head){setLook(head,$('lightingLook').value,$('lightBrightness').value);setHairTone(head.armature,$('hairTone').value);wardrobe?.setPalette($('blouseColor').value);}
- }catch{/* Keep the current appearance when the connection is unavailable. */}
+  if(head){setLook(head,$('lightingLook').value,$('lightBrightness').value);setHairTone(head.armature,$('hairTone').value);setEyeTone(head.armature,$('eyeTone').value);wardrobe?.setPalette($('blouseColor').value);}
+  appearanceSnapshot=key;$('appearanceState').textContent='Appearance shared with JJRVIS';
+ }catch{$('appearanceState').textContent='Shared appearance unavailable · showing current choices';}
 }
 function saveAppearance(){
- if(jarvisEmbed)return;clearTimeout(appearanceSaveTimer);appearanceSaveTimer=setTimeout(async()=>{try{const next=Object.fromEntries(appearanceIds.map(id=>[id,$(id).value]));await api('/api/appearance',next);appearanceSnapshot=JSON.stringify(next);}catch{notify('This appearance change could not be saved. Your current preview remains available.');}},400);
+ if(jarvisEmbed)return;clearTimeout(appearanceSaveTimer);appearanceSaveTimer=setTimeout(async()=>{try{const next=Object.fromEntries(appearanceIds.map(id=>[id,$(id).value]));await api('/api/appearance',next);appearanceSnapshot=JSON.stringify(next);$('appearanceState').textContent='Appearance shared with JJRVIS';}catch{notify('This appearance change could not be saved. Your current preview remains available.');}},400);
 }
 async function initializeStage() {
   try {
@@ -696,6 +702,19 @@ async function initialize() {
     resetConversation:async()=>{await stopAll();history=[];$('messages').replaceChildren();$('welcome').hidden=false;},
     download:(filename,value)=>{const url=URL.createObjectURL(new Blob([JSON.stringify(value,null,2)],{type:'application/json'}));const link=document.createElement('a');link.href=url;link.download=filename;link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}});
   try{await tools.start();}catch(error){notify(error.message);}
+  // A saved persona can include older appearance fields. The shared choices
+  // shown in JJRVIS remain authoritative when opening this editor.
+  await syncAppearance(true);
+  animationBuilder=new AnimationBuilder($('animationBuilder'),{
+    getLibrary:()=>motionLibrary,getRig:()=>rig,stopConversation:stopAll,frame:frameCharacter,
+    onSaved:async record=>{await tools.refreshMotions();$('motionLibrary').value=record.id;await $('motionLibrary').onchange();}
+  });
+  try{await animationBuilder.start();}catch(error){animationBuilder.say(error.message);}
+  if(new URLSearchParams(location.search).get('panel')==='animation'){
+    const panel=$('animationBuilder'),settingsPane=panel.closest('.settings');panel.open=true;
+    window.scrollTo(0,0);settingsPane.scrollTop+=panel.getBoundingClientRect().top-settingsPane.getBoundingClientRect().top;
+    panel.querySelector('summary').focus({preventScroll:true});
+  }
   updateLiveControls();pollReminders();
 }
 initialize();

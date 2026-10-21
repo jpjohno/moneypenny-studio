@@ -1,0 +1,20 @@
+{
+  "prepared": "2026-10-21",
+  "requires_exact_private_basis": true,
+  "before_sha256": {
+    "workspace.js": "a6cd6970074b31d730b81868f8d98167a4c53fb89e6579578fe4debaf68b4069",
+    "jarvis_comm_broker.py": "074965e2782056eb7a451cd4afa082dcddf0a1f399125065fc46bf487414d08c"
+  },
+  "after_sha256": {
+    "workspace.js": "a4e028fc44b92a9ac4512624a24eec06942500ff68ae5118995e5d191253d4c9",
+    "jarvis_comm_broker.py": "1e6764d26dfd79faee5c3eed49dbf7da4a248b266f6375e0db5a4a2aab9ec5ff"
+  },
+  "exact_replay_verified": true,
+  "source_copy_sha256": {
+    "voice_profiles.py": "9af5479dff86f9d28211b50c8e0e142120e32c04934a1360a536d161e5156403",
+    "tests/test_voice_preferences.py": "9b5ff316bdbd7ed38a7d77f7983e7071ac3e2117661daaecf8fe6f20ac3adf5a",
+    "tests/test_voice_routes_review.py": "6b30ee005cc978c4f76f75dc5b7941c8a9dbbdefa881d45d1213a4d1816bcaf9",
+    "tests/presence-voice.test.cjs": "4df2b8413fbea8953d5a0ab914f5c67a3e22ac7a6800240a86fa047823826b87",
+    "tests/test_voice_interrupt.cjs": "d05a3f7eb18e04f091911cbee2c9b79e3e73c5fc39b1ced9ba88f1e01b2cb855"
+  }
+}

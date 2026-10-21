@@ -2,8 +2,8 @@
 import json, math, os, tempfile
 from pathlib import Path
 PATH=Path(__file__).resolve().parent/'.runtime/appearance.json'
-DEFAULTS={'blouseColor':'petrol','hairTone':'darkblonde','lightingLook':'daylight','lightBrightness':'1'}
-CHOICES={'blouseColor':{'petrol','navy','ivory','plum'},'hairTone':{'original','warm','darkblonde','brunette'},'lightingLook':{'daylight','portrait','neutral'}}
+DEFAULTS={'blouseColor':'petrol','hairTone':'lightblonde','eyeTone':'brightblue','lightingLook':'daylight','lightBrightness':'1'}
+CHOICES={'blouseColor':{'petrol','navy','ivory','plum'},'hairTone':{'original','lightblonde','warm','darkblonde','brunette'},'eyeTone':{'natural','brightblue'},'lightingLook':{'daylight','portrait','neutral'}}
 def validate(value):
     if not isinstance(value,dict) or set(value)-set(DEFAULTS):raise ValueError('Unsupported appearance setting')
     result=dict(DEFAULTS)

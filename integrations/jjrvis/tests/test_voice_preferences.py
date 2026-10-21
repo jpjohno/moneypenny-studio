@@ -26,3 +26,15 @@ def test_answer_model_alias_reports_the_engine_that_runs():
 def test_every_offered_model_accepted_by_request_schema(model):
     from jarvis_comm_broker import VoicePreference
     assert VoicePreference(profile='moneypenny', speed=1, model=model).model == model
+
+
+def test_public_voice_identity_is_explicit_and_speech_pin_does_not_persist(tmp_path, monkeypatch):
+    monkeypatch.setattr(v, 'PATH', tmp_path/'preferences.json')
+    v.save('moneypenny', 1.15, 'gpt-4.1-mini')
+    assert v.public()['voice'] == {'provider':'local-kokoro','voice':'bf_emma','language':'en-GB'}
+    pinned = v.for_speech('english', 1.0)
+    assert (pinned['profile'], pinned['voice'], pinned['language'], pinned['speed']) == ('english','bm_george','en-GB',1.0)
+    assert v.selected()['profile'] == 'moneypenny'
+    assert v.selected()['speed'] == 1.15
+    for speed in (True, float('nan'), .4):
+        with pytest.raises(ValueError): v.for_speech('english', speed)

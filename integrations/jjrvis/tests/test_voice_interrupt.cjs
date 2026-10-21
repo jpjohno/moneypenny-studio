@@ -45,6 +45,7 @@ function harness({deferStop=false}={}) {
     },
     $(selector) { if (!nodes.has(selector)) nodes.set(selector, element()); return nodes.get(selector); },
     notify() {},
+    updateStageVoice() {},
     selectedAssistantIdentity() { return {profile:'moneypenny',name:'Moneypenny'}; },
   };
   vm.createContext(context);
@@ -59,7 +60,7 @@ function harness({deferStop=false}={}) {
       get wakeStarts(){return wakeStarts;}
     };
   `, context);
-  const deliver = async index => { await tick(); audioRequests[index].resolve({ok: true, blob: async () => ({})}); await tick(); };
+  const deliver = async index => { await tick(); audioRequests[index].resolve({ok: true, headers:{get:key=>({'X-JJRVIS-Voice-Provider':'local-kokoro','X-JJRVIS-Voice-Profile':'moneypenny','X-JJRVIS-Voice-ID':'bf_emma','X-JJRVIS-Voice-Language':'en-GB'}[key]||null)}, blob: async () => ({})}); await tick(); };
   return {context, audioRequests, stopRequests, audios, nodes, revoked, deliver, status: () => context.$('#voice-status').textContent};
 }
 

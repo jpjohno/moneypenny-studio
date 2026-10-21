@@ -3,6 +3,7 @@ import {studioFetch as fetch} from './studio-paths.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { BVHLoader } from 'three/addons/loaders/BVHLoader.js';
 import { retargetClip } from 'three/addons/utils/SkeletonUtils.js';
+import {validateAnimationSequence} from './animation-builder.js';
 const canonical=name=>name.replace(/^mixamorig[:_]?/i,'').replace(/[^a-z0-9]/gi,'').toLowerCase();
 const aliases={Hips:['hip','pelvis'],Spine:['abdomen','lowerback'],Spine1:['chest','upperback'],Spine2:['chest2','thorax'],Neck:['neck','lowerneck'],Head:['head']};
 for(const [side,prefix] of [['Left','l'],['Right','r']])for(const [bone,other] of [['Shoulder','collar'],['Arm','shoulder'],['ForeArm','elbow'],['Hand','wrist'],['UpLeg','hip'],['Leg','knee'],['Foot','ankle']])aliases[side+bone]=[prefix+other];
@@ -52,20 +53,26 @@ export function retarget(source,clip,rig,mapping={}){
 
 export class MotionLibrary {
   constructor(head,rig,onState=()=>{}){
-    Object.assign(this,{head,rig,onState});this.items=[];this.cache=new Map();this.mixer=new THREE.AnimationMixer(head.armature);this.current=null;this.clock=0;this.speed=1;this.blend=.6;this.loop=false;this.paused=false;this.request=0;this.mapping={};this.autoIds=['studio-stretch'];this.aliasOverrides={};this.cueOverrides={};this.onCue=()=>{};this.onProgress=()=>{};this.firedCues=new Set();
+    Object.assign(this,{head,rig,onState});this.items=[];this.cache=new Map();this.mixer=new THREE.AnimationMixer(head.armature);this.current=null;this.currentSequence=null;this.onSequence=null;this.clock=0;this.speed=1;this.blend=.6;this.loop=false;this.paused=false;this.request=0;this.mapping={};this.autoIds=['studio-stretch'];this.aliasOverrides={};this.cueOverrides={};this.onCue=()=>{};this.onProgress=()=>{};this.firedCues=new Set();
     const tracks=rig.bodyNames.map(name=>new THREE.QuaternionKeyframeTrack(name+'.quaternion',[0,1],[...rig.rest[name].q.toArray(),...rig.rest[name].q.toArray()]));
     tracks.push(new THREE.VectorKeyframeTrack('Hips.position',[0,1],[...rig.rest.Hips.p.toArray(),...rig.rest.Hips.p.toArray()]));
     this.base=this.mixer.clipAction(new THREE.AnimationClip('neutral',1,tracks));this.base.play();
     this.poseCache=Object.fromEntries(Object.entries(rig.rest).map(([name,value])=>[name,{q:value.q.clone(),p:value.p.clone()}]));
     this.mixer.addEventListener('finished',event=>{if(event.action===this.current){this.stop();this.onState('Movement complete');}});
   }
-  get playing(){return !!this.current||this.fadeUntil>this.clock;}
+  get playing(){return !!this.currentSequence||!!this.current||this.fadeUntil>this.clock;}
+  get canPause(){return !this.currentSequence;}
   async refresh(){const response=await fetch('/api/motion/library');if(!response.ok)throw new Error('Motion library unavailable.');this.items=(await response.json()).motions;return this.items;}
   async load(id){
     if(this.cache.has(id))return this.cache.get(id);
     const item=this.items.find(x=>x.id===id);if(!item)throw new Error('Choose a library movement.');
     const response=await fetch(item.url);if(!response.ok)throw new Error('Animation asset unavailable.');
     let clips,source=null;
+    if(item.format==='sequence'){
+      const sequence=validateAnimationSequence(await response.json());
+      const entries=[{sequence,clip:{name:sequence.name,duration:sequence.steps.reduce((sum,step)=>sum+step.duration,0)},mapping:{}}];
+      this.cache.set(id,entries);return entries;
+    }
     if(item.format==='motion')clips=[authoredClip(await response.json(),this.rig)];
     else if(item.format==='bvh'){const result=new BVHLoader().parse(await response.text());clips=[result.clip];source=result.skeleton;}
     else{
@@ -82,9 +89,20 @@ export class MotionLibrary {
   }
   async play(id,index=0,source='instruction'){
     const token=++this.request;const clips=await this.load(id);if(token!==this.request)return null;const entry=clips[index];if(!entry)throw new Error('Choose a clip from this file.');
+    if(entry.sequence){this.playSequence(entry.sequence,source);this.currentId=id;return entry;}
+    if(this.currentSequence)this.stop();
     const action=this.mixer.clipAction(entry.clip).reset().setEffectiveTimeScale(this.speed).setEffectiveWeight(1);action.clampWhenFinished=true;action.setLoop(this.loop?THREE.LoopRepeat:THREE.LoopOnce,this.loop?Infinity:1);
     const previous=this.current;this.paused=false;action.play();
     if(previous!==action)action.crossFadeFrom(previous||this.base,this.blend,false);this.current=action;this.currentId=id;this.currentSource=source;this.firedCues.clear();this.lastClipTime=0;this.fadeUntil=0;this.onState((source==='persona'?'Persona chose · ':'Playing · ')+entry.clip.name);return entry;
+  }
+  playSequence(value,source='instruction'){
+    const sequence=validateAnimationSequence(value);
+    if(typeof this.onSequence!=='function')throw new Error('The animation builder is still preparing the body controller.');
+    this.stop();
+    const director=this.onSequence({steps:sequence.steps},source);
+    if(!director||typeof director.update!=='function'||typeof director.stop!=='function')throw new Error('This animation could not be queued.');
+    this.currentSequence={sequence,director,start:director.clock};this.currentSource=source;this.currentId=null;this.fadeUntil=0;this.paused=false;
+    this.onState('Playing · '+sequence.name+' · use Stop to end the sequence');return sequence;
   }
   sample(dt){
     // Three's property mixer skips writes for unchanged values. Restore its last
@@ -93,14 +111,27 @@ export class MotionLibrary {
     this.mixer.update(dt);
     for(const [name,value] of Object.entries(this.poseCache)){value.q.copy(this.rig.bones[name].quaternion);value.p.copy(this.rig.bones[name].position);}
   }
-  seek(seconds){if(!this.current||!Number.isFinite(seconds))return;this.current.time=Math.max(0,Math.min(this.current.getClip().duration-.001,seconds));this.sample(0);this.onProgress(this.current.time,this.current.getClip().duration);}
+  seek(seconds){if(this.currentSequence){this.onState('Sequences use Preview and Stop. Timeline seeking is available for imported clips.');return;}if(!this.current||!Number.isFinite(seconds))return;this.current.time=Math.max(0,Math.min(this.current.getClip().duration-.001,seconds));this.sample(0);this.onProgress(this.current.time,this.current.getClip().duration);}
   match(text){
     const value=text.toLowerCase();if(/\b(?:don't|do not|stop|avoid|without)\b/.test(value))return null;
     return this.items.map(item=>({item,words:this.aliasOverrides[item.id]||item.aliases||[]})).filter(({words})=>words.some(word=>word.length>2&&new RegExp('(?:^|\\W)'+word.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'(?:$|\\W)','i').test(value))).sort((a,b)=>Math.max(...b.words.map(x=>x.length))-Math.max(...a.words.map(x=>x.length)))[0]?.item||null;
   }
-  stop(){this.request++;if(this.current){this.current.fadeOut(this.blend);this.base.reset().setEffectiveWeight(1).fadeIn(this.blend).play();this.fadeUntil=this.clock+this.blend;this.current=null;}this.paused=false;}
-  update(dt){this.clock+=dt;if(this.current){this.current.paused=this.paused;this.current.timeScale=this.speed;}this.sample(dt);
+  stop(){this.request++;if(this.currentSequence){this.currentSequence.director.stop();this.currentSequence=null;}if(this.current){this.current.fadeOut(this.blend);this.base.reset().setEffectiveWeight(1).fadeIn(this.blend).play();this.fadeUntil=this.clock+this.blend;this.current=null;}this.paused=false;}
+  update(dt){this.clock+=dt;
+    if(this.currentSequence){
+      const playing=this.currentSequence,{sequence,director}=playing;
+      if(this.paused){this.paused=false;this.onState('Sequences use Preview and Stop. Pause is available for imported clips.');}
+      director.update(dt*1000*this.speed);
+      const duration=sequence.steps.reduce((sum,step)=>sum+step.duration,0),elapsed=Math.max(0,director.clock-playing.start);
+      this.onProgress(Math.min(duration,elapsed),duration);
+      if(!director.active&&!director.queue.length){
+        if(this.loop){const next=this.onSequence({steps:sequence.steps},this.currentSource);if(!next||typeof next.update!=='function'){this.currentSequence=null;this.onState('Animation stopped.');}else {playing.director=next;playing.start=next.clock;}}
+        else {this.currentSequence=null;director.nextDecision=Math.max(director.nextDecision,director.clock+3);this.onState('Animation complete');}
+      }
+      return;
+    }
+    if(this.current){this.current.paused=this.paused;this.current.timeScale=this.speed;}this.sample(dt);
     if(this.current){this.onProgress(this.current.time,this.current.getClip().duration);const time=this.current.time;if(time<this.lastClipTime)this.firedCues.clear();const cues=this.cueOverrides[this.currentId]||[];for(const [i,cue] of cues.entries())if(time>=cue.at&&!this.firedCues.has(i)){this.firedCues.add(i);this.onCue(cue);}this.lastClipTime=time;}
   }
-  dispose(){this.request++;this.mixer.stopAllAction();this.mixer.uncacheRoot(this.head.armature);this.cache.clear();}
+  dispose(){this.stop();this.mixer.stopAllAction();this.mixer.uncacheRoot(this.head.armature);this.cache.clear();}
 }

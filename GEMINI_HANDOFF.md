@@ -124,3 +124,30 @@ highlights in the 1K atlas and the existing generic skin maps remain. Do not
 claim that more samples or hundreds of parameter variations resolve those
 source limitations. New runtime binaries remain private; the build and fixes
 are published as source. No new photographic character was downloaded.
+
+## Animation and voice follow-up, 21 October 2026
+
+`static/animation-builder.js` and the Create an animation panel now provide local
+ordered movement creation, Preview/Stop, save/reopen and sequence JSON export/
+import. `motion_assets.py` validates and stores `.sequence.json`; the library
+plays it through the existing MotionDirector instead of duplicating bone poses.
+Nine ordinary skills are exposed, at most eight steps. Imported/baked clip pause,
+seeking and garment cues remain separate from sequence playback.
+
+The shared appearance reader was incorrectly calling the POST helper with no
+body and silently keeping old settings. It now uses GET, reports sync status and
+re-applies shared choices after loading an older saved persona. Light blonde
+raises the authored hair factor; Brighter blue masks only the actual iris UV
+annuli, preserving pupils, whites, maps, geometry and facial shapes. This is a
+reversible presentation change, not a new photographic character source.
+
+The private broker voice update is in
+`integrations/jjrvis/jjrvis-voice-identity.patch`, with exact basis hashes and
+verification. A reply keeps one profile/speed across all phrases and rejects
+unexpected voice metadata. Both British local voices were verified after broker
+restart. The existing bf_emma sound and owner preference were preserved; the
+reported changed accent was not acoustically reproduced. After the owner
+unlocked the native app, the workspace was reloaded and visibly showed v39,
+the blonde/blue palette, a working Wave and the local Create animations link.
+The Studio save/reopen/Preview/Stop workflow was also checked live. No microphone
+or acoustic playback certification was performed in this follow-up.

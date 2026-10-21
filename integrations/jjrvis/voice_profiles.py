@@ -25,8 +25,10 @@ for model in ('uncensored-3b:latest','sadiq-bd/llama3.2-3b-uncensored:latest','l
  MODELS['ollama:'+model]={'label':model+' · on this Mac','input':0,'output':0,'ollama_model':model}
 # The fixed local voice was explicitly selected after the greeting preview.
 # Existing Moneypenny preferences therefore follow the same approved voice.
-PROFILES['moneypenny'].update({'provider':'local-kokoro','voice':'bf_emma','label':'Moneypenny · British voice on this Mac'})
-PROFILES['english'].update({'provider':'local-kokoro','voice':'bm_george','label':'Jarvis · British male voice on this Mac'})
+PROFILES['moneypenny'].update({'provider':'local-kokoro','voice':'bf_emma','language':'en-GB','label':'Moneypenny · British voice on this Mac'})
+PROFILES['english'].update({'provider':'local-kokoro','voice':'bm_george','language':'en-GB','label':'Jarvis · British male voice on this Mac'})
+PROFILES['american'].update({'provider':'openai','language':'en-US'})
+
 def selected():
  try:
   data=json.loads(PATH.read_text()); profile=data['profile']; speed=float(data.get('speed',1.3))
@@ -39,7 +41,7 @@ def resolved_model(model=None):
  return MODELS.get(model,{}).get('ollama_model') or model
 def public():
  preference=selected()
- return {**preference,'resolved_model':resolved_model(preference['model']),'models':[{'id':k,**v} for k,v in MODELS.items()],'choices':[{'id':k,'name':v['name'],'label':v['label']} for k,v in PROFILES.items()]}
+ return {**preference,'voice':{key:PROFILES[preference['profile']][key] for key in ('provider','voice','language')},'resolved_model':resolved_model(preference['model']),'models':[{'id':k,**v} for k,v in MODELS.items()],'choices':[{'id':k,'name':v['name'],'label':v['label']} for k,v in PROFILES.items()]}
 def current():
  preference=selected()
  return {**PROFILES[preference['profile']],**preference}
@@ -55,3 +57,13 @@ def save(profile,speed,model=None):
  finally:
   if os.path.exists(name):os.unlink(name)
  return public()
+
+
+def for_speech(profile=None, speed=None):
+    """Resolve one explicit identity; never silently replace a missing voice."""
+    preference = selected()
+    profile = profile if profile is not None else preference['profile']
+    speed = speed if speed is not None else preference['speed']
+    if profile not in PROFILES or isinstance(speed, bool) or not isinstance(speed, (int, float)) or not .8 <= speed <= 1.5:
+        raise ValueError('Invalid voice preference')
+    return {**PROFILES[profile], 'profile': profile, 'speed': float(speed)}

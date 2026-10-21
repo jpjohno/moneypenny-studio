@@ -230,3 +230,54 @@ async def test_configured_transcription_retains_the_selected_provider(isolated, 
     async with client(isolated) as request:
         result = await request.post('/v1/workspace/voice/transcribe',content=b'\0\0'*1600,headers={'Content-Type':'application/octet-stream'})
         assert result.json() == {'text':'configured fixture words','engine':'openai-transcribe'}
+
+
+@pytest.mark.anyio
+async def test_pinned_british_speech_survives_another_saved_profile(isolated, monkeypatch):
+    calls = []
+    voice_profiles.save("american", 1.4, "gpt-4.1-mini")
+    async def local(text, *, speed, voice):
+        calls.append((speed, voice))
+        return audio_fixture()
+    monkeypatch.setattr(local_voice, "speech", local)
+    monkeypatch.setattr(cloud_ai.usage_meter, "record", lambda *args, **kwargs: None)
+    def forbidden_headers():
+        pytest.fail("An explicitly pinned British identity must not call cloud speech")
+    monkeypatch.setattr(cloud_ai, "headers", forbidden_headers)
+    async with client(isolated) as request:
+        for profile, name, voice in (("moneypenny", "Moneypenny", "bf_emma"), ("english", "Jarvis", "bm_george")):
+            result = await request.post("/v1/workspace/voice/audio", json={"text": "Your next appointment is ready.", "profile": profile, "speed": 1.0})
+            assert result.status_code == 200
+            assert result.headers["x-jjrvis-voice-provider"] == "local-kokoro"
+            assert result.headers["x-jjrvis-voice"] == name
+            assert result.headers["x-jjrvis-voice-id"] == voice
+            assert result.headers["x-jjrvis-voice-profile"] == profile
+            assert result.headers["x-jjrvis-voice-language"] == "en-GB"
+    assert calls == [(1.0, "bf_emma"), (1.0, "bm_george")]
+    assert voice_profiles.selected()["profile"] == "american", "Speech does not rewrite the saved selection"
+
+
+@pytest.mark.anyio
+async def test_missing_pinned_british_voice_is_clear_and_never_calls_cloud(isolated, monkeypatch):
+    async def missing(*args, **kwargs):
+        raise local_voice.LocalVoiceUnavailable("Private diagnostic")
+    monkeypatch.setattr(local_voice, "speech", missing)
+    def forbidden_headers():
+        pytest.fail("A missing British voice must not fall back to cloud speech")
+    monkeypatch.setattr(cloud_ai, "headers", forbidden_headers)
+    async with client(isolated) as request:
+        result = await request.post("/v1/workspace/voice/audio", json={"text": "Hello James.", "profile": "english", "speed": 1.0})
+    assert result.status_code == 503
+    assert result.json()["detail"] == "Your selected British voice is unavailable. No different voice was substituted."
+    assert "Private diagnostic" not in result.text
+
+
+@pytest.mark.anyio
+async def test_unknown_voice_and_speed_are_rejected_before_synthesis(isolated, monkeypatch):
+    async def forbidden(*args, **kwargs):
+        pytest.fail("Invalid preferences must not synthesize")
+    monkeypatch.setattr(cloud_ai, "speech", forbidden)
+    async with client(isolated) as request:
+        for options in ({"profile": "unknown"}, {"speed": 0.5}, {"speed": True}):
+            result = await request.post("/v1/workspace/voice/audio", json={"text": "Hello.", **options})
+            assert result.status_code == 422

@@ -9,6 +9,7 @@ assert.ok(voiceStart>0&&voiceEnd>voiceStart&&bridgeStart>0&&bridgeEnd>bridgeStar
 const tick=()=>new Promise(setImmediate);
 function harness({ready=true,framePresent=true,name='Moneypenny',presenceMode='together',origin='https://app.jjrvis.com',frameOrigin=origin}={}){
  const events=new Map(),messages=[],audioRequests=[],stops=[],nodes=new Map(),audio=[];
+ let identity={name,profile:name==='Jarvis'?'english':'moneypenny',speed:1.0};
  const frameWindow={postMessage(message,origin){messages.push({message,origin});}};
  const frame={src:frameOrigin+'/presence/?embed=jarvis',contentWindow:frameWindow};
  const presenceState={dataset:{state:ready?'ready':'loading'},textContent:ready?'3D READY':'LOADING'};
@@ -17,13 +18,13 @@ function harness({ready=true,framePresent=true,name='Moneypenny',presenceMode='t
  class TestAudio{constructor(){audio.push(this);}play(){return Promise.resolve();}pause(){this.paused=true;}}
  const ctx={window:{JJSpokenReply:require('../spoken-reply'),JJSettings:{preferences:()=>({volume:.6})},speechSynthesis:{cancel(){}},addEventListener(type,listener){events.set(type,listener);}},
   location:{origin,href:origin+'/workspace'},document:{documentElement:{dataset:{presenceMode}},hidden:false,querySelector(selector){return selector==='#moneypenny-presence'?(framePresent?frame:null):selector==='[data-presence-state]'?presenceState:null;}},
-  $,AbortController,AbortSignal,DOMException,clearTimeout(){},setTimeout(){return 1;},notify(){},localStorage:{setItem(){}},selectedAssistantIdentity(){return {name};},URL,Audio:TestAudio,
+  $,AbortController,AbortSignal,DOMException,clearTimeout(){},setTimeout(){return 1;},notify(){},localStorage:{setItem(){}},selectedAssistantIdentity(){return identity;},URL,Audio:TestAudio,
   fetch(url,options){if(url==='/v1/workspace/voice/stop'){stops.push(url);return Promise.resolve({ok:true});}if(url==='/v1/workspace/voice/audio')return new Promise((resolve,reject)=>audioRequests.push({resolve,reject,options}));throw new Error('Unexpected request: '+url);}
  };
  vm.createContext(ctx);vm.runInContext(`let conversationInvite=false;let cloudAudio=null,activeUtterance=null,activeRecognition=null,speechController=null,presenceSpeech=null,presenceSpeechSequence=0,streamingSpeech=null;let speechEchoUntil=0,wakeArmedUntil=0,wakeRestart=null,wakePaused=false,wakeEnabled=true,wakeMicStream=null,wakeStarts=0;const wakeStarter=()=>wakeStarts++;${source.slice(voiceStart,voiceEnd)}\n${source.slice(bridgeStart,bridgeEnd)}\nglobalThis.state={get utterance(){return activeUtterance;},get presence(){return presenceSpeech;},get wakeStarts(){return wakeStarts;},get speech(){return streamingSpeech;}};`,ctx);
  const emit=(type,requestId,data={},extras={})=>events.get('message')({origin:frameOrigin,source:frameWindow,data:{type,requestId,...data},...extras});
- const resolveAudio=async(index=0)=>{audioRequests[index].resolve({ok:true,headers:{get:()=> 'local-kokoro'},blob:async()=>new Blob([new Uint8Array([1,2,3])],{type:'audio/wav'})});await tick();};
- return {ctx,emit,messages,audioRequests,stops,frameWindow,presenceState,audio,resolveAudio,audioMessages:()=>messages.filter(row=>row.message.type==='jjrvis-audio'),status:()=>$('#voice-status').textContent};
+ const resolveAudio=async(index=0,overrides={})=>{const sent=JSON.parse(audioRequests[index].options.body),meta={'X-JJRVIS-Voice-Provider':'local-kokoro','X-JJRVIS-Voice-Profile':sent.profile,'X-JJRVIS-Voice-ID':sent.profile==='english'?'bm_george':'bf_emma','X-JJRVIS-Voice-Language':'en-GB',...overrides};audioRequests[index].resolve({ok:true,headers:{get:key=>meta[key]||null},blob:async()=>new Blob([new Uint8Array([1,2,3])],{type:'audio/wav'})});await tick();};
+ return {ctx,emit,messages,audioRequests,stops,frameWindow,presenceState,audio,resolveAudio,setIdentity:value=>{identity=value;},audioMessages:()=>messages.filter(row=>row.message.type==='jjrvis-audio'),status:()=>$('#voice-status').textContent};
 }
 test('same-origin avatar receives the broker WAV and stays busy until phrase and final acknowledgements',async()=>{
  const h=harness();let started=0;h.ctx.speak('Ready when you are.',()=>started++);await tick();assert.equal(h.audioRequests.length,1);assert.equal(started,0);await h.resolveAudio();
@@ -67,4 +68,40 @@ test('native partial speech can interrupt while matching spoken audio is exclude
  assert.equal(ctx.isVoiceInterruption('Moneypenny can we talk','Here are your headlines.'),true);
  assert.equal(ctx.isVoiceInterruption('Here are your headlines','Here are your headlines.'),false);
  assert.equal(ctx.isVoiceInterruption('um','Here are your headlines.'),false);
+});
+
+
+test('one spoken reply pins the British identity and speed across all prefetched phrases',async()=>{
+ const h=harness({framePresent:false});
+ h.ctx.speak('Here is your first sentence. Here is the next sentence.');await tick();
+ assert.deepEqual(JSON.parse(h.audioRequests[0].options.body),{text:'Here is your first sentence.',profile:'moneypenny',speed:1});
+ h.setIdentity({name:'Jarvis',profile:'english',speed:1.4});
+ await h.resolveAudio();await tick();
+ assert.equal(h.audioRequests.length,2);
+ const next=JSON.parse(h.audioRequests[1].options.body);assert.equal(next.profile,'moneypenny');assert.equal(next.speed,1);
+ assert.match(h.status(),/Moneypenny speaking/);h.ctx.stopVoice();await h.resolveAudio(1);
+});
+
+test('mismatched or unconfirmed audio identity is not played through the avatar or browser',async()=>{
+ for(const metadata of [
+  {'X-JJRVIS-Voice-ID':'af_heart'},
+  {'X-JJRVIS-Voice-Language':'en-US'},
+  {'X-JJRVIS-Voice-Profile':'english'},
+  {'X-JJRVIS-Voice-Provider':'openai'},
+  {'X-JJRVIS-Voice-ID':null}
+ ]){
+  const h=harness();h.ctx.speak('Use the selected British voice.');await tick();await h.resolveAudio(0,metadata);
+  assert.equal(h.audioMessages().length,0);assert.equal(h.audio.length,0);assert.equal(h.audioRequests.length,1);
+  assert.match(h.status(),/No different voice was played/);assert.equal(h.ctx.state.utterance,null);
+ }
+});
+
+test('animation creation link exists only in a local workspace movement menu',()=>{
+ const begin=source.indexOf('<details class="presence-movement-menu">'),end=source.indexOf('</details>',begin);
+ assert.ok(begin>0&&end>begin);
+ const template=source.slice(begin,end+10);
+ for(const hostname of ['127.0.0.1','localhost','app.jjrvis.com']){
+  const rendered=vm.runInNewContext('`'+template+'`',{location:{hostname}});
+  assert.equal(rendered.includes('http://127.0.0.1:8090/?panel=animation#animationBuilder'),hostname!=='app.jjrvis.com');
+ }
 });

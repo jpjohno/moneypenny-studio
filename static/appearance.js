@@ -7,6 +7,37 @@ const looks={
 };
 
 const hairOriginals=new WeakMap();
+const eyePalettes=new WeakMap();
+export const IRIS_PALETTE=Object.freeze({centres:[[.299,.704],[.705,.299]],inner:[.032,.043],outer:[.107,.115],gain:[.94,1.10,1.38]});
+const smoothstep=(a,b,x)=>{const t=Math.max(0,Math.min(1,(x-a)/(b-a)));return t*t*(3-2*t);};
+export function irisPaletteMask(u,v){
+  const d=Math.min(...IRIS_PALETTE.centres.map(([x,y])=>Math.hypot(u-x,v-y)));
+  return smoothstep(...IRIS_PALETTE.inner,d)*(1-smoothstep(...IRIS_PALETTE.outer,d));
+}
+function prepareEyePalette(material){
+  if(eyePalettes.has(material))return eyePalettes.get(material);
+  const strength={value:0},previous=material.onBeforeCompile,previousKey=material.customProgramCacheKey;
+  material.onBeforeCompile=function(shader,renderer){
+    previous.call(this,shader,renderer);shader.uniforms.moneypennyIrisStrength=strength;
+    shader.fragmentShader='uniform float moneypennyIrisStrength;\n'+shader.fragmentShader.replace('#include <map_fragment>',`#include <map_fragment>
+      #ifdef USE_MAP
+      float irisDistance=min(distance(vMapUv,vec2(${IRIS_PALETTE.centres[0]})),distance(vMapUv,vec2(${IRIS_PALETTE.centres[1]})));
+      float irisMask=smoothstep(${IRIS_PALETTE.inner},irisDistance)*(1.0-smoothstep(${IRIS_PALETTE.outer},irisDistance));
+      diffuseColor.rgb*=mix(vec3(1.0),vec3(${IRIS_PALETTE.gain}),moneypennyIrisStrength*irisMask);
+      #endif`);
+  };
+  material.customProgramCacheKey=function(){return previousKey.call(this)+'|moneypenny-iris-v1';};
+  material.needsUpdate=true;eyePalettes.set(material,strength);return strength;
+}
+export function setEyeTone(root,tone='natural'){
+  root.traverse(node=>{
+    if(!node.isMesh)return;
+    for(const material of [node.material].flat()){
+      if(material?.name!=='Adult_Body_Source.high-poly'||!material.map)continue;
+      prepareEyePalette(material).value=tone==='brightblue'?.85:0;
+    }
+  });
+}
 export function setHairTone(root,tone='darkblonde'){
   const tint=new THREE.Color(({original:'#ffffff',warm:'#e4c9a4',darkblonde:'#b5c4ad',brunette:'#82634d'})[tone]||'#ffffff');
   root.traverse(node=>{
@@ -18,7 +49,9 @@ export function setHairTone(root,tone='darkblonde'){
       // Applying the older green-grey sample tint again gives an olive cast.
       const authoredBlonde=tone==='darkblonde'&&/^v39\b/.test(node.userData?.groom_revision||'');
       material.color.copy(hairOriginals.get(material));
-      if(!authoredBlonde)material.color.multiply(tint);
+      // Lift the fibres and reduce the atlas's pink cast toward a lighter beige blonde.
+      if(tone==='lightblonde')material.color.lerp(new THREE.Color(1,1,1),.65).multiply(new THREE.Color(.92,1.03,1.03));
+      else if(!authoredBlonde)material.color.multiply(tint);
     }
   });
 }

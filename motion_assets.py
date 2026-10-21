@@ -11,6 +11,7 @@ LOCK=threading.Lock()
 BUILTINS=[dict(id='studio-wave',name='Studio wave · Blender IK study',url='/static/motions/studio-wave.glb',format='glb',source='Studio Blender-authored study',aliases=['wave','wave hello']),
           dict(id='studio-bow',name='Studio bow',url='/static/motions/studio-bow.motion.json',format='motion',source='Studio authored study',aliases=['bow']),
           dict(id='studio-stretch',name='Studio shoulder stretch',url='/static/motions/studio-stretch.motion.json',format='motion',source='Studio authored study',aliases=['stretch'])]
+SEQUENCE_SKILLS={'wave','bow','stretch','turn','bend_forward','walk','dance','jig','idle'}
 
 
 def library():
@@ -23,7 +24,18 @@ def add(name,filename,data):
     if not isinstance(name,str) or not name.strip() or len(name)>80:raise ValueError('Give the movement a name under 80 characters.')
     if not 20<len(data)<=24*1024*1024:raise ValueError('Animation files must be under 24 MB.')
     extension=Path(filename).suffix.lower()
-    if filename.lower().endswith('.motion.json'):
+    if filename.lower().endswith('.sequence.json'):
+        value=json.loads(data)
+        if not isinstance(value,dict) or type(value.get('version')) is not int or value['version']!=1 or value.get('kind')!='sequence':
+            raise ValueError('Unsupported animation sequence format.')
+        if not isinstance(value.get('steps'),list) or any(not isinstance(step,dict) or step.get('skill') not in SEQUENCE_SKILLS for step in value['steps']):
+            raise ValueError('The animation sequence contains an unsupported movement.')
+        cleaned=validate_plan({'steps':value['steps']})
+        # Persist only validated movement data. Unknown fields and embedded
+        # instructions are never carried into a reopened animation.
+        data=json.dumps({'version':1,'kind':'sequence','name':name.strip(),**cleaned}).encode()
+        extension='.sequence.json';kind='sequence'
+    elif filename.lower().endswith('.motion.json'):
         value=json.loads(data)
         if value.get('version')!=1:raise ValueError('Unsupported motion format.')
         validate_plan({'steps':[{'skill':'custom','duration':value.get('duration',4),'frames':value.get('frames')}]})
@@ -41,7 +53,7 @@ def add(name,filename,data):
         decoded=data.decode('utf8')
         if not decoded.lstrip().startswith('HIERARCHY') or 'MOTION' not in decoded:raise ValueError('Use a valid BVH motion-capture file.')
         kind='bvh'
-    else:raise ValueError('Import GLB, BVH or .motion.json animation data.')
+    else:raise ValueError('Import GLB, BVH, .motion.json or .sequence.json animation data.')
     identity=str(uuid.uuid4());record=dict(id=identity,name=name.strip(),format=kind,source='Your local animation',url='/api/motion/assets/'+identity,filename=identity+extension,aliases=[])
     with LOCK:
         DIRECTORY.mkdir(parents=True,exist_ok=True)

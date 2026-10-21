@@ -40,6 +40,20 @@
         <p class="hint">Clothed pose study with a closed seat support. Stop movement to lower the foot.</p>
         <p class="hint" id="motionState" role="status">Independent body controller preparing…</p>
       </details>
+      <details class="animation-builder" id="animationBuilder" open><summary>Create an animation <span>＋</span></summary>
+        <p class="hint">Choose movements, put them in order and preview them on Moneypenny. Runs on this Mac without an AI request.</p>
+        <label for="animationSaved">Open a saved animation</label><select id="animationSaved" data-animation="saved"><option value="">Choose a saved animation</option></select>
+        <label for="animationName">Animation name</label><input id="animationName" data-animation="name" maxlength="80" value="My animation">
+        <label for="animationAction">Add a movement</label><select id="animationAction" data-animation="action"><option value="wave">Wave hello</option></select>
+        <div class="animation-add"><label for="animationDuration">Seconds</label><input id="animationDuration" data-animation="duration" type="number" min="1" max="20" step=".5" value="4"><button type="button" class="file-button" data-animation="add">＋ Add step</button></div>
+        <ol class="animation-steps" data-animation="steps" aria-label="Animation steps"></ol>
+        <p class="hint" data-animation="empty">No movements yet. Add the first step above.</p>
+        <p class="animation-summary" data-animation="summary">0 / 8 movements · 0 seconds</p>
+        <div class="control-pair"><button type="button" class="preview-button animation-preview" data-animation="preview" disabled>▶ Preview</button><button type="button" class="text-button" data-animation="stop">■ Stop</button></div>
+        <div class="control-pair animation-save"><button type="button" class="file-button" data-animation="save" disabled>Save animation</button><button type="button" class="text-button" data-animation="new">New</button></div>
+        <div class="control-pair"><button type="button" class="text-button" data-animation="download" disabled>Export JSON</button><label class="text-button animation-import" for="animationImport">Open JSON</label><input id="animationImport" class="visually-hidden" data-animation="import" type="file" accept=".json,application/json"></div>
+        <p class="hint" role="status" aria-live="polite" data-animation="status">Build up to 8 steps. Preview and Stop work independently of conversation.</p>
+      </details>
       <details open><summary>Motion library <span>＋</span></summary>
         <label for="motionLibrary">Saved movement</label><select id="motionLibrary"></select>
         <label for="motionClip">Animation clip</label><select id="motionClip"><option value="0">First clip</option></select>
@@ -50,7 +64,7 @@
         <label class="toggle-label"><input id="autoLibraryMotion" type="checkbox"> Include in independent movement</label>
         <label class="toggle-label"><input id="loopMotion" type="checkbox"> Loop selected movement</label>
         <label for="motionAliases">Words that request this movement</label><input id="motionAliases" maxlength="300" placeholder="For example: bow, take a bow"><button id="saveMotionAliases" class="text-button">Save movement words</button>
-        <details><summary>Outfit changes with movement <span>＋</span></summary><label for="cueGarment">Garment</label><select id="cueGarment"></select><label for="cueTime">Change at (seconds)</label><input id="cueTime" type="number" min="0" max="120" step=".1" value="1"><label class="toggle-label"><input id="cueVisible" type="checkbox" checked> Garment visible after this point</label><button id="addGarmentCue" class="text-button">Add outfit change</button><button id="clearGarmentCues" class="text-button">Clear outfit changes</button><p class="hint" id="cueState">Use a dressing animation fitted to the garment. The sample's fixed coverage layer stays underneath.</p></details>
+        <details id="motionGarmentCues"><summary>Outfit changes with movement <span>＋</span></summary><label for="cueGarment">Garment</label><select id="cueGarment"></select><label for="cueTime">Change at (seconds)</label><input id="cueTime" type="number" min="0" max="120" step=".1" value="1"><label class="toggle-label"><input id="cueVisible" type="checkbox" checked> Garment visible after this point</label><button id="addGarmentCue" class="text-button">Add outfit change</button><button id="clearGarmentCues" class="text-button">Clear outfit changes</button><p class="hint" id="cueState">Use a dressing animation fitted to the garment. The sample's fixed coverage layer stays underneath.</p></details>
         <label for="motionName">Name a new movement</label><input id="motionName" maxlength="80" placeholder="For example: relaxed sitting">
         <label class="file-button" for="motionUpload">＋ Add animation <small>GLB · BVH · motion JSON</small></label><input class="visually-hidden" id="motionUpload" type="file" accept=".glb,.bvh,.json">
         <p class="hint" id="libraryState" role="status">Loading the animation library…</p>
@@ -66,8 +80,9 @@
         <p class="hint" id="rigState" role="status">Move a slider or drag a handle to hold a target. Distances are metres; targets beyond a limb's reach are clamped.</p>
       </details>
       <details class="character-details" open><summary>Character & appearance <span>＋</span></summary>
-        <p class="hint" id="avatarLabel">Studio character · CC0 sample</p>
-        <label for="hairTone">Hair colour</label><select id="hairTone"><option value="original">Light blonde</option><option value="warm">Warm blonde</option><option value="darkblonde" selected>Dark blonde</option><option value="brunette">Soft brunette</option></select>
+        <p class="hint" id="avatarLabel">Studio character · CC0 sample</p><p class="hint" id="appearanceState" role="status">Checking shared appearance…</p>
+        <label for="eyeTone">Eye colour</label><select id="eyeTone"><option value="brightblue" selected>Brighter blue</option><option value="natural">Original blue</option></select>
+        <label for="hairTone">Hair colour</label><select id="hairTone"><option value="lightblonde" selected>Light blonde</option><option value="original">Original blonde</option><option value="warm">Warm blonde</option><option value="darkblonde">Dark blonde</option><option value="brunette">Soft brunette</option></select>
         <label for="lightingLook">Lighting</label><select id="lightingLook"><option value="daylight">Soft daylight</option><option value="portrait">Portrait studio</option><option value="neutral">Neutral fitting light</option></select>
         <label for="lightBrightness">Brightness</label><input id="lightBrightness" type="range" min=".65" max="1.25" step=".05" value="1">
         <label for="blouseColor">Blouse colour</label><select id="blouseColor"><option value="petrol">Petrol blue</option><option value="navy">Midnight navy</option><option value="ivory">Soft ivory</option><option value="plum">Plum</option></select><label for="wardrobe">Outfit</label><select id="wardrobe"><option value="office">Office · waistcoat & skirt</option><option value="casual" selected>Casual · top & trousers</option><option value="dress">Evening · dress</option><option value="base">Base clothes · hide added layers</option><option value="original">Original sample outfit</option></select>

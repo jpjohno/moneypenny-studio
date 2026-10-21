@@ -1,0 +1,102 @@
+{
+  "mode": "real_synthesis_through_updated_in_process_routes",
+  "speaker_playback": false,
+  "acoustic_accent_review": "not_performed",
+  "saved_preference_changed": false,
+  "previews": [
+    {
+      "profile": "moneypenny",
+      "http_status": 200,
+      "headers": {
+        "x-jjrvis-voice-provider": "local-kokoro",
+        "x-jjrvis-voice": "Moneypenny",
+        "x-jjrvis-voice-id": "bf_emma",
+        "x-jjrvis-voice-profile": "moneypenny",
+        "x-jjrvis-voice-language": "en-GB"
+      },
+      "wav": {
+        "channels": 1,
+        "sample_width": 2,
+        "sample_rate": 24000,
+        "frames": 107664,
+        "seconds": 4.486
+      },
+      "sha256": "9e4517e968c42bee835d5eac0fcb4d5546b8293d61d4e81a8d9134588db44682"
+    },
+    {
+      "profile": "english",
+      "http_status": 200,
+      "headers": {
+        "x-jjrvis-voice-provider": "local-kokoro",
+        "x-jjrvis-voice": "Jarvis",
+        "x-jjrvis-voice-id": "bm_george",
+        "x-jjrvis-voice-profile": "english",
+        "x-jjrvis-voice-language": "en-GB"
+      },
+      "wav": {
+        "channels": 1,
+        "sample_width": 2,
+        "sample_rate": 24000,
+        "frames": 121327,
+        "seconds": 5.055
+      },
+      "sha256": "6302e6fe51aea37b35a9e28d89a34d13fd5e05d32ce1050799dcf8bcfb37cd4a"
+    }
+  ],
+  "moneypenny_unchanged_from_pre_fix_live_preview": true,
+  "prepared": "2026-10-21",
+  "python_voice_tests_passed": 53,
+  "js_voice_tests_passed": 21,
+  "live_broker_restarted": true,
+  "new_routes_verified": "in_process_real_synthesis",
+  "patch_exact_replay_verified": true,
+  "live_routes_verified": true,
+  "live_route_verification": [
+    {
+      "profile": "moneypenny",
+      "http_status": 200,
+      "headers": {
+        "x-jjrvis-voice-provider": "local-kokoro",
+        "x-jjrvis-voice": "Moneypenny",
+        "x-jjrvis-voice-id": "bf_emma",
+        "x-jjrvis-voice-profile": "moneypenny",
+        "x-jjrvis-voice-language": "en-GB"
+      },
+      "wav": {
+        "channels": 1,
+        "sample_width": 2,
+        "sample_rate": 24000,
+        "frames": 107664,
+        "seconds": 4.486
+      },
+      "sha256": "9e4517e968c42bee835d5eac0fcb4d5546b8293d61d4e81a8d9134588db44682",
+      "matches_updated_in_process_preview": true
+    },
+    {
+      "profile": "english",
+      "http_status": 200,
+      "headers": {
+        "x-jjrvis-voice-provider": "local-kokoro",
+        "x-jjrvis-voice": "Jarvis",
+        "x-jjrvis-voice-id": "bm_george",
+        "x-jjrvis-voice-profile": "english",
+        "x-jjrvis-voice-language": "en-GB"
+      },
+      "wav": {
+        "channels": 1,
+        "sample_width": 2,
+        "sample_rate": 24000,
+        "frames": 121327,
+        "seconds": 5.055
+      },
+      "sha256": "6302e6fe51aea37b35a9e28d89a34d13fd5e05d32ce1050799dcf8bcfb37cd4a",
+      "matches_updated_in_process_preview": true
+    }
+  ],
+  "live_explicit_pinned_audio_verified": true,
+  "live_workspace_matches_patch_sha256": "a4e028fc44b92a9ac4512624a24eec06942500ff68ae5118995e5d191253d4c9",
+  "live_local_animation_link_present": true,
+  "native_app_reload_verified": true,
+  "microphone_opened": false,
+  "native_verification": "Owner unlocked; current workspace reloaded and local animation link visibly verified. No microphone or speaker playback test performed."
+}
