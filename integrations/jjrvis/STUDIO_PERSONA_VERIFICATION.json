@@ -1,0 +1,36 @@
+{
+  "checked_on": "2026-10-21",
+  "python_checks": 145,
+  "javascript_checks": 17,
+  "syntax_checks": {
+    "python": true,
+    "workspace_javascript": true
+  },
+  "patch_replay_verified": true,
+  "selected_persona": {
+    "state": "saved",
+    "id": "4ceff3ea-d4ea-44de-a659-18588e2cd09d",
+    "name": "Moneypenny",
+    "source": "Moneypenny Studio \u00b7 saved on this Mac",
+    "prompt_length": 318,
+    "prompt_sha256": "dec6b5abd226adeb77946aa5f73b2b029f6dc8658d88b01ee142ecfe1d27aae0"
+  },
+  "private_binding_stores_id_only": true,
+  "studio_database_bytes_unchanged": true,
+  "voice_preference_bytes_unchanged": true,
+  "answer_model": "uncensored-3b:latest",
+  "voice": "bf_emma",
+  "activation": {
+    "broker_restart": "completed",
+    "native_reload": "completed_without_relocking",
+    "native_preferences": "saved_Moneypenny_persona_local_uncensored_3b_British_voice_verified",
+    "live_generated_answer": "HTTP_200_model_generated_local_conversation_saved_persona_verified",
+    "microphone_opened": false,
+    "native_generated_reply": "completed_with_saved_character_and_actual_model_caption"
+  },
+  "limits": [
+    "Saved style does not change model capability, provider rules, permissions or application evidence.",
+    "Utility replies are still local deterministic responses, not generated conversation.",
+    "Browser-local unsaved Studio draft changes are not the saved database record."
+  ]
+}

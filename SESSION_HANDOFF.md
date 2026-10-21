@@ -1,5 +1,11 @@
 # Moneypenny Studio handover
 
+## Latest continuation — 21 October 2026: saved persona and voice phonemes
+
+JJRVIS now binds the saved Studio Moneypenny style independently of the existing local uncensored-3b answer model and British voice. Kokoro mouth cues use actual generated phoneme timings, with bounded WAV metadata, delayed phrase handoff, Stop ownership and legacy analysis fallback. Random lip distortions yield during speech. Explicit shared environment strengths reduce skin/fabric washout without a new texture or render pass. Current CG appearance remains non-photographic.
+
+See [PHONEME_TIMING_RELEASE.md](integrations/jjrvis/PHONEME_TIMING_RELEASE.md), [STUDIO_PERSONA_RELEASE.md](integrations/jjrvis/STUDIO_PERSONA_RELEASE.md), [PERSONA_ROUTING_RELEASE.md](integrations/jjrvis/PERSONA_ROUTING_RELEASE.md) and [the verification](integrations/jjrvis/PERSONA_PHONEME_VERIFICATION.json). Only the existing OpenWebUI chat container was restarted to clear competing 40,960-token requests; its saved volume and Home Assistant were preserved. A live persona reply succeeded, with ongoing memory pressure limiting latency. No native rebuild, microphone recording or owner unlock change was made.
+
 ## Latest continuation — 21 October 2026: editable body and recorded 4D workshop
 
 Use [GEMINI_HANDOFF.md](GEMINI_HANDOFF.md) for the current source map and requested next work. The original neutral adult parametric body is now included at repository root; a prepared 4D Blender workshop remains local with its licensed cache and images. New launchers and VS Code tasks open each separately with source-script execution disabled. Neither captured sample is a finished replacement Moneypenny or a scanner that creates a new identity.

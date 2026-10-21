@@ -24,7 +24,7 @@ MAX_STREAM_SECONDS = 120
 STATIC_FILES = frozenset({
     'seat-support.js', 'rig-view.js', 'live.js', 'motion.js', 'studio-paths.js',
     'studio-tools.js', 'appearance.js', 'persona-expression.js', 'studio.js', 'record-worklet.js',
-    'presence-audio.js', 'action-commands.js', 'model-choice.js', 'studio.css',
+    'presence-audio.js', 'speech-timing.js', 'action-commands.js', 'model-choice.js', 'studio.css',
     'correctives.js', 'rig.js', 'motion-library.js', 'render-budget.js',
     'recorder.js', 'wardrobe.js', 'animation-builder.js',
 })

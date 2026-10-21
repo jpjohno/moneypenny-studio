@@ -5,7 +5,8 @@ import {TalkingHead} from '../static/vendor/talkinghead/talkinghead.mjs';
 
 function speechHead(){
  const head=Object.create(TalkingHead.prototype);
- const names=['mouthSmile','viseme_PP','viseme_aa','jawOpen','eyeBlinkLeft','eyeBlinkRight'];
+ const names=['mouthSmile','viseme_PP','viseme_aa','jawOpen','eyeBlinkLeft','eyeBlinkRight',
+  'mouthRollUpper','mouthRollLower','mouthDimpleLeft','mouthPressLeft','browOuterUpLeft','cheekSquintLeft'];
  head.applied=new Float32Array(names.length);
  head.mtAvatar=Object.fromEntries(names.map((name,index)=>[name,{
   value:0,applied:0,baseline:0,base:null,fixed:null,realtime:null,system:null,systemd:null,newvalue:null,
@@ -13,6 +14,7 @@ function speechHead(){
  }]));
  Object.assign(head,{studioNeutral:{},avatar:{},animClock:0,stateName:'idle',isSpeaking:false,
   mtBaselineDefault:0,mtBaselineExceptions:{},animQueue:[],audioPlaylist:[],speechQueue:[],
+  mtRandomized:['mouthRollUpper','mouthRollLower','mouthDimpleLeft','mouthPressLeft','browOuterUpLeft','cheekSquintLeft'],
   animMoods:{neutral:{baseline:{},anims:[{name:'mouth',dt:[1000],vs:{mouthSmile:[.3]}}]}}});
  installWarmExpression(head);setPersonaMood(head,'neutral');
  return head;
@@ -82,6 +84,49 @@ test('expression installation is idempotent and leaves other moods and user cont
 test('imported characters keep their selected expression',()=>{
  const head={animMoods:{neutral:{}},setMood(value){this.selected=value;}};
  assert.equal(installWarmExpression(head),false);setPersonaMood(head,'neutral');assert.equal(head.selected,'neutral');
+});
+
+test('held vendor lip randomization releases during PCM speech without altering PP or blink',()=>{
+ const head=speechHead(),original=head.mtRandomized,roll=head.mtAvatar.mouthRollUpper;
+ // Reproduce the actual vendor randomizer's held base using the real morph
+ // updater: it can settle at a random value with needsUpdate then false.
+ roll.base=.4;roll.needsUpdate=true;advance(head,1000);
+ assert.equal(roll.value,.4);assert.equal(roll.needsUpdate,false);
+ head.isSpeaking=true;head.mtAvatar.viseme_PP.realtime=.75;head.mtAvatar.viseme_PP.needsUpdate=true;
+ head.mtAvatar.eyeBlinkLeft.realtime=1;head.mtAvatar.eyeBlinkLeft.needsUpdate=true;
+ head.updateMorphTargets(20);
+ assert.equal(head.mtRandomized.includes('mouthRollUpper'),false);
+ assert.equal(head.mtRandomized.includes('browOuterUpLeft'),true);
+ assert.equal(head.mtRandomized.includes('cheekSquintLeft'),true);
+ advance(head,100);assert.ok(roll.applied<.014,'random roll still distorts the consonant after release');
+ assert.equal(head.applied[1],.75);assert.equal(head.applied[4],1);
+ head.isSpeaking=false;advance(head,200);
+ assert.notEqual(head.mtRandomized,original,'short gaps must not reintroduce random lips');
+ advance(head,200);assert.equal(head.mtRandomized,original,'restore the original idle picker after speech drains');
+});
+
+test('external speech preserves named expression tracks and fixed/realtime mouth controls',()=>{
+ const head=speechHead();head.isSpeaking=true;
+ const roll=head.mtAvatar.mouthRollUpper,lower=head.mtAvatar.mouthRollLower,press=head.mtAvatar.mouthPressLeft;
+ roll.fixed=.4;roll.needsUpdate=true;lower.realtime=.3;lower.needsUpdate=true;
+ press.newvalue=.2;press.needsUpdate=true;
+ head.updateMorphTargets(20);
+ assert.equal(roll.fixed,.4);assert.ok(roll.applied>.35,'fixed control was blocked');
+ assert.ok(Math.abs(lower.applied-.3)<1e-6);
+ assert.ok(Math.abs(press.applied-.2)<1e-6,'a queued purposeful expression lost ownership');
+ const original=head.mtRandomized;head.studioNeutral=null;head.updateMorphTargets(20);
+ assert.notEqual(head.mtRandomized,original,'importing a character restores the picker immediately');
+ assert.equal(head.mtRandomized.includes('mouthRollUpper'),true);
+});
+
+test('timed output keeps random lips and resting smile released after the input source ends',()=>{
+ const head=speechHead(),original=head.mtRandomized;
+ head.isSpeaking=true;advance(head,200);
+ head.isSpeaking=false;head.studioSpeechActive=true;advance(head,800);
+ assert.equal(head.applied[0],0,'resting smile returned before delayed speech finished');
+ assert.equal(head.mtRandomized.includes('mouthRollUpper'),false);
+ head.studioSpeechActive=false;advance(head,200);assert.notEqual(head.mtRandomized,original);
+ advance(head,200);assert.equal(head.mtRandomized,original);assert.ok(head.applied[0]<.1);
 });
 
 

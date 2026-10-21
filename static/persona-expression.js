@@ -1,21 +1,50 @@
 // A restrained resting expression uses the existing authored face shapes.
 // Speech, blink and gaze remain owned by TalkingHead; no fixed mouth override.
 const warmUpdates=new WeakMap();
+const randomLipChannels=new Set([
+ 'mouthDimpleLeft','mouthDimpleRight','mouthLeft','mouthPressLeft','mouthPressRight',
+ 'mouthStretchLeft','mouthStretchRight','mouthShrugLower','mouthShrugUpper','mouthRollLower','mouthRollUpper',
+]);
 
 function installSpeakingSmile(head){
  if(typeof head.updateMorphTargets!=='function'||warmUpdates.has(head))return;
  const update=head.updateMorphTargets;
- const state={quietMs:0};
+ const state={quietMs:0,speechQuietMs:350,randomized:null,filtered:null};
  warmUpdates.set(head,state);
  head.updateMorphTargets=function(dt){
+  const elapsed=Math.min(100,Math.max(0,Number(dt)||0));
+  const speaking=this.isSpeaking||this.studioSpeechActive;
+  state.speechQuietMs=speaking?0:state.speechQuietMs+elapsed;
+  // The vendor randomizer can hold lip rolls/presses after they settle. These
+  // are not phonemes and can distort PP by several millimetres. During PCM
+  // playback and its short drain, random lips yield to the audio owner; named
+  // expression tracks and fixed/realtime/system controls keep their priority.
+  if(this.studioNeutral&&state.speechQuietMs<350){
+   if(!state.randomized&&Array.isArray(this.mtRandomized)){
+    const filtered=this.mtRandomized.filter(name=>!randomLipChannels.has(name));
+    // TalkingHead expects at least one randomized target. Its normal brow,
+    // nose and cheek choices remain; never install an empty picker.
+    if(filtered.length){state.randomized=this.mtRandomized;state.filtered=filtered;this.mtRandomized=filtered;}
+   }
+   const release=1-Math.exp(-elapsed/35);
+   for(const key of randomLipChannels){
+    const channel=this.mtAvatar?.[key];
+    if(!channel||channel.fixed!=null||channel.realtime!=null||channel.system!=null||channel.newvalue!=null||channel.ref)continue;
+    const target=Number.isFinite(channel.baseline)?channel.baseline:0;
+    const value=(channel.value||0)+(target-(channel.value||0))*release;
+    channel.base=null;channel.newvalue=Math.abs(value-target)<.001?target:value;channel.needsUpdate=true;
+   }
+  }else if(state.randomized){
+   if(this.mtRandomized===state.filtered)this.mtRandomized=state.randomized;
+   state.randomized=null;state.filtered=null;
+  }
   const mouth=this.mtAvatar?.mouthSmile;
   if(this.studioNeutral&&this.mood===this.animMoods?.warm&&mouth){
-   const elapsed=Math.min(100,Math.max(0,Number(dt)||0));
    // Studio's WAV playback owns isSpeaking, independently of stateName.
    // Wait through short phrase gaps before easing the resting smile back in.
-   state.quietMs=this.isSpeaking?0:state.quietMs+elapsed;
+   state.quietMs=speaking?0:state.quietMs+elapsed;
    if(mouth.fixed==null&&mouth.realtime==null&&mouth.system==null){
-    const target=this.isSpeaking||state.quietMs<350?0:.25;
+    const target=speaking||state.quietMs<350?0:.25;
     const duration=target===0?35:550;
     const value=(mouth.value||0)+(target-(mouth.value||0))*(1-Math.exp(-elapsed/duration));
     mouth.newvalue=Math.abs(value-target)<.001?target:value;

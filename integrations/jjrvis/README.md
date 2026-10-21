@@ -1,3 +1,11 @@
+# Latest phoneme timing and saved personality
+
+See [PHONEME_TIMING_RELEASE.md](PHONEME_TIMING_RELEASE.md) for voice-generated mouth cues, Stop/phrase timing and reduced skin/fabric washout. [STUDIO_PERSONA_RELEASE.md](STUDIO_PERSONA_RELEASE.md) and [PERSONA_ROUTING_RELEASE.md](PERSONA_ROUTING_RELEASE.md) cover the separate saved style and answer routing overlays.
+
+# Latest saved-persona binding
+
+See [STUDIO_PERSONA_RELEASE.md](STUDIO_PERSONA_RELEASE.md) for explicit saved Studio personality selection in JJRVIS, independent voice/model choices, read-only source access and exact private overlay checks. The bounded [self-personality routing follow-up](PERSONA_ROUTING_RELEASE.md) keeps “No device actions” from forcing a workspace read; live generation timing remains separately verified.
+
 # Latest portrait and natural motion update
 
 See [PORTRAIT_MOTION_RELEASE.md](PORTRAIT_MOTION_RELEASE.md) for the clear-eye hair fit, expression-linked brows, softer skin/light response and natural breathing/presentation gestures. Photographic appearance remains unachieved.

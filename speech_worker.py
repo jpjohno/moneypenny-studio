@@ -13,6 +13,7 @@ import onnxruntime as ort
 from kokoro_onnx import Kokoro
 from kokoro_onnx.config import EspeakConfig
 import soundfile as sf
+from speech_timing import create_speech, append_viseme_chunk
 
 
 def frame(value):
@@ -49,12 +50,12 @@ def main():
         text, speed = payload["text"], payload["speed"]
         if not isinstance(text, str) or not 0 < len(text) <= 2400 or not .8 <= speed <= 1.5:
             raise ValueError("Invalid voice request")
-        samples, rate = engine.create(text, voice="bf_emma", lang="en-gb", speed=speed)
+        samples, rate, timings = create_speech(engine, text, "bf_emma", "en-gb", speed)
         if rate != 24000 or not np.isfinite(samples).all():
             raise ValueError("Invalid speech")
         output = io.BytesIO()
         sf.write(output, samples, rate, format="WAV", subtype="PCM_16")
-        frame(output.getvalue())
+        frame(append_viseme_chunk(output.getvalue(), timings, len(samples)/rate))
 
 
 if __name__ == "__main__":

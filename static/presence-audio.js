@@ -1,3 +1,5 @@
+import {parseSpeechTiming,attachSpeechTiming,speechTiming} from './speech-timing.js';
+
 // One broker-owned audio stream drives both this voice and its facial analysis.
 export class PresenceAudio {
   constructor({stopAudio,decode,playAudio,drain=async()=>{},setBusy=()=>{},emit=()=>{}}){Object.assign(this,{stopAudio,decode,playAudio,drain,setBusy,emit});this.epoch=0;this.id=null;this.playing=false;this.lastSequence=-1;}
@@ -128,4 +130,18 @@ export function trimSpeechTail(context,buffer){
   const trimmed=context.createBuffer(channels,end,rate);
   for(let channel=0;channel<channels;channel++)trimmed.getChannelData(channel).set(samples[channel].subarray(0,end));
   return trimmed;
+}
+
+// Read optional phoneme timing before decodeAudioData can detach the WAV bytes.
+// Validate against the original PCM duration, then clip only a confirmed quiet
+// tail. Old or malformed metadata leaves the existing audio analysis available.
+export async function decodeSpeechBuffer(context,bytes){
+  const timing=parseSpeechTiming(bytes);
+  const decoded=attachSpeechTiming(await context.decodeAudioData(bytes),timing);
+  const checked=speechTiming(decoded),trimmed=trimSpeechTail(context,decoded);
+  if(!checked||trimmed===decoded)return trimmed;
+  const duration=trimmed.duration;
+  return attachSpeechTiming(trimmed,{version:1,duration,cues:checked.cues
+    .filter(([start])=>start<duration)
+    .map(([start,end,name])=>[start,Math.min(end,duration),name])});
 }

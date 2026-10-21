@@ -3,13 +3,14 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import vm from 'node:vm';
 import {SpeechFrameClock} from '../static/presence-audio.js';
+import {TimedSpeechMouth} from '../static/speech-timing.js';
 
 const source=await readFile(new URL('../static/studio.js',import.meta.url),'utf8');
 const callback=source.slice(source.indexOf('    let previousMotionClock='),source.indexOf('    liveSession=new LiveSession'));
 function harness(libraryPlaying=false){
  const calls={motion:[],library:[],rig:[],lips:[],breathing:[],correctives:[]};
  const audio={currentTime:0},head={animClock:0,opt:{},isSpeaking:false};
- const stage={dataset:{}},sandbox={head,speechClock:new SpeechFrameClock(audio),renderFrames:0,
+ const stage={dataset:{}},sandbox={head,speechClock:new SpeechFrameClock(audio),timedMouth:new TimedSpeechMouth(head,audio),speechDelay:{delayTime:{value:.1}},renderFrames:0,
   $:()=>stage,stageActivity:{update(){}},busy:false,userSpeaking:false,
   lips:{update:dt=>calls.lips.push(dt)},
   motion:{active:null,queue:[],autonomous:true,update:dt=>calls.motion.push(dt)},

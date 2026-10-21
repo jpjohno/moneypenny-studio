@@ -24,7 +24,7 @@ MAX_CHARACTERS = 2400
 MAX_CACHE_FILES = 30
 MAX_AUDIO_BYTES = 24_000_044
 ENGINE = {
-    "engine": "kokoro-onnx", "engine_version": "0.6.1", "worker_version": 3,
+    "engine": "kokoro-onnx", "engine_version": "0.6.1", "worker_version": 4,
     "model_sha256": "beb0d1848dee9a49da392cc3df26958d46cfa35d321edf434f52949153f0df3a",
     "voices_sha256": "bca610b8308e8d99f32e6fe4197e7ec01679264efed0cac9140fe9c29f1fbf7d",
     "voice": "bf_emma", "language": "en-gb", "sample_rate": 24000,

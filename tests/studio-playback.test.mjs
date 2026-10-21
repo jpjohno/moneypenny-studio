@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import vm from 'node:vm';
 import {connectSpeechSource,fadeSpeechGain,openSpeechGate} from '../static/presence-audio.js';
+import {TimedSpeechMouth,speechTiming,attachSpeechTiming} from '../static/speech-timing.js';
 const studio=await readFile(new URL('../static/studio.js',import.meta.url),'utf8');
 const stop=studio.slice(studio.indexOf('async function stopAll('),studio.indexOf('function performActions('));
 const play=studio.slice(studio.indexOf('async function playPrepared('),studio.indexOf('async function playSpeech('));
@@ -12,13 +13,14 @@ function harness(){
  const context={currentTime:4,createGain(){const envelope={gain:gain(),connect(){},disconnect(){this.disconnected=true;}};envelopes.push(envelope);return envelope;},createBufferSource(){
   const source={connect(){},disconnect(){this.disconnected=true;},start(time){this.started=time;},stop(time){this.stopped=time;}};sources.push(source);return source;
  }};
- const elements=new Map(),element=id=>{if(!elements.has(id))elements.set(id,{classList:{remove(){}},querySelectorAll:()=>[],value:'neutral'});return elements.get(id);};
- const sandbox={connectSpeechSource,fadeSpeechGain,openSpeechGate,console,Uint8Array,clearTimeout,
-  head:{audioCtx:context,audioSpeechGainNode:{},isSpeaking:false,lookAtCamera(){context.currentTime+=.020;},stopSpeaking(){},stopGesture(){},setValue(){}},
+ const elements=new Map(),element=id=>{if(!elements.has(id))elements.set(id,{dataset:{},classList:{remove(){}},querySelectorAll:()=>[],value:'neutral'});return elements.get(id);};
+ const sandbox={connectSpeechSource,fadeSpeechGain,openSpeechGate,speechTiming,console,Uint8Array,clearTimeout,
+  head:{audioCtx:context,mtAvatar:{viseme_aa:{value:0},viseme_PP:{value:0}},audioSpeechGainNode:{},isSpeaking:false,lookAtCamera(){context.currentTime+=.020;},stopSpeaking(){},stopGesture(){},setValue(){}},
   $:element,setState(){},setBusy(){},notify(){},api:async()=>{},performActions(){},setPersonaMood(){},
   recorder:{cancel(){}},analyser:{frequencyBinCount:16},cancelAnimationFrame:id=>cancellations.push(id),
   jarvisEmbed:true,proxiedPresence:true,document:{hidden:false},owner:'test',
  };
+ sandbox.timedMouth=new TimedSpeechMouth(sandbox.head,context);
  vm.createContext(sandbox);
  vm.runInContext(`let generation=0,controller=null,motionLibrary=null,speechGate={gain:{value:0,cancelAndHoldAtTime(){},cancelScheduledValues(time){globalThis.openedAt=time;},setValueAtTime(){},linearRampToValueAtTime(){}}},speechDelay={delayTime:{value:.15}},speechStopAt=0,activeReply=null,recordingPending=false,currentSource=null,currentEnvelope=null,speechEnded=null,lips=null,visualizer=9,actionTimers=[],userSpeaking=false,avatarReady=true,turnStarted=0,firstVoiceAt=0,liveSession=null;${stop}\n${play}\nglobalThis.play=audio=>playPrepared(audio,generation);globalThis.stop=()=>stopAll();globalThis.state=()=>({currentSource,currentEnvelope,speechEnded,speaking:head.isSpeaking});`,sandbox);
  return {sandbox,sources,envelopes,context,cancellations};
@@ -56,4 +58,18 @@ test('animation preview stops locally without waiting for a stalled voice servic
  assert.equal(busy.at(-1),false,'controls settle while the voice service request is pending');
  assert.equal(typeof completeRequest,'function','the old synthesis is still cancelled in the background');
  completeRequest();
+});
+
+test('actual playback retains delayed timed lips across phrase handoff and Stop cancels them',async()=>{
+ const h=harness(),buffer=name=>attachSpeechTiming({duration:.5},{version:1,duration:.5,cues:[[0,.5,name]]});
+ const first=h.sandbox.play(buffer('viseme_aa')),source=h.sources[0];
+ h.context.currentTime=source.started+.5;source.onended();await first;
+ const second=h.sandbox.play(buffer('viseme_PP')),next=h.sources[1];
+ assert.equal(h.sandbox.timedMouth.queue.length,2,'previous output has not drained at source end');
+ h.sandbox.timedMouth.update();assert.ok(h.sandbox.head.mtAvatar.viseme_aa.newvalue>.6);
+ h.context.currentTime=next.started+.15+.1;h.sandbox.timedMouth.update();
+ assert.ok(h.sandbox.head.mtAvatar.viseme_PP.newvalue>.7);assert.equal(h.sandbox.head.mtAvatar.viseme_aa.newvalue,0);
+ await h.sandbox.stop();await second;
+ assert.equal(h.sandbox.timedMouth.active,false);assert.equal(h.sandbox.head.mtAvatar.viseme_PP.newvalue,0);
+ assert.equal(h.sandbox.head.studioSpeechActive,false);
 });

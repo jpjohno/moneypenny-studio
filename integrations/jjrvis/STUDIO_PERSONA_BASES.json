@@ -1,0 +1,24 @@
+{
+  "prepared": "2026-10-21",
+  "apply_after": [
+    "jjrvis-voice-identity.patch",
+    "jjrvis-voice-help.patch"
+  ],
+  "requires_exact_private_basis": true,
+  "before_sha256": {
+    "jjrvis_core.py": "6de9ecb2bcb458571be0cccebfaf0137c528000593544542175263adf670e347",
+    "jarvis_comm_broker.py": "1e6764d26dfd79faee5c3eed49dbf7da4a248b266f6375e0db5a4a2aab9ec5ff",
+    "voice_profiles.py": "9af5479dff86f9d28211b50c8e0e142120e32c04934a1360a536d161e5156403",
+    "workspace.js": "94750a4606fb546be39fbf22b79722590ea4e91d8e5c172a0f18d7e70ed2a06e",
+    "briefing.py": "9704a54e316f88511d1b44e8b7ace98e2d0e775ccc763e38267cdadaeaf9287e"
+  },
+  "after_sha256": {
+    "jjrvis_core.py": "fd6911c48e1fff392883ac56dd68d4416ace77928104373a9bd0c733b0ecd1b3",
+    "jarvis_comm_broker.py": "907c682ce7e13f76949917417dd566eb38153fb94c6c201efa27b059cb44e02c",
+    "voice_profiles.py": "6578ed9c16dbb9aa877ac561d6235dde815cb562629278d073294fe198f3d82e",
+    "workspace.js": "375b01bf4b6036b410609c33a7ced4a960193a694cc530c9518f340e24bbd03d",
+    "briefing.py": "d8788c5d388f261d2360fc1ef1eff64f2ce5c16e0e62df38ece03fe67dd0cf68"
+  },
+  "helper_sha256": "2fca1a0ea31ec08aaa26fe15f8950623c9acd2e2444edb7b3a07258fe2ec5d1d",
+  "exact_replay_verified": true
+}

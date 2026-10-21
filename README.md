@@ -22,6 +22,8 @@ Publication correction: a separate root-level **Moneypenny-Adult-Anatomy-Study-v
 
 ## JJRVIS front of house
 
+The latest repair explicitly selects a saved Studio **Persona** independently of **Voice** and **Answer model** in JJRVIS. Local Kokoro WAVs carry their existing phoneme durations, so mouth shapes follow the generated voice on the same audio clock; older audio keeps the analysis fallback. Random lip distortions yield during speech. Skin and fabric use corrected reflection strengths with the existing room environment. See [the release notes](integrations/jjrvis/PHONEME_TIMING_RELEASE.md) and [verification](integrations/jjrvis/PERSONA_PHONEME_VERIFICATION.json) for the actual tested scope. These changes do not make the current CG asset photographic or guarantee every model response.
+
 Open the combined private workspace at http://127.0.0.1:8766/workspace . The existing JJRVIS service must be running separately. Moneypenny and the interactive device atlas share one scene; **Customise Moneypenny** opens this full studio. The embedded view has transparent surroundings and uses the local voice with speech-driven mouth shapes. The current v38 character improves the hair fringe, brow fit, portrait lighting and natural idle motion, following the hand and blouse-fit corrections. It remains a CG character, not a photographic asset.
 
 ## Captured human previews

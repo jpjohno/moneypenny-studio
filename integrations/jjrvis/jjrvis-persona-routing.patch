@@ -1,0 +1,24 @@
+--- a/jjrvis_core.py
++++ b/jjrvis_core.py
+@@ -36,2 +36,13 @@
+     return {'persona': studio_persona.summary(binding), 'reply_provenance': 'model_generated'}
++
++
++def personality_conversation_request(question, character_name='Moneypenny'):
++    """An anchored self-style question; never strip workspace words generally."""
++    names = '|'.join(re.escape(name) for name in {character_name, 'Moneypenny', 'Money Penny', 'Jarvis', 'JJRVIS'} if name)
++    return bool(re.fullmatch(
++        r'\s*(?:(?:' + names + r')[,\s]+)?(?:please\s+)?'
++        r'(?:describe|tell me about|what (?:is|is like)|what[’\']s|how would you describe)\s+'
++        r'your\s+(?:conversational\s+)?(?:personality|character|conversation style|conversational style)'
++        r'(?:\s+in\s+(?:one|a)\s+(?:short\s+)?sentence)?[?.!\s]*'
++        r'(?:no device actions[.!\s]*)?', question, re.I))
+ 
+@@ -543,2 +554,7 @@
+                 r'weather|forecast|news|headlines|search|find|locate|access|cost|free|today|latest|tomorrow)\b', lower))
++            if personality_conversation_request(question, character_name):
++                # "No device actions" in a self-style question is a constraint,
++                # not a request to collect device/workspace evidence.
++                workspace_intent = False
++                casual_persona_followup = False
+             if not selected_file and (identity_hint or re.search(

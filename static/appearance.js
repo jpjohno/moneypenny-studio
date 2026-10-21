@@ -118,7 +118,7 @@ export function prepareSampleMaterials(root){
 
 // The local asset already owns its textures, skin rig and facial shapes. Improve
 // sampling and light response without replacing those production data.
-export function prepareCharacterMaterials(root,renderer){
+export function prepareCharacterMaterials(root,renderer,environment=null){
   const anisotropy=Math.min(4,renderer.capabilities.getMaxAnisotropy());
   const seen=new Set();
   root.traverse(node=>{
@@ -166,8 +166,15 @@ export function prepareCharacterMaterials(root,renderer){
         material.depthWrite=false;material.clearcoat=.5;material.clearcoatRoughness=.08;
         material.envMapIntensity=.8;
       }
+      // r180 otherwise replaces a material's envMapIntensity with the scene
+      // value. Bind the already-baked room map so these local responses work;
+      // ownership stays with TalkingHead's scene, never this material helper.
+      if(environment?.isTexture&&/blouse/i.test(material.name)){
+        material.envMap=environment;material.envMapIntensity=.3;
+      }
       if(material.name.startsWith('Performance skin')){
-        material.envMapIntensity=.8;
+        if(environment?.isTexture){material.envMap=environment;material.envMapIntensity=.62;}
+        else material.envMapIntensity=.8;
         // The old procedural map carries large facial relief as well as pores.
         // Reduce that relief; the actual skin colour/UVs stay intact.
         material.normalScale?.set(.3,.3);

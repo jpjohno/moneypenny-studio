@@ -1,0 +1,17 @@
+{
+  "prepared": "2026-10-21",
+  "requires_exact_private_basis": true,
+  "before_sha256": {
+    "local_voice.py": "e7cd2d348016647abad7774c2db86a88c9cc788e9457c3f8c9e5bf10d208cbd0",
+    "local_voice_worker.py": "891705b52a511f29fb00f0ab6f14d6bd8a45321c18778208217da37f1b711cba",
+    "presence_proxy.py": "ab636c84acf52685991f859ef5a87f6cd7d9e57b0628b4ead3be044d1088000a"
+  },
+  "after_sha256": {
+    "local_voice.py": "e4618a22541ad258e282721c4d9a8422f7a5b7e6e430c730b2f39f91e4b3aa9c",
+    "local_voice_worker.py": "016420b2238f6bf0ae07501cf458ae1b938724c44a9fc7017030a85edafe261e",
+    "presence_proxy.py": "b5f553d9cbbf3dbf265e4ed255893a1b9b8ee4c7cbefcf8a2c7aa886af813e91"
+  },
+  "helper_sha256": "5c1c0bd26d8b2b456d5675f9c30ca10f776cfad001bf9a93a96d8670efc3d64e",
+  "exact_replay_verified": true,
+  "voice_cache_version": 4
+}

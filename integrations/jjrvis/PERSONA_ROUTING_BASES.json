@@ -1,0 +1,11 @@
+{
+  "prepared": "2026-10-21",
+  "apply_after": "jjrvis-studio-persona.patch",
+  "before_sha256": {
+    "jjrvis_core.py": "fd6911c48e1fff392883ac56dd68d4416ace77928104373a9bd0c733b0ecd1b3"
+  },
+  "after_sha256": {
+    "jjrvis_core.py": "1bd488507cbaa8f59333c937d1d5bc2dd606b334abda1c292bee78bb990c2fde"
+  },
+  "exact_replay_verified": true
+}

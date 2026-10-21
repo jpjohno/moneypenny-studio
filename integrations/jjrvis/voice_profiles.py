@@ -2,6 +2,7 @@
 import json
 import os
 import tempfile
+import studio_persona
 from pathlib import Path
 PATH=Path(__file__).parent/'.runtime/voice-preference.json'
 PROFILES={
@@ -41,7 +42,7 @@ def resolved_model(model=None):
  return MODELS.get(model,{}).get('ollama_model') or model
 def public():
  preference=selected()
- return {**preference,'voice':{key:PROFILES[preference['profile']][key] for key in ('provider','voice','language')},'resolved_model':resolved_model(preference['model']),'models':[{'id':k,**v} for k,v in MODELS.items()],'choices':[{'id':k,'name':v['name'],'label':v['label']} for k,v in PROFILES.items()]}
+ return {**preference,'persona':studio_persona.public(),'voice':{key:PROFILES[preference['profile']][key] for key in ('provider','voice','language')},'resolved_model':resolved_model(preference['model']),'models':[{'id':k,**v} for k,v in MODELS.items()],'choices':[{'id':k,'name':v['name'],'label':v['label']} for k,v in PROFILES.items()]}
 def current():
  preference=selected()
  return {**PROFILES[preference['profile']],**preference}

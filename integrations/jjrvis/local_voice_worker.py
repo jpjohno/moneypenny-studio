@@ -10,6 +10,7 @@ from pathlib import Path
 import shutil
 import struct
 import sys
+from speech_timing import create_speech, append_viseme_chunk
 
 
 def validate_voice(payload):
@@ -58,12 +59,12 @@ def synthesize(engine, payload):
         raise ValueError("Invalid local speech request")
     import numpy as np
     import soundfile as sf
-    samples, sample_rate = engine.create(text, voice=payload["voice"], lang="en-gb", speed=speed)
+    samples, sample_rate, timings = create_speech(engine, text, payload["voice"], "en-gb", speed)
     if sample_rate != 24000 or not samples.size or not np.isfinite(samples).all():
         raise ValueError("Invalid speech samples")
     output = io.BytesIO()
     sf.write(output, samples, sample_rate, format="WAV", subtype="PCM_16")
-    value = output.getvalue()
+    value = append_viseme_chunk(output.getvalue(), timings, len(samples)/sample_rate)
     if not 44 < len(value) <= 24_000_044:
         raise ValueError("Invalid speech length")
     return value

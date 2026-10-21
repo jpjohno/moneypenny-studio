@@ -19,7 +19,8 @@ import { actionOnly, movementAcknowledgement, wardrobeCommand } from './action-c
 import { chooseModel } from './model-choice.js';
 import { renderProfile,StageActivity } from './render-budget.js';
 import { studioFetch as fetch,studioURL,parentOrigins,STUDIO_BASE } from './studio-paths.js';
-import {PresenceAudio,connectSpeechSource,fadeSpeechGain,openSpeechGate,installSpeechVisemeLifecycle,SpeechFrameClock,trimSpeechTail} from './presence-audio.js';
+import {PresenceAudio,connectSpeechSource,fadeSpeechGain,openSpeechGate,installSpeechVisemeLifecycle,SpeechFrameClock,decodeSpeechBuffer} from './presence-audio.js';
+import {TimedSpeechMouth,speechTiming} from './speech-timing.js';
 
 const $ = id => document.getElementById(id);
 const jarvisEmbed=new URLSearchParams(location.search).get('embed')==='jarvis';
@@ -36,7 +37,7 @@ const presets = {
   playful: 'You are Moneypenny, an adult British woman with a confident, witty and subtly flirtatious personality. Use warm smiles, gentle teasing and clever wordplay when welcome. Keep flirtation non-explicit and responsive. Shift to a clear, considerate manner when the topic calls for it. Speak like a natural conversation.',
 };
 const settingIds = ['personaName','personaPreset','systemPrompt','movement','mood','wardrobe','footwear','blouseColor','hairTone','eyeTone','lightingLook','lightBrightness','autonomy','aiMotion','activity','behaviourPrompt','modelSelect','speed','mouthTiming','temperature','maxTokens','autoSpeak'];
-let head, lips, analyser, visualizer, avatarReady = false, lipReady = false;
+let head, lips, timedMouth, analyser, visualizer, avatarReady = false, lipReady = false;
 let generation = 0, controller = null, busy = false, currentSource = null, currentEnvelope=null, speechEnded = null, speechStopAt=0;
 let history = [], statusData = {}, avatarURL = null, portraitURL = null, recordingPending = false;
 let studioOutfit = [],disposeAppearance=null;
@@ -185,7 +186,7 @@ async function showAvatar(file=null, localCharacter=null) {
     try{motionLibrary.autoIds=JSON.parse(localStorage.getItem('moneypenny-autonomous-clips')||'["studio-stretch"]');motionLibrary.aliasOverrides=JSON.parse(localStorage.getItem('moneypenny-motion-aliases')||'{}');motionLibrary.cueOverrides=JSON.parse(localStorage.getItem('moneypenny-garment-cues')||'{}');}catch{}
     tools?.refreshGarments();
     if(!file&&!localCharacter)disposeAppearance=prepareSampleMaterials(head.armature);
-    else if(localCharacter)prepareCharacterMaterials(head.armature,head.renderer);
+    else if(localCharacter)prepareCharacterMaterials(head.armature,head.renderer,head.scene.environment);
     setLook(head,$('lightingLook').value,$('lightBrightness').value);
     studioOutfit=[];
     if(!file&&!localCharacter)head.armature.traverse(node=>{if(node.isMesh&&node.name.includes('female_casualsuit')){for(const material of [node.material].flat())studioOutfit.push({material,map:material.map,color:material.color.clone()});}});
@@ -256,6 +257,7 @@ async function initializeStage() {
     await head.audioCtx.audioWorklet.addModule(studioURL('/static/vendor/headaudio/headworklet.min.mjs'));
     lips=new HeadAudio(head.audioCtx,{parameterData:{vadGateActiveDb:-40,vadGateInactiveDb:-55,speakerMeanHz:220}});
     installSpeechVisemeLifecycle(lips);
+    timedMouth=new TimedSpeechMouth(head,head.audioCtx);
     const speechClock=new SpeechFrameClock(head.audioCtx);
     await lips.loadModel(studioURL('/static/vendor/headaudio/model-en-mixed.bin'));
     head.audioSpeechGainNode.connect(lips);
@@ -263,7 +265,7 @@ async function initializeStage() {
     speechGate=head.audioCtx.createGain();
     head.audioSpeechGainNode.disconnect(head.audioReverbNode); head.audioSpeechGainNode.connect(delay); delay.connect(speechGate);speechGate.connect(head.audioReverbNode);
     analyser=head.audioCtx.createAnalyser(); analyser.fftSize=256; head.audioSpeechGainNode.connect(analyser);
-    lips.onvalue=(key,value)=>{const target=head.mtAvatar[key];if(target)Object.assign(target,{newvalue:value,needsUpdate:true});};
+    lips.onvalue=(key,value)=>{if(key.startsWith('viseme_')&&timedMouth.active)return;const target=head.mtAvatar[key];if(target)Object.assign(target,{newvalue:value,needsUpdate:true});};
     let previousMotionClock=head.animClock;
     head.opt.update=dt=>{
       // TalkingHead limits its pose interpolation delta, but its animation clock
@@ -272,8 +274,9 @@ async function initializeStage() {
       previousMotionClock=head.animClock;
       renderFrames++;
       if(renderFrames%30===0)$('avatar').dataset.renderFrames=String(renderFrames);
-      stageActivity.update({active:busy||userSpeaking||head.isSpeaking||!!motion?.active||!!motion?.queue.length||!!motionLibrary?.playing||!!rig?.targets.size});
-      lips.update(speechClock.tick());if(!rig)return;
+      head.studioSpeechActive=head.isSpeaking||timedMouth.active;
+      stageActivity.update({active:busy||userSpeaking||head.studioSpeechActive||!!motion?.active||!!motion?.queue.length||!!motionLibrary?.playing||!!rig?.targets.size});
+      lips.update(speechClock.tick());timedMouth.syncOutputDelay(speechDelay?.delayTime.value||0);timedMouth.update();if(!rig)return;
       const seconds=motionMs/1000;
       if((busy||userSpeaking)&&motionLibrary?.currentSource==='persona')motionLibrary.stop();
       rig.resetBody(!!motion?.active||!!motion?.queue.length||motionLibrary?.playing||rig.targets.size>0);
@@ -304,6 +307,7 @@ async function initializeStage() {
 async function stopAll(clearNotice=true,cancelLocalVoice=true,waitForLocalVoice=true) {
   const cancelled=generation;
   generation++; controller?.abort(); controller=null;motionLibrary?.stop();
+  timedMouth?.stop();if(head)head.studioSpeechActive=false;
   const stopGeneration=generation;
   if(speechGate)fadeSpeechGain(speechGate.gain,head.audioCtx.currentTime,0);
   if(activeReply){activeReply.body.textContent=activeReply.body.textContent==='…'?'Reply stopped.':`${activeReply.body.textContent}\n\n[Stopped]`;activeReply=null;}
@@ -356,7 +360,7 @@ async function prepareSpeech(value, token) {
   await head.audioCtx.resume();
   if(!currentSource)setState('Preparing her voice','busy');
   const response=await api('/api/speech',{text:value,speed:Number($('speed').value),owner:`${owner}:${token}`},controller?.signal);
-  const audio=trimSpeechTail(head.audioCtx,await head.audioCtx.decodeAudioData(await response.arrayBuffer()));
+  const audio=await decodeSpeechBuffer(head.audioCtx,await response.arrayBuffer());
   if(token!==generation)throw new DOMException('Stopped','AbortError');
   return audio;
 }
@@ -365,8 +369,8 @@ async function playPrepared(audio, token, performance={}) {
   setState('Speaking','speaking');
   if(turnStarted&&!firstVoiceAt){firstVoiceAt=(performanceNow()-turnStarted)/1000;$('chatMetrics').dataset.firstVoiceSeconds=firstVoiceAt.toFixed(2);$('chatMetrics').textContent=`Voice in ${firstVoiceAt.toFixed(1)}s`;}
   performActions(performance);
-  // One continuous WAV. HeadAudio analyses this exact audio, rather than a timer
-  // guessing at phonemes. A short audio delay compensates for processing time.
+  // The installed voice's predicted phoneme durations follow this exact PCM.
+  // Older WAVs retain HeadAudio analysis; both use the same output delay/clock.
   await new Promise(resolve=>{
     const source=head.audioCtx.createBufferSource(); source.buffer=audio;
     head.isSpeaking=true; head.lookAtCamera(2000);
@@ -379,6 +383,9 @@ async function playPrepared(audio, token, performance={}) {
     if(!jarvisEmbed&&!document.hidden)draw();
     // Schedule the PCM and its envelope on the same clock, after DOM/gaze work.
     const startAt=Math.max(head.audioCtx.currentTime+.004,speechStopAt);
+    const timed=timedMouth.schedule(audio,startAt,speechDelay?.delayTime.value||0);
+    $('avatar').dataset.speechTiming=timed?'voice-phonemes':'audio-analysis';
+    $('avatar').dataset.speechCues=String(timed?speechTiming(audio).cues.length:0);
     // Reopen at the delayed output's arrival, keeping the interrupted reply's
     // buffered tail muted during rapid replacement.
     if(speechGate)openSpeechGate(speechGate.gain,startAt+(speechDelay?.delayTime.value||0));
@@ -635,7 +642,7 @@ if(jarvisEmbed){
       if(!avatarReady||!lipReady)throw new Error('Moneypenny is still preparing her character and voice.');
       await new Promise((resolve,reject)=>{const timer=setTimeout(()=>reject(new Error('Tap Moneypenny once to enable her voice on this device.')),2500);head.audioCtx.resume().then(()=>{clearTimeout(timer);resolve();},error=>{clearTimeout(timer);reject(error);});});
       if(head.audioCtx.state!=='running')throw new Error('Tap Moneypenny once to enable her voice on this device.');
-      return trimSpeechTail(head.audioCtx,await head.audioCtx.decodeAudioData(bytes));
+      return decodeSpeechBuffer(head.audioCtx,bytes);
     },
     playAudio:(audio,{onStarted})=>playPrepared(audio,generation,{onStarted,mood:$('mood').value||'neutral'}),
     drain:()=>new Promise(resolve=>setTimeout(resolve,Math.round((speechDelay?.delayTime.value||0)*1000)+30)),
