@@ -1,4 +1,4 @@
-"""Record saved local character deliverables without publishing their contents."""
+"""Record saved local deliverables and identify matching published source copies."""
 import hashlib
 import json
 from pathlib import Path
@@ -32,6 +32,7 @@ FILES = {
     'Moneypenny-Style-v26.glb': 'v26 clothed browser candidate; balanced profile and Jarvis presence source',
     'Moneypenny-Style-v27.blend': 'v27 clothed garment-fit source; body and all morph coordinates preserved from v26',
     'Moneypenny-Style-v27.glb': 'v27 clothed browser candidate; corrected under-bust drape and Jarvis presence source',
+    'Moneypenny-Style-v38.glb': 'Current clothed conversational fallback; reviewed eyes, brows and hand/clothing repair',
 }
 
 
@@ -44,14 +45,24 @@ def main():
             with path.open('rb') as source:
                 item.update(bytes=path.stat().st_size, sha256=hashlib.file_digest(source, 'sha256').hexdigest())
         items.append(item)
+    public_copies = []
+    public_base = ROOT / 'Moneypenny-Adult-Body-Source.blend'
+    base_item = next(item for item in items if item['path'].endswith('/Moneypenny-Adult-Body-Source.blend'))
+    if public_base.is_file() and base_item.get('sha256'):
+        with public_base.open('rb') as source:
+            if hashlib.file_digest(source, 'sha256').hexdigest() == base_item['sha256']:
+                public_copies.append({'local_path': base_item['path'], 'source_copy': public_base.name,
+                                      'sha256': base_item['sha256']})
     manifest = {'scope': 'Saved local files only. Unsaved Blender edits are not included.',
-                'asset_contents_published_to_git': False,
+                'asset_contents_published_to_git': bool(public_copies),
+                'matching_published_source_copies': public_copies,
+                'publication_note': 'See CHARACTER_SOURCE_PROVENANCE.json. Only the original parametric base has a matching new public copy; the older tracked anatomy study differs from its runtime copy. Capture data and later exports remain local.',
                 'commercial_redistribution_cleared': False,
                 'rebuild': 'See CHARACTER_WORKSHOP.md and Build Performance Character.command',
                 'files': items}
     destination = ROOT / 'LOCAL_CHARACTER_ASSETS.json'
     destination.write_text(json.dumps(manifest, indent=2) + '\n')
-    print(f'Inventoried {len(items)} local deliverables; no asset contents uploaded.')
+    print(f'Inventoried {len(items)} local deliverables and {len(public_copies)} matching source copies; this command uploads nothing.')
 
 
 if __name__ == '__main__':

@@ -24,3 +24,7 @@ The active checkout is `/Users/jamesjohnston/Documents/Moneypenny-Studio`. Do no
 Read the relevant existing files before proposing or applying a change. Prefer one small extension to the current architecture. Preserve unrelated changes, Git history, Blender files, and backups. Never claim an edit, test, render, animation, export, commit, push, or deployment succeeded without direct tool output proving it.
 
 Do not delete, move, rename, install, commit, push, or run broad terminal commands unless the user explicitly requests that action.
+
+## Current character and 4D source map
+
+Read `GEMINI_HANDOFF.md` and `CHARACTER_SOURCE_PROVENANCE.json` before character work. The root `Moneypenny-Adult-Body-Source.blend` is the original editable adult base. Live v38 remains the fallback. The Aliyah/Claudia captures are separate clothed studies; the 4D workshop is recorded playback, not a hidden complete body or autonomous motion generator. Use the named launchers or VS Code tasks. Preserve original scenes and save a new version.

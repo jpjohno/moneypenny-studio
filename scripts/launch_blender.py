@@ -20,6 +20,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--file', type=Path, help='An explicitly chosen .blend source')
     parser.add_argument('--check', action='store_true', help='Check paths without opening or modifying Blender')
+    parser.add_argument('--no-controls', action='store_true', help='Open a body or captured-mesh study without the humanoid motion panel')
     args = parser.parse_args()
     executable = blender_path()
     if not executable:
@@ -32,7 +33,10 @@ def main():
         raise SystemExit('Local character source was not found. Use --file /path/to/source.blend or build the performance source first.')
     print(f'Blender: {executable}\nSource: {source}\nExisting Blender windows and unsaved work are left alone.', flush=True)
     if not args.check:
-        return subprocess.call([str(executable), str(source), '--python', str(ROOT / 'scripts/character/studio_controls.py')], cwd=ROOT)
+        command = [str(executable), '--disable-autoexec', str(source)]
+        if not args.no_controls:
+            command += ['--python', str(ROOT / 'scripts/character/studio_controls.py')]
+        return subprocess.call(command, cwd=ROOT)
     return 0
 
 

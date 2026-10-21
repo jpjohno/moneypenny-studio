@@ -14,6 +14,12 @@ For editing existing code with this Dolphin model, open the file, select the rel
 
 **Open Studio Rig Controls.command** locates Blender on this Mac and opens the local dressed performance source with a **Moneypenny** sidebar. Remember a pose, edit a different pose, then animate back to the remembered pose. A new timeline action keeps the previous action available; constrained rigs must be animated through their own controls. Export movement produces a motion-only GLB for **Motion library → Add animation** in the web app. No character upload or automatic execution of model-written code is involved. See [CHARACTER_WORKSHOP.md](CHARACTER_WORKSHOP.md#blender-to-web-studio-motion-workflow).
 
+## Character handover and 4D workshop
+
+Read [GEMINI_HANDOFF.md](GEMINI_HANDOFF.md) before continuing the character rebuild. The original **Moneypenny-Adult-Body-Source.blend** is now included at repository root as an unfinished adult authoring base. **Open Moneypenny Body Source.command** opens it in Blender. **Open 4D Capture Workshop.command** opens the prepared local recorded capture; it is a playback/authoring workshop, not a scanner for creating a new person. Both launchers preserve existing Blender windows and disable embedded source scripts.
+
+Publication correction: a separate root-level **Moneypenny-Adult-Anatomy-Study-v3.blend** was already tracked earlier and differs from the runtime copy. The original parametric base is the preferred clean starting point. Newer runtime exports and Renderpeople capture data remain local; their distribution is not covered by publishing the original base. See [CHARACTER_SOURCE_PROVENANCE.json](CHARACTER_SOURCE_PROVENANCE.json) for hashes, component licences and actual scope.
+
 ## JJRVIS front of house
 
 Open the combined private workspace at http://127.0.0.1:8766/workspace . The existing JJRVIS service must be running separately. Moneypenny and the interactive device atlas share one scene; **Customise Moneypenny** opens this full studio. The embedded view has transparent surroundings and uses the local voice with speech-driven mouth shapes. The current v38 character improves the hair fringe, brow fit, portrait lighting and natural idle motion, following the hand and blouse-fit corrections. It remains a CG character, not a photographic asset.

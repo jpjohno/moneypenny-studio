@@ -1,5 +1,12 @@
 # Moneypenny Studio handover
 
+## Latest continuation — 21 October 2026: editable body and recorded 4D workshop
+
+Use [GEMINI_HANDOFF.md](GEMINI_HANDOFF.md) for the current source map and requested next work. The original neutral adult parametric body is now included at repository root; a prepared 4D Blender workshop remains local with its licensed cache and images. New launchers and VS Code tasks open each separately with source-script execution disabled. Neither captured sample is a finished replacement Moneypenny or a scanner that creates a new identity.
+
+An older root anatomy-study binary was already tracked in `6ba429a`; earlier blanket statements that all Blender files were excluded were too broad. It differs from the runtime study. Source hashes and input licence references are recorded in `CHARACTER_SOURCE_PROVENANCE.json`. Runtime capture data, secrets and recordings have not been added. Existing live v38 and its speech/persona behaviour remain the fallback. No photographic completion, calibrated scan speech or customer redistribution clearance is claimed.
+
+
 Updated: 18 October 2026. Checkout: `/Users/jamesjohnston/Documents/Moneypenny-Studio`. Repository: `jpjohno/moneypenny-studio`, branch `codex/live-3d-persona`, draft PR [#1](https://github.com/jpjohno/moneypenny-studio/pull/1). Local URL: http://127.0.0.1:8090.
 
 

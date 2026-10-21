@@ -1,6 +1,14 @@
 {
   "scope": "Saved local files only. Unsaved Blender edits are not included.",
-  "asset_contents_published_to_git": false,
+  "asset_contents_published_to_git": true,
+  "matching_published_source_copies": [
+    {
+      "local_path": ".runtime/character-workshop/Moneypenny-Adult-Body-Source.blend",
+      "source_copy": "Moneypenny-Adult-Body-Source.blend",
+      "sha256": "2b26290a38eeaae94f8e17df81d0ab1982624ba5b25885d24b2b88debbc5d4ae"
+    }
+  ],
+  "publication_note": "See CHARACTER_SOURCE_PROVENANCE.json. Only the original parametric base has a matching new public copy; the older tracked anatomy study differs from its runtime copy. Capture data and later exports remain local.",
   "commercial_redistribution_cleared": false,
   "rebuild": "See CHARACTER_WORKSHOP.md and Build Performance Character.command",
   "files": [
@@ -192,6 +200,13 @@
       "present": true,
       "bytes": 49895220,
       "sha256": "d9166e9e453cb9eb2f5047853cdaa4d8e7011e25493138979fe1e44c3fd4f9c4"
+    },
+    {
+      "path": ".runtime/character-workshop/Moneypenny-Style-v38.glb",
+      "role": "Current clothed conversational fallback; reviewed eyes, brows and hand/clothing repair",
+      "present": true,
+      "bytes": 27558660,
+      "sha256": "2e709d0e483fabc7b15c12b1211fb032037c0a78195a53486e955c1f6e20d027"
     }
   ]
 }

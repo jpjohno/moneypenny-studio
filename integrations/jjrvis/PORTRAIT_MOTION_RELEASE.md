@@ -12,4 +12,9 @@ Breathing uses a shorter inhale and longer exhale with continuous joins and slow
 
 The actual v38 export passes the geometry, skeleton, corrective and speech-viseme contract. 65 Node tests and 66 Python tests pass, with two Python skips. Native visual results are recorded in PORTRAIT_MOTION_VERIFICATION.json. Texture/rig measurements do not prove photographic realism, arbitrary motion or full autonomous application control.
 
-The underlying face remains a generic authored mesh with a 2K whole-body colour atlas and procedural detail maps. This increment does not turn it into a scanned human face or establish customer-release rights for the legacy body asset. It is a verified improvement to the current character. Private runtime models, source scenes, screenshots and records are excluded from the public source repository.
+The underlying face remains a generic authored mesh with a 2K whole-body colour atlas and procedural detail maps. This increment does not turn it into a scanned human face or establish customer-release rights for the legacy body asset. It is a verified improvement to the current character. The private v38 runtime export, generated styling studies, screenshots and records remain outside the public source repository.
+
+Publication clarification: the original parametric body was added as a named
+root-level handover source on 21 October, and an older root anatomy study was
+already tracked. The v38 runtime export and captured scan data remain local.
+See `CHARACTER_SOURCE_PROVENANCE.json` at repository root for the exact exceptions.

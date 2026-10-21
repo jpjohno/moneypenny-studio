@@ -1,8 +1,52 @@
 {
-  "folders": [{"path": ".", "name": "Moneypenny · complete studio"}],
-  "settings": {"python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python"},
-  "tasks": {"version": "2.0.0", "tasks": [
-    {"label": "Moneypenny: open web studio", "type": "process", "command": "/bin/zsh", "args": ["${workspaceFolder}/Start-Moneypenny.command"], "problemMatcher": []},
-    {"label": "Moneypenny: open Blender motion panel", "type": "process", "command": "python3", "args": ["${workspaceFolder}/scripts/launch_blender.py"], "problemMatcher": []}
-  ]}
+  "folders": [
+    {
+      "path": ".",
+      "name": "Moneypenny \u00b7 complete studio"
+    }
+  ],
+  "settings": {
+    "python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python"
+  },
+  "tasks": {
+    "version": "2.0.0",
+    "tasks": [
+      {
+        "label": "Moneypenny: open web studio",
+        "type": "process",
+        "command": "/bin/zsh",
+        "args": [
+          "${workspaceFolder}/Start-Moneypenny.command"
+        ],
+        "problemMatcher": []
+      },
+      {
+        "label": "Moneypenny: open Blender motion panel",
+        "type": "process",
+        "command": "python3",
+        "args": [
+          "${workspaceFolder}/scripts/launch_blender.py"
+        ],
+        "problemMatcher": []
+      },
+      {
+        "label": "Moneypenny: open 4D capture workshop",
+        "type": "process",
+        "command": "/bin/zsh",
+        "args": [
+          "${workspaceFolder}/Open 4D Capture Workshop.command"
+        ],
+        "problemMatcher": []
+      },
+      {
+        "label": "Moneypenny: open editable body source",
+        "type": "process",
+        "command": "/bin/zsh",
+        "args": [
+          "${workspaceFolder}/Open Moneypenny Body Source.command"
+        ],
+        "problemMatcher": []
+      }
+    ]
+  }
 }

@@ -81,3 +81,9 @@ not a generic human or ARKit converter.
 A fresh Git checkout has source and tests, not licensed captured models. Missing
 local candidates return an explicit unavailable response rather than a simulated
 success or a fabricated person.
+
+The later 21 October handover also includes the original editable parametric body
+at repository root. A separate older anatomy-study binary was already tracked.
+Those files are distinct from the Renderpeople capture data described here; see
+`GEMINI_HANDOFF.md` and `CHARACTER_SOURCE_PROVENANCE.json` at repository root for
+the corrected file-by-file publication scope.

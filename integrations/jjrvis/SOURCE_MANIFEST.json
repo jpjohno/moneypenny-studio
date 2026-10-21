@@ -1,7 +1,7 @@
 {
   "prepared": "2026-10-21",
-  "kind": "captured_human_private_review_and_portrait_motion",
-  "status": "local_review_verified_source_only_customer_redistribution_uncleared",
+  "kind": "editable_body_and_private_4d_workshop_handover",
+  "status": "local_workshop_verified_body_base_and_source_prepared_for_publication",
   "files": {
     "CAPTURE_RATE_BASES.json": "e65b22d90ed1b0fdfcfd015e6b764df38e09c2e2f188ec5294d8df6b3661dd39",
     "CAPTURE_RATE_RELEASE.md": "85faea55c6c2bdcbc10f75e8581414ce2529567bec5c49496fadb0e31605a2e8",
@@ -157,13 +157,14 @@
     "workspace_assets.py": "9b7d0f2dc8a7799fa4c28a87923169d21cfbeb698d343aa04ea23800e0b7d514",
     "HAND_FIT_RELEASE.md": "91c8566fecbb2c96e0e8682067a81c6caadb4f18f3d82b1953ddbf44e69fbeed",
     "HAND_FIT_VERIFICATION.json": "aab39c01bba83bb9eafbf09064d9d866cf11b391ab86c60f06d1148a84aee63a",
-    "PORTRAIT_MOTION_RELEASE.md": "dae19bbedff9ead3126b73e1a3ee179031d23a2b43ac0fe1f05ee1513c3a3154",
+    "PORTRAIT_MOTION_RELEASE.md": "9f8a277279bf0ebab257ea24da308bbcf89d975aa41c5f4ea7a2f3c332d93651",
     "PORTRAIT_MOTION_VERIFICATION.json": "b3345ec55cd6c8fd6ddc0d92b1eddaa37bef9431b339dd7357342417d855010c",
-    "SCANNED_4D_REVIEW_RELEASE.md": "74badbb137c018a2dd5af8a84e3a6ebf0257de510c3b6bce976ff24f9ab9433f",
-    "SCANNED_4D_REVIEW_VERIFICATION.json": "ee9d57250f80008d711a80b111e504c0b41236d5cdaed49eec4c25fab1e0642f"
+    "SCANNED_4D_REVIEW_RELEASE.md": "9d31769df8377a42a2c2c0d6562b6264943d24f37c0f499a08b547519ca442f5",
+    "SCANNED_4D_REVIEW_VERIFICATION.json": "ee9d57250f80008d711a80b111e504c0b41236d5cdaed49eec4c25fab1e0642f",
+    "CHARACTER_WORKSHOP_HANDOFF_VERIFICATION.json": "2182e646d7fb5505193ccf8991ddebbf7d5d0f33aa09967a67df0bf6c6d0dc91"
   },
   "studio_review_files": {
-    "README.md": "0b5fafe071bc967504653d4be49046747a2bdb37e511614e27034396bdc224d8",
+    "README.md": "ae8698b702553af4a742d56671598255c2178ec2b353419392e63bd7be0a9d18",
     "app.py": "809604a1f23a253c789b3d7d9a64dd3e1514f86dd28959937bf2f8e095a0fb26",
     "package.json": "924817c5fc1b753443501130461a0bce2f495a4132eea64e40a2193029cd1aa8",
     "templates/index.html": "2bf3a2e2749b2d808e36dd0fc1dc6335b1ac1e4af505d747a21c1d3db51b729c",
@@ -176,5 +177,20 @@
     "tests/fourd-player.test.mjs": "b13c7fac1c02c9fc88ee75f05d506afa0da7d21654f3faf5b2737b7c14ec5028",
     "tests/realism-integration.test.mjs": "852ce08142c2894fb84dc44fb45e43fb1ba9eff328593e437b93a3c9ebe6af5c",
     "tests/test_realism_review.py": "68b6b6ac3720135ce2aef1b2a4cacde9c34c603586ca4b6e740987538214f6ab"
+  },
+  "studio_handoff_files": {
+    "GEMINI_HANDOFF.md": "183703dd0e707582c0811972532444763ae9558ad259e8d8396e97c5cd15c352",
+    "CHARACTER_SOURCE_PROVENANCE.json": "1fb4750c0e01e74bb1b32105ac0966a1c4423ef22501dbbdb8354edbe9f081e5",
+    "Moneypenny-Adult-Body-Source.blend": "2b26290a38eeaae94f8e17df81d0ab1982624ba5b25885d24b2b88debbc5d4ae",
+    "Open 4D Capture Workshop.command": "17549094e7c7b00da4627a4ded20c2937373b7228622e9d5378048a8183e8b44",
+    "Open Moneypenny Body Source.command": "72ec58ee8d0de508e6cde10ed8acb8c16b483201b9a23e1b55bb1672ce5dc887",
+    "Moneypenny.code-workspace": "be626671a3ce72f0ebf03d20fac636c41715906520ca97cbc76124bf47cf327e",
+    "SESSION_HANDOFF.md": "5e1b6f0cd42ce94c18b28264fa79c64042457df5a0c106129eb5d74610e06c64",
+    "LOCAL_CHARACTER_ASSETS.json": "44de4620e52069bdf8c7d9a5a74b648938254fe3dfb67825d0fbb24bfe6ae957",
+    ".continue/rules/moneypenny.md": "d96756ed2d76117c6381281622db7d0df55d6e886396b5e81a6cc013830a4b0f",
+    "scripts/launch_blender.py": "5648bf7f9997fd7709cd8591418135eb15eff5c44e1b8f07afa70586232f4755",
+    "scripts/character/inventory_local_assets.py": "a09695f8a76f0f313b8dd2d698524669ac29c2b2c517d9dc6e9009e0ad08275b",
+    "scripts/character/prepare_4d_workshop.py": "8b862810278dc20248c78e5a0c0e5d9fc1054dec4407e05cc9c481fd74355deb",
+    "tests/test_blender_launcher.py": "e379ae7ae5232838251041f61ea5c9f07bf0e899b9c11e62ded1c6556f5a0d56"
   }
 }
